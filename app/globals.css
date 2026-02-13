@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modo Escuro (Padrão) */
+body {
+  @apply bg-slate-950 text-white;
+}
+
+/* Modo Claro */
+html.light body {
+  @apply bg-white text-slate-950;
+}
+
+/* Gradientes */
+.gradient-text {
+  @apply bg-gradient-to-r from-pink-300 via-purple-300 to-sky-300 bg-clip-text text-transparent;
+}
+
+
+.gradient-bg {
+  @apply bg-gradient-to-br from-purple-900/20 to-pink-900/20;
+}
+
+/* Animações */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Scrollbar Customizado */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-900;
+}
+
+html.light ::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-purple-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-purple-500;
+}
+
+/* Botões */
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2
+  px-6 py-3 rounded-full font-bold
+  bg-gradient-to-r from-purple-500 to-pink-500
+  shadow-lg shadow-pink-500/20
+  transition-all duration-300;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 18px 45px rgba(236, 72, 153, 0.25);
+}
+
+.btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+  px-6 py-3 rounded-full font-bold
+  border border-white/15
+  bg-white/5 backdrop-blur
+  transition-all duration-300;
+}
+
+.btn-secondary:hover {
+  @apply bg-white/10 border-white/25;
+  transform: translateY(-1px);
+}
+
+/* Cards */
+.card {
+  @apply p-6 rounded-3xl
+  bg-white/5 backdrop-blur
+  border border-white/10
+  transition-all duration-300;
+}
+
+.card:hover {
+  @apply border-white/20;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 60px rgba(168, 85, 247, 0.18);
+}
+
+html.light .card {
+  @apply bg-gradient-to-br from-purple-100/50 to-pink-100/50 border-purple-300/50;
+}
+
+/* Seções */
+.section {
+  @apply py-20 px-4;
+}
+
+.section-dark {
+  @apply bg-black/30;
+}
+
+html.light .section-dark {
+  @apply bg-slate-100/50;
+}
+
+/* Container */
+.container-max {
+  @apply max-w-6xl mx-auto;
+}
+
+/* Efeitos de Fundo */
+.blob { @apply absolute rounded-full blur-3xl opacity-25; }
+.blob-1 { @apply top-40 left-10 w-80 h-80 bg-pink-500; }
+.blob-2 { @apply bottom-40 right-10 w-96 h-96 bg-purple-500; }
+
+
+/* Modo Claro - Ajustes */
+html.light .blob {
+  @apply opacity-10;
+}
+
+html.light .blob-1 {
+  @apply bg-purple-400;
+}
+
+html.light .blob-2 {
+  @apply bg-pink-400;
+}
+
+/* Transição suave de tema */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

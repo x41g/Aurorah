@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GuildConfig {
+  guildId   String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model GuildStats {
+  guildId            String   @id
+  todayKey           String?
+  ticketsCreatedToday Int      @default(0)
+  ticketsClosedToday  Int      @default(0)
+  staff              Json?
+  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime  @default(now())
+}
+
+model BotState {
+  id        String   @id @default("singleton")
+  guildIds  Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Whitelist {
+  id        String   @id @default("singleton")
+  enabled   Boolean  @default(false)
+  guildIds  Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Transcript {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  guildSlug String
+  userId    String
+  shortcode String
+  html      String
+  passHash  String
+  expireAt  DateTime
+  createdAt DateTime @default(now())
+
+  @@index([guildSlug])
+  @@index([userId])
+  @@index([expireAt])
+}
