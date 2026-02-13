@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Settings, BarChart3, Shield } from 'lucide-react'
@@ -70,17 +69,19 @@ export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: str
     <aside className="w-[280px] shrink-0">
       <div className="card sticky top-6 p-4">
         <div className="flex items-center gap-3 mb-4">
-          {logoSrc ? (
-            <Image
-              src={logoSrc}
-              alt="Logo"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-2xl border border-white/10 object-cover"
-            />
-          ) : (
-            <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10" />
-          )}
+            {logoSrc ? (
+              <img
+                src={logoSrc}
+                alt="Logo"
+                className="h-10 w-10 rounded-2xl border border-white/10 object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10" />
+            )}
+
 
           <div className="min-w-0">
             <div className="font-bold leading-tight truncate">Painel</div>

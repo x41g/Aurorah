@@ -7,7 +7,7 @@ export const config = {
   tagline: 'Automatize as vendas do seu Discord',
   
   // 🔗 Links
-  discordLink: 'https://discord.com/oauth2/authorize?client_id=1470481135321485455&permissions=8&integration_type=0&scope=bot',
+  discordLink: 'https://discord.com/oauth2/authorize?client_id=1470481135321485455&permissions=6755399844031600&redirect_uri=https%3A%2F%2Fwww.auroxegroup.shop%2Fapi%2Fauth%2Fcallback%2Fdiscord&integration_type=0&scope=bot',
   buyLink: '',
   
   colors: {

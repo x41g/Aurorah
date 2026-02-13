@@ -29,7 +29,7 @@ export default async function DashboardHome() {
     <div className="flex gap-6">
       <Sidebar isAdmin={isAdmin} />
       <div className="flex-1 min-w-0">
-        <Topbar title="Seus servidores" userName={session.user?.name} />
+        <Topbar title="Seus servidores" userName={session.user?.name} userImage={session.user?.image} />
         <div className="grid gap-4">
           {eligible.map((g) => (
             <GuildCard key={g.id} guild={g} botInGuild={true} />

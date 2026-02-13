@@ -52,7 +52,7 @@ export default async function GuildPage({
     <div className="flex gap-6">
       <Sidebar guildId={params.guildId} isAdmin={isAdmin} />
       <div className="flex-1 min-w-0">
-        <Topbar title={access.guild.name} userName={session.user?.name} />
+        <Topbar title={access.guild.name} userName={session.user?.name} userImage={session.user?.image} />
 
         <div className="grid md:grid-cols-3 gap-4 mb-6">
           <StatCard label="Tickets criados hoje" value={String(stats.ticketsCreatedToday ?? 0)} hint={stats.todayKey ? `Dia: ${stats.todayKey}` : undefined} />
