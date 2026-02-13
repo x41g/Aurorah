@@ -151,8 +151,23 @@ const textChannelOptions = channels
     ))}
   </select>
 </div>
-        <Field label="Canal de Logs (Channel ID)" value={logsChannelId} onChange={setLogsChannelId} />
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <label className="text-xs text-white/60">Canal de Logs (Channel ID)</label>
+        <select
+    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
+    value={logsChannelId}
+    onChange={(e) => setLogsChannelId(e.target.value)}
+  >
+    <option value="">Selecione um canal</option>
+    {textChannelOptions.map((o) => (
+      <option key={o.value} value={o.value}>
+        # {o.label}
+      </option>
+    ))}
+  </select>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+
   <label className="text-xs text-white/60">Canal do Painel</label>
   <select
     className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
