@@ -1,5 +1,7 @@
 'use client'
 
+import React, { useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Settings, BarChart3, Shield } from 'lucide-react'
@@ -13,8 +15,40 @@ function cls(active: boolean) {
   ].join(' ')
 }
 
-export function Sidebar({ guildId, isAdmin }: { guildId?: string; isAdmin?: boolean }) {
+export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: string }) {
   const pathname = usePathname()
+
+  const [guildName, setGuildName] = useState<string>('')
+  const [guildIconUrl, setGuildIconUrl] = useState<string>('')
+
+  const defaultLogo = (process.env.NEXT_PUBLIC_PANEL_LOGO_URL || '').trim()
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!guildId) {
+      setGuildName('')
+      setGuildIconUrl('')
+      return
+    }
+
+    fetch(`/api/discord/guilds/${guildId}/info`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return
+        setGuildName(String(d?.name || ''))
+        setGuildIconUrl(String(d?.iconUrl || ''))
+      })
+      .catch(() => {
+        if (cancelled) return
+        setGuildName('')
+        setGuildIconUrl('')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [guildId])
 
   const items: Item[] = guildId
     ? [
@@ -24,20 +58,39 @@ export function Sidebar({ guildId, isAdmin }: { guildId?: string; isAdmin?: bool
       ]
     : [{ href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> }]
 
+  const logoSrc = guildIconUrl || defaultLogo
+  const subtitle = guildName ? guildName : 'Tickets'
+
+  const isActive = (href: string) => {
+    if (href.includes('?')) return pathname.startsWith(href.split('?')[0]!)
+    return pathname === href
+  }
+
   return (
     <aside className="w-[280px] shrink-0">
       <div className="card sticky top-6 p-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10" />
-          <div>
-            <div className="font-bold leading-tight">Painel</div>
-            <div className="text-xs text-white/60 leading-tight">Tickets</div>
+          {logoSrc ? (
+            <Image
+              src={logoSrc}
+              alt="Logo"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-2xl border border-white/10 object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10" />
+          )}
+
+          <div className="min-w-0">
+            <div className="font-bold leading-tight truncate">Painel</div>
+            <div className="text-xs text-white/60 leading-tight truncate">{subtitle}</div>
           </div>
         </div>
 
         <nav className="space-y-2">
           {items.map((it) => {
-            const active = pathname === it.href
+            const active = isActive(it.href)
             return (
               <Link key={it.href} href={it.href} className={cls(active)}>
                 {it.icon}

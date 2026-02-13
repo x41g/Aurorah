@@ -153,8 +153,8 @@ accent: '#0f0f1a',
     type: "auto" as const,
     alt: "Prévia do dashboard",
     // poster: "https://seu-link-aqui/poster.png", // opcional (bom pra video)
-      serverIconUrl: "https://r2.e-z.host/3b4c067b-8d6b-4b6c-ba63-092e2cbda5d5/riyofmko.png",
+      serverIconUrl: "https://r2.e-z.host/3b4c067b-8d6b-4b6c-ba63-092e2cbda5d5/d035xj7t.png",
       botAvatarUrl: "https://r2.e-z.host/3b4c067b-8d6b-4b6c-ba63-092e2cbda5d5/zl54n5em.png",
-      loopImageUrl: "https://r2.e-z.host/3b4c067b-8d6b-4b6c-ba63-092e2cbda5d5/w549dsk7.png",
+      loopImageUrl: "https://r2.e-z.host/3b4c067b-8d6b-4b6c-ba63-092e2cbda5d5/d035xj7t.png",
   },
 }
