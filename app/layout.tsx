@@ -13,10 +13,10 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: 'Aurora - Gerenciamento de Tickets Discord',
-    description: 'Aurora — Automatize as vendas do seu Discord',
+    title: 'Auroxe Group — Aurora ',
+    description: 'Cansado de gerenciar seu servidor manualmente? A Aurora é a melhor auxiliar de tickets e pagamentos definitivo para Discord, automatizando o suporte e vendas do seu servidor com facilidade. Experimente agora e transforme seu servidor!',
     url: 'https://auroxegroup.shop', // Coloque a URL real do seu site aqui
-    siteName: 'Aurora',
+    siteName: '- Auroxe Group -',
     images: [
       {
         url: '/aurora.png', // A imagem deve estar na pasta 'public'
@@ -32,8 +32,8 @@ export const metadata: Metadata = {
   // Importante para o card ficar grande no Discord e Twitter
   twitter: {
     card: 'summary_large_image',
-    title: 'Aurora - Gerenciamento de Tickets Discord',
-    description: 'Aurora — Automatize as vendas do seu Discord',
+    title: 'Auroxe Group — Aurora ',
+    description: 'Cansado de gerenciar seu servidor manualmente? A Aurora é a melhor auxiliar de tickets e pagamentos definitivo para Discord, automatizando o suporte e vendas do seu servidor com facilidade. Experimente agora e transforme seu servidor!',
     images: ['/aurora.png'], // Mesma imagem do OpenGraph
   },
 };
