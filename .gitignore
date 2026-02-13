@@ -42,3 +42,5 @@ Thumbs.db
 
 .vercel
 Site Aurora.zip
+.vercel
+.env*.local

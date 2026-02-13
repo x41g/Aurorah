@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Topbar } from "@/components/dashboard/Topbar";
 import type { GuildStats } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { WhitelistPanel } from "@/components/admin/WhitelistPanel";
+import { WhitelistPanel } from "@/components/admin/WhitelistPanel"; 
 
 type BotGuilds = { guildIds: string[]; updatedAt?: number };
 
@@ -25,21 +25,27 @@ export default async function AdminPage() {
   };
 
   const slice = (botGuilds.guildIds || []).slice(0, 25);
-  const rows = await prisma.guildStats.findMany({
-    where: { guildId: { in: slice.map(String) } },
-  });
-  const byId = new Map(rows.map((r) => [r.guildId, r]));
-  const statsList: GuildStats[] = slice.map((id) => {
-    const r = byId.get(String(id));
-    return {
-      guildId: String(id),
-      updatedAt: r?.updatedAt ? r.updatedAt.getTime() : 0,
-      todayKey: r?.todayKey || undefined,
-      ticketsCreatedToday: r?.ticketsCreatedToday ?? 0,
-      ticketsClosedToday: r?.ticketsClosedToday ?? 0,
-      staff: (r?.staff as any) || undefined,
-    };
-  });
+const rows = await prisma.guildStats.findMany({
+  where: { guildId: { in: slice.map(String) } },
+});
+
+type Row = (typeof rows)[number];
+
+const byId = new Map<string, Row>(rows.map((r: Row) => [String(r.guildId), r]));
+
+const statsList: GuildStats[] = slice.map((id) => {
+  const r = byId.get(String(id));
+  return {
+    guildId: String(id),
+    updatedAt: r?.updatedAt ? new Date(r.updatedAt).getTime() : 0,
+    todayKey: r?.todayKey ?? undefined,
+    ticketsCreatedToday: r?.ticketsCreatedToday ?? 0,
+    ticketsClosedToday: r?.ticketsClosedToday ?? 0,
+    staff: (r?.staff as any) ?? undefined,
+  };
+});
+
+
 
 return (
   <div className="min-h-screen">
@@ -50,7 +56,12 @@ return (
         </div>
 
         <main className="min-w-0">
-          <Topbar title="Admin" userName={session.user?.name} />
+          <Topbar
+            title="Admin"
+            userName={session.user?.name}
+            userImage={session.user?.image}
+          />
+
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             <StatCard label="Guilds com bot (registradas)" value={String(botGuilds.guildIds?.length ?? 0)} />

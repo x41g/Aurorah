@@ -8,6 +8,7 @@ export type GuildConfig = {
   allowOpenRoleIds?: string[]
   maxOpenTicketsPerUser?: number
   cooldownSeconds?: number
+  panelImageUrl?: string;
 }
 
 export type GuildStats = {

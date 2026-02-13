@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react'
 import type { GuildConfig } from '@/lib/types'
 
+
+
 type Props = { guildId: string; initial: GuildConfig }
 
 function asArray(v: string) {
@@ -13,6 +15,7 @@ function asArray(v: string) {
 }
 
 export function GuildSettings({ guildId, initial }: Props) {
+  const [panelImageUrl, setPanelImageUrl] = useState(initial.panelImageUrl ?? "")
   const [saving, setSaving] = useState(false)
   const [ok, setOk] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -29,6 +32,7 @@ export function GuildSettings({ guildId, initial }: Props) {
 
   const preview = useMemo(() => {
     const cfg: GuildConfig = {
+      panelImageUrl: panelImageUrl || undefined,
       staffRoleId: staffRoleId || undefined,
       ticketCategoryId: ticketCategoryId || undefined,
       logsChannelId: logsChannelId || undefined,
@@ -73,6 +77,19 @@ export function GuildSettings({ guildId, initial }: Props) {
       setSaving(false)
     }
   }
+
+<div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+  <label className="text-xs text-white/60">Imagem do Painel (URL)</label>
+  <input
+    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
+    value={panelImageUrl}
+    onChange={(e) => setPanelImageUrl(e.target.value)}
+    placeholder="https://..."
+  />
+  <p className="mt-2 text-xs text-white/50">
+    Dica: use PNG/JPG. Recomendado 512x512.
+  </p>
+</div>
 
   return (
     <div className="card">
@@ -137,7 +154,21 @@ export function GuildSettings({ guildId, initial }: Props) {
           <pre className="mt-3 p-4 rounded-2xl bg-black/50 border border-white/10 overflow-auto text-xs">{JSON.stringify(preview, null, 2)}</pre>
         </details>
       </div>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+  <label className="text-xs text-white/60">Imagem do Painel (URL)</label>
+  <input
+    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
+    value={panelImageUrl}
+    onChange={(e) => setPanelImageUrl(e.target.value)}
+    placeholder="https://..."
+  />
+  <p className="mt-2 text-xs text-white/50">
+    Dica: use PNG/JPG. Recomendado 512x512.
+  </p>
+</div>
+
     </div>
+    
   )
 }
 

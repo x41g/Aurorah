@@ -19,10 +19,10 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
-session.accessToken = token.accessToken;
-session.user = { ...session.user, id: token.sub };
-      return session;
-    },
+async session({ session, token }) {
+  session.accessToken = token.accessToken as any;
+  session.user = { ...session.user, id: token.sub as any };
+  return session;
+},
   },
 };
