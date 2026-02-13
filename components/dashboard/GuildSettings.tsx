@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { GuildConfig } from '@/lib/types'
 
 
@@ -29,6 +29,30 @@ export function GuildSettings({ guildId, initial }: Props) {
   const [allowOpenRoleIds, setAllowOpenRoleIds] = useState((initial.allowOpenRoleIds ?? []).join(', '))
   const [maxOpenTicketsPerUser, setMaxOpenTicketsPerUser] = useState(String(initial.maxOpenTicketsPerUser ?? 1))
   const [cooldownSeconds, setCooldownSeconds] = useState(String(initial.cooldownSeconds ?? 0))
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
+const [channels, setChannels] = useState<{ id: string; name: string; type: number }[]>([])
+
+useEffect(() => {
+  fetch(`/api/discord/guilds/${guildId}/roles`)
+    .then((r) => r.json())
+    .then((data) => setRoles(Array.isArray(data) ? data : []))
+    .catch(() => setRoles([]))
+
+  fetch(`/api/discord/guilds/${guildId}/channels`)
+    .then((r) => r.json())
+    .then((data) => setChannels(Array.isArray(data) ? data : []))
+    .catch(() => setChannels([]))
+}, [guildId])
+const roleOptions = roles.map((r) => ({ value: r.id, label: r.name }))
+
+const categoryOptions = channels
+  .filter((c) => c.type === 4) // 4 = categoria
+  .map((c) => ({ value: c.id, label: c.name }))
+
+const textChannelOptions = channels
+  .filter((c) => c.type === 0) // 0 = canal texto
+  .map((c) => ({ value: c.id, label: c.name }))
+
 
   const preview = useMemo(() => {
     const cfg: GuildConfig = {
@@ -97,10 +121,52 @@ export function GuildSettings({ guildId, initial }: Props) {
       <p className="text-white/60 mb-6">Cole IDs do Discord (canais, cargos e categorias).</p>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <Field label="Cargo Staff (Role ID)" value={staffRoleId} onChange={setStaffRoleId} />
-        <Field label="Categoria de Tickets (Category ID)" value={ticketCategoryId} onChange={setTicketCategoryId} />
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+  <label className="text-xs text-white/60">Cargo Staff</label>
+  <select
+    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
+    value={staffRoleId}
+    onChange={(e) => setStaffRoleId(e.target.value)}
+  >
+    <option value="">Selecione um cargo</option>
+    {roleOptions.map((o) => (
+      <option key={o.value} value={o.value}>
+        {o.label}
+      </option>
+    ))}
+  </select>
+</div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+  <label className="text-xs text-white/60">Categoria de Tickets</label>
+  <select
+    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
+    value={ticketCategoryId}
+    onChange={(e) => setTicketCategoryId(e.target.value)}
+  >
+    <option value="">Selecione uma categoria</option>
+    {categoryOptions.map((o) => (
+      <option key={o.value} value={o.value}>
+        📁 {o.label}
+      </option>
+    ))}
+  </select>
+</div>
         <Field label="Canal de Logs (Channel ID)" value={logsChannelId} onChange={setLogsChannelId} />
-        <Field label="Canal do Painel (Channel ID)" value={panelChannelId} onChange={setPanelChannelId} />
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+  <label className="text-xs text-white/60">Canal do Painel</label>
+  <select
+    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
+    value={panelChannelId}
+    onChange={(e) => setPanelChannelId(e.target.value)}
+  >
+    <option value="">Selecione um canal</option>
+    {textChannelOptions.map((o) => (
+      <option key={o.value} value={o.value}>
+        # {o.label}
+      </option>
+    ))}
+  </select>
+</div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between gap-4">
