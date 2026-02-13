@@ -4,7 +4,6 @@ import { signOut } from 'next-auth/react'
 import { useTheme } from '@/app/providers'
 import { Moon, Sun, LogOut } from 'lucide-react'
 import { useState } from 'react';
-const [imgOk, setImgOk] = useState(true);
 type Props = {
   title: string
   userName?: string | null
@@ -13,7 +12,7 @@ type Props = {
 
 export function Topbar({ title, userName, userImage }: Props) {
   const { theme, toggleTheme } = useTheme()
-
+const [imgOk, setImgOk] = useState(true);
   const initial = userName?.charAt(0)?.toUpperCase() ?? 'U'
 
   return (
