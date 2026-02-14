@@ -61,7 +61,12 @@ export function WhitelistPanel() {
       try {
         setLoading(true);
         const res = await fetch("/api/admin/whitelist", { cache: "no-store" });
-        const data = (await res.json()) as State | { error: string };
+        const ct = res.headers.get("content-type") || "";
+if (!ct.includes("application/json")) {
+  const text = await res.text();
+  throw new Error("API não retornou JSON. Provável redirect/login. Primeiro trecho: " + text.slice(0, 60));
+}
+const data = (await res.json()) as State | { error: string };
         if (!res.ok) throw new Error((data as any)?.error || "failed");
 
         if (cancelled) return;
