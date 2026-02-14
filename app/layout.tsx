@@ -52,7 +52,6 @@ export default function RootLayout({
       </head>
       <body className={`${fredoka.className} bg-slate-950 text-white transition-colors duration-300 dark:bg-slate-950 dark:text-white`}>
         <Providers>{children}</Providers> 
-        <Footer />
       </body>
     </html>
   )
