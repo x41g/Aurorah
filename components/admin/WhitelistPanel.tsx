@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { MoreHorizontal, Trash2, Plus, Copy } from "lucide-react";
 
@@ -179,16 +179,27 @@ export function WhitelistPanel() {
 
       <div className="mt-4 flex items-center gap-3">
         <button
-          type="button"
-          disabled={loading || saving}
-          onClick={() => onToggle(!enabled)}
-          className={[
-            "px-4 py-2 rounded-xl border transition text-sm font-semibold",
-            enabled ? "bg-violet-500/20 border-violet-400/30 text-violet-100" : "bg-white/5 border-white/10 text-white/80",
-          ].join(" ")}
-        >
-          {enabled ? "Whitelist ativa" : "Whitelist desativada"}
-        </button>
+  type="button"
+  disabled={loading || saving}
+  onClick={() => onToggle(!enabled)}
+  className={[
+    "relative h-10 w-[84px] rounded-full border transition",
+    enabled ? "bg-violet-500/25 border-violet-400/30" : "bg-white/5 border-white/10",
+  ].join(" ")}
+  aria-label="Toggle whitelist"
+>
+  <span
+    className={[
+      "absolute top-1 left-1 h-8 w-8 rounded-full transition",
+      enabled ? "translate-x-[44px] bg-violet-300" : "translate-x-0 bg-white/70",
+    ].join(" ")}
+  />
+</button>
+
+<div className="text-sm font-semibold">
+  {enabled ? "Whitelist ativa" : "Whitelist desativada"}
+</div>
+
 
         <span className="text-xs text-white/50">
           ({count} {count === 1 ? "servidor" : "servidores"})
