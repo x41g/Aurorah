@@ -59,14 +59,14 @@ async function readJsonSafe(res: Response) {
         fetch(`/api/admin/subscriptions?q=${encodeURIComponent(q)}`, { cache: "no-store" }),
       ]);
 
-      const pData = await readJsonSafe(pRes);
-      const sData = await readJsonSafe(sRes);
+      const pData = await pRes.json();
+      const sData = await sRes.json();
 
-      if (!pRes.ok) throw new Error(String((pData as any)?.error || "Falha ao carregar planos"));
-      if (!sRes.ok) throw new Error(String((sData as any)?.error || "Falha ao carregar assinaturas"));
+      if (!pRes.ok) throw new Error(pData?.error || "Falha ao carregar planos");
+      if (!sRes.ok) throw new Error(sData?.error || "Falha ao carregar assinaturas");
 
-      setPlans(Array.isArray((pData as any)?.plans) ? (pData as any).plans : []);
-      setSubs(Array.isArray((sData as any)?.subscriptions) ? (sData as any).subscriptions : []);
+      setPlans(Array.isArray(pData?.plans) ? pData.plans : []);
+      setSubs(Array.isArray(sData?.subscriptions) ? sData.subscriptions : []);
     } catch (e: any) {
       setError(String(e?.message || e));
     } finally {
@@ -84,13 +84,15 @@ async function readJsonSafe(res: Response) {
     setError("");
     setOk("");
     try {
+      // payload separado para evitar erros de escopo e facilitar debugar
+      const payload = { userId, planKey, status };
       const res = await fetch("/api/admin/subscriptions", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await readJsonSafe(res);
-      if (!res.ok) throw new Error(String((data as any)?.error || "Falha ao salvar"));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Falha ao salvar");
 
       setOk("Salvo!");
       setTimeout(() => setOk(""), 1200);

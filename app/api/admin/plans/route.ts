@@ -5,73 +5,64 @@ import { isAdminDiscordId } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import type { PlanKey } from "@prisma/client";
 
+export const runtime = "nodejs";
+
 async function assertAdmin() {
   const session = (await getServerSession(authOptions as any)) as any;
   const userId = session?.user?.id ?? null;
   if (!session?.user || !isAdminDiscordId(userId)) return null;
-  return { session, userId: String(userId) };
+  return session;
 }
 
 export async function GET() {
-  const ok = await assertAdmin();
-  if (!ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const session = await assertAdmin();
+  if (!session) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const plans = await prisma.plan.findMany({
-    orderBy: [{ active: "desc" }, { priceCents: "asc" }, { key: "asc" }],
+    orderBy: [{ active: "desc" }, { priceCents: "asc" }],
   });
-
-  return NextResponse.json({
-    plans: plans.map((p) => ({
-      key: p.key,
-      name: p.name,
-      description: p.description,
-      priceCents: p.priceCents,
-      active: p.active,
-      maxGuilds: p.maxGuilds,
-      maxTicketsPerMonth: p.maxTicketsPerMonth,
-      dashboardEnabled: p.dashboardEnabled,
-      paymentsEnabled: p.paymentsEnabled,
-      safePayEnabled: p.safePayEnabled,
-      aiEnabled: p.aiEnabled,
-      analyticsEnabled: p.analyticsEnabled,
-      prioritySupport: p.prioritySupport,
-      createdAt: p.createdAt.getTime(),
-      updatedAt: p.updatedAt.getTime(),
-    })),
-  });
+  return NextResponse.json({ plans });
 }
 
 export async function PUT(req: Request) {
-  const ok = await assertAdmin();
-  if (!ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const session = await assertAdmin();
+  if (!session) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const body = (await req.json().catch(() => null)) as any;
-  if (!body?.key) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  const body = await req.json().catch(() => null);
+  const key = String(body?.key || "").toUpperCase();
+  if (!key) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-  const key = String(body.key) as PlanKey;
+  const allowed: PlanKey[] = ["STARTER", "PRO"]; // se adicionar mais, coloque aqui
+  const planKey = (allowed.includes(key as any) ? key : null) as PlanKey | null;
+  if (!planKey) return NextResponse.json({ error: "invalid_plan_key" }, { status: 400 });
 
-  const updated = await prisma.plan.update({
-    where: { key },
-    data: {
-      name: typeof body.name === "string" ? body.name : undefined,
-      description: typeof body.description === "string" ? body.description : undefined,
-      priceCents: Number.isFinite(Number(body.priceCents)) ? Number(body.priceCents) : undefined,
-      active: typeof body.active === "boolean" ? body.active : undefined,
-      maxGuilds: Number.isFinite(Number(body.maxGuilds)) ? Number(body.maxGuilds) : undefined,
-      maxTicketsPerMonth:
-        body.maxTicketsPerMonth == null || body.maxTicketsPerMonth === ""
-          ? null
-          : Number.isFinite(Number(body.maxTicketsPerMonth))
-            ? Number(body.maxTicketsPerMonth)
-            : undefined,
-      dashboardEnabled: typeof body.dashboardEnabled === "boolean" ? body.dashboardEnabled : undefined,
-      paymentsEnabled: typeof body.paymentsEnabled === "boolean" ? body.paymentsEnabled : undefined,
-      safePayEnabled: typeof body.safePayEnabled === "boolean" ? body.safePayEnabled : undefined,
-      aiEnabled: typeof body.aiEnabled === "boolean" ? body.aiEnabled : undefined,
-      analyticsEnabled: typeof body.analyticsEnabled === "boolean" ? body.analyticsEnabled : undefined,
-      prioritySupport: typeof body.prioritySupport === "boolean" ? body.prioritySupport : undefined,
-    },
+  const data = {
+    key: planKey,
+    name: String(body?.name || planKey),
+    description: String(body?.description || ""),
+    priceCents: Number.isFinite(Number(body?.priceCents)) ? Number(body.priceCents) : 0,
+    active: Boolean(body?.active),
+    maxGuilds: Number.isFinite(Number(body?.maxGuilds)) ? Number(body.maxGuilds) : 1,
+    maxTicketsPerMonth:
+      body?.maxTicketsPerMonth === null || body?.maxTicketsPerMonth === ""
+        ? null
+        : Number.isFinite(Number(body?.maxTicketsPerMonth))
+          ? Number(body.maxTicketsPerMonth)
+          : null,
+
+    dashboardEnabled: Boolean(body?.dashboardEnabled),
+    paymentsEnabled: Boolean(body?.paymentsEnabled),
+    safePayEnabled: Boolean(body?.safePayEnabled),
+    aiEnabled: Boolean(body?.aiEnabled),
+    analyticsEnabled: Boolean(body?.analyticsEnabled),
+    prioritySupport: Boolean(body?.prioritySupport),
+  };
+
+  const plan = await prisma.plan.upsert({
+    where: { key: planKey },
+    create: data,
+    update: data,
   });
 
-  return NextResponse.json({ ok: true, plan: { key: updated.key, updatedAt: updated.updatedAt.getTime() } });
+  return NextResponse.json({ ok: true, plan });
 }
