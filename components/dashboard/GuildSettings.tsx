@@ -55,18 +55,17 @@ const textChannelOptions = channels
 
 
   const preview = useMemo(() => {
-    const cfg: GuildConfig = {
-      panelImageUrl: panelImageUrl || undefined,
-      staffRoleId: staffRoleId || undefined,
-      ticketCategoryId: ticketCategoryId || undefined,
-      logsChannelId: logsChannelId || undefined,
-      panelChannelId: panelChannelId || undefined,
-      transcriptEnabled,
-      transcriptTtlDays: Number(transcriptTtlDays || 0) || undefined,
-      allowOpenRoleIds: asArray(allowOpenRoleIds),
-      maxOpenTicketsPerUser: Number(maxOpenTicketsPerUser || 0) || undefined,
-      cooldownSeconds: Number(cooldownSeconds || 0) || undefined,
-    }
+const cfg: GuildConfig = {
+  staffRoleId: staffRoleId || undefined,
+  ticketCategoryId: ticketCategoryId || undefined,
+  logsChannelId: logsChannelId || undefined,
+  panelChannelId: panelChannelId || undefined,
+  transcriptEnabled, // sempre manda
+  transcriptTtlDays: Number(transcriptTtlDays || 0) || undefined,
+  allowOpenRoleIds: asArray(allowOpenRoleIds), // sempre manda array (pode ser [])
+  maxOpenTicketsPerUser: Number(maxOpenTicketsPerUser || 0) || undefined,
+  cooldownSeconds: Number(cooldownSeconds || 0) || undefined,
+}
     return cfg
   }, [
     allowOpenRoleIds,

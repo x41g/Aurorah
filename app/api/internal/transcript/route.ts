@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
@@ -16,25 +17,35 @@ export async function POST(req: Request) {
     assertAuth(req);
 
     const body = await req.json();
+
     const {
+      guildId,
       guildSlug,
       userId,
       shortcode,
       html,
       passHash,
-      expireAt,
+      ttlDays,
     }: {
+      guildId?: string;
       guildSlug?: string;
       userId?: string;
       shortcode?: string;
       html?: string;
       passHash?: string;
-      expireAt?: number;
+      ttlDays?: number;
     } = body || {};
 
-    if (!guildSlug || !userId || !shortcode || !html || !passHash || !expireAt) {
-      return Response.json({ error: "bad_request" }, { status: 400 });
+    if (!guildId || !guildSlug || !userId || !shortcode || !html || !passHash) {
+      return NextResponse.json({ error: "bad_request" }, { status: 400 });
     }
+
+    // ✅ TTL vem do body OU do env OU default 30
+    const envDefault = Number(process.env.TRANSCRIPT_TTL_DAYS || 30);
+    const ttl = Number(ttlDays ?? envDefault) || envDefault;
+
+    // ✅ Prisma DateTime precisa de Date (não number)
+    const expireAt = new Date(Date.now() + Math.max(1, ttl) * 24 * 60 * 60 * 1000);
 
     const slug = `${guildSlug}-${userId}-${shortcode}`;
 
@@ -42,30 +53,33 @@ export async function POST(req: Request) {
       where: { slug },
       create: {
         slug,
-        guildSlug,
+        guildId: String(guildId),
+        guildSlug: String(guildSlug),
         userId: String(userId),
-        shortcode,
-        html,
-        passHash,
-        expireAt: new Date(Number(expireAt)),
+        shortcode: String(shortcode),
+        html: String(html),
+        passHash: String(passHash),
+        expireAt,
       },
       update: {
-        html,
-        passHash,
-        expireAt: new Date(Number(expireAt)),
+        guildId: String(guildId),
+        guildSlug: String(guildSlug),
+        html: String(html),
+        passHash: String(passHash),
+        expireAt,
       },
     });
 
     const base = (process.env.NEXT_PUBLIC_BASE_URL || "https://auroxegroup.shop").replace(/\/$/, "");
     const url = `${base}/transcript/${slug}`;
 
-    return Response.json({ ok: true, slug, url }, { status: 200 });
+    return NextResponse.json({ ok: true, slug, url }, { status: 200 });
   } catch (err: any) {
     console.error("[internal/transcript] error:", err);
     const msg = String(err?.message || err);
     if (msg === "unauthorized") {
-      return Response.json({ error: "unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
-    return Response.json({ error: "server_error", detail: msg }, { status: 500 });
+    return NextResponse.json({ error: "server_error", detail: msg }, { status: 500 });
   }
 }

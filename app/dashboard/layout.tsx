@@ -7,8 +7,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.accessToken) redirect("/login");
 
   return (
-    <div className="min-h-screen section">
+    <div className="min-h-screen section bg-[#0B0B10]">
       <div className="container-max">{children}</div>
     </div>
   );
 }
+
+
+
+
+

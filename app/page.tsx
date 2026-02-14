@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronDown, Check, } from 'lucide-react' 
+import { ChevronDown, Check, Link, } from 'lucide-react' 
 {/*ADICIONAR  Moon, Sun,*/}
 {/* import { useTheme } from './providers' */}
 import { config } from '../config'  
@@ -479,6 +479,11 @@ bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
         <div className="container-max">
           <div className="text-center text-gray-400">
             <p>&copy; 2026 {config.botName}. Todos os direitos reservados.</p>
+            <p>Powered by Auroxe Group</p>
+          </div>
+          <div className="flex items-center gap-6">
+            <Link href="/terms">Termos</Link>
+            <Link href="/privacy">Privacidade</Link>
           </div>
         </div>
       </footer>

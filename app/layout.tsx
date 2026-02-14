@@ -1,3 +1,4 @@
+import { Footer } from "@/components/layout/Footer";
 import type { Metadata } from 'next'
 import { Providers } from './providers'
 import './globals.css'
@@ -50,7 +51,8 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={`${fredoka.className} bg-slate-950 text-white transition-colors duration-300 dark:bg-slate-950 dark:text-white`}>
-        <Providers>{children}</Providers>
+        <Providers>{children}</Providers> 
+        <Footer />
       </body>
     </html>
   )
