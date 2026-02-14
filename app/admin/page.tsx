@@ -4,12 +4,11 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { isAdminDiscordId } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Topbar } from "@/components/dashboard/Topbar";
 import type { GuildStats } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WhitelistPanel } from "@/components/admin/WhitelistPanel"; 
-import { SubscriptionsPanel } from "@/components/admin/SubscriptionsPanel";
+import { ResetDbPanel } from "@/components/admin/ResetDbPanel";
 
 type BotGuilds = { guildIds: string[]; updatedAt?: number };
 
@@ -57,18 +56,8 @@ const statsList: GuildStats[] = slice.map((id) => {
     staff: (r?.staff as any) ?? undefined,
   };
 });
-
-
-
 return (
-  <div className="min-h-screen">
-    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6">
-        <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
-          <Sidebar isAdmin={true} />
-        </div>
-
-        <main className="min-w-0">
+  <>
           <Topbar
             title="Admin"
             userName={session.user?.name}
@@ -90,17 +79,17 @@ return (
             <div className="mt-6">
               <GuildSampleList stats={statsList} />
             </div>
-              <div className="text-sm text-white/60">Sem dados ainda.</div>
+              {!statsList.length ? <div className="text-sm text-white/60">Sem dados ainda.</div> : null}
             </div>
           </div>
 
           <div className="mt-6">
             <WhitelistPanel />
-            <SubscriptionsPanel />
           </div>
-        </main>
-      </div>
-    </div>
-  </div>
+
+          <div className="mt-6">
+            <ResetDbPanel />
+          </div>
+  </>
 );
 }

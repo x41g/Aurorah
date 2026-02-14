@@ -75,3 +75,15 @@ export async function PUT(req: Request) {
 
   return NextResponse.json({ ok: true, subscription: sub });
 }
+
+export async function DELETE(req: Request) {
+  const session = await assertAdmin()
+  if (!session) return NextResponse.json({ error: "forbidden" }, { status: 403 })
+
+  const { searchParams } = new URL(req.url)
+  const userId = String(searchParams.get("userId") || "").trim()
+  if (!userId) return NextResponse.json({ error: "bad_request" }, { status: 400 })
+
+  await prisma.subscription.delete({ where: { userId } }).catch(() => null)
+  return NextResponse.json({ ok: true })
+}

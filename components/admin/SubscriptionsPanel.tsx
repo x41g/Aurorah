@@ -37,6 +37,10 @@ export function SubscriptionsPanel() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [q, setQ] = useState("");
 
+  const [newUserId, setNewUserId] = useState("");
+  const [newPlanKey, setNewPlanKey] = useState<string>("");
+  const [newStatus, setNewStatus] = useState<string>("active");
+
   const activePlans = useMemo(() => plans.filter((p) => p.active), [plans]);
 
   
@@ -104,6 +108,27 @@ async function readJsonSafe(res: Response) {
     }
   }
 
+  async function deleteSub(userId: string) {
+    if (!confirm(`Remover assinatura do User ID ${userId}?`)) return;
+    setSaving(true);
+    setError("");
+    setOk("");
+    try {
+      const res = await fetch(`/api/admin/subscriptions?userId=${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Falha ao remover");
+      setOk("Removido!");
+      setTimeout(() => setOk(""), 1200);
+      await load();
+    } catch (e: any) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="card">
       <div className="flex items-start justify-between gap-4">
@@ -137,6 +162,60 @@ async function readJsonSafe(res: Response) {
         >
           Buscar
         </button>
+      </div>
+
+      {/* ADD / UPDATE */}
+      <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="font-semibold">Adicionar / atualizar assinatura</div>
+        <p className="text-xs text-white/60 mt-1">
+          Informe o <b>User ID</b> do dono do servidor. Se já existir, será atualizado.
+        </p>
+
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_220px_180px_160px] gap-2">
+          <input
+            value={newUserId}
+            onChange={(e) => setNewUserId(e.target.value)}
+            placeholder="User ID (Discord)"
+            className="h-11 rounded-2xl bg-black/40 border border-white/10 px-4 outline-none focus:border-white/25"
+          />
+
+          <select
+            value={newPlanKey || (activePlans[0]?.key ?? "")}
+            onChange={(e) => setNewPlanKey(e.target.value)}
+            className="h-11 rounded-2xl bg-black/40 border border-white/10 px-3 outline-none"
+          >
+            {activePlans.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.name} ({p.key})
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={newStatus}
+            onChange={(e) => setNewStatus(e.target.value)}
+            className="h-11 rounded-2xl bg-black/40 border border-white/10 px-3 outline-none"
+          >
+            <option value="active">active</option>
+            <option value="past_due">past_due</option>
+            <option value="canceled">canceled</option>
+            <option value="expired">expired</option>
+          </select>
+
+          <button
+            className="h-11 px-4 rounded-2xl bg-white text-black font-semibold hover:bg-white/90 transition disabled:opacity-60"
+            onClick={() => {
+              const uid = String(newUserId || "").trim();
+              const pk = (newPlanKey || activePlans[0]?.key || "").trim();
+              if (!uid || !pk) return;
+              saveSub(uid, pk, newStatus);
+              setNewUserId("");
+            }}
+            disabled={saving || loading || activePlans.length === 0}
+          >
+            Salvar
+          </button>
+        </div>
       </div>
 
       {loading ? <div className="mt-4 text-sm text-white/60">Carregando...</div> : null}
@@ -180,6 +259,15 @@ async function readJsonSafe(res: Response) {
                   <option value="past_due">past_due</option>
                   <option value="canceled">canceled</option>
                 </select>
+
+                <button
+                  type="button"
+                  onClick={() => deleteSub(s.userId)}
+                  className="h-10 px-3 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold"
+                  disabled={saving}
+                >
+                  Remover
+                </button>
               </div>
             </div>
           </div>
