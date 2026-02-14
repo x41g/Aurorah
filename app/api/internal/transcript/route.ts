@@ -73,7 +73,10 @@ export async function POST(req: Request) {
     const base = (process.env.NEXT_PUBLIC_BASE_URL || "https://auroxegroup.shop").replace(/\/$/, "");
     const url = `${base}/transcript/${slug}`;
 
-    return NextResponse.json({ ok: true, slug, url }, { status: 200 });
+    return NextResponse.json(
+  { ok: true, slug, url, expireAt: expireAt.toISOString(), expireAtMs: expireAt.getTime() },
+  { status: 200 }
+);
   } catch (err: any) {
     console.error("[internal/transcript] error:", err);
     const msg = String(err?.message || err);

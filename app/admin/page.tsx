@@ -1,3 +1,4 @@
+import { GuildSampleList } from "@/components/admin/GuildSampleList";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -24,7 +25,18 @@ export default async function AdminPage() {
     updatedAt: botRow?.updatedAt ? botRow.updatedAt.getTime() : 0,
   };
 
-  const slice = (botGuilds.guildIds || []).slice(0, 25);
+  
+  const wl = await prisma.whitelist.findUnique({ where: { id: "singleton" } });
+
+const wlEnabled = Boolean(wl?.enabled);
+const wlIds = Array.isArray(wl?.guildIds) ? (wl.guildIds as any).map(String) : [];
+
+const baseGuildIds = botGuilds.guildIds || [];
+const filteredGuildIds = wlEnabled
+  ? baseGuildIds.filter((id) => wlIds.includes(String(id)))
+  : baseGuildIds;
+
+const slice = filteredGuildIds.slice(0, 25);
 const rows = await prisma.guildStats.findMany({
   where: { guildId: { in: slice.map(String) } },
 });
@@ -74,29 +86,10 @@ return (
             <p className="text-white/60 mb-4">Lista rápida para conferir se o bot está sincronizando.</p>
 
             <div className="space-y-3">
-              {statsList.map((s) => (
-                <div
-                  key={s.guildId}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl border border-white/10 bg-white/5"
-                >
-                  <div className="min-w-0 text-sm">
-                    <div className="font-semibold truncate">Guild ID: {s.guildId}</div>
-                    <div className="text-white/60 text-xs">
-                      Atualizado: {s.updatedAt ? new Date(s.updatedAt).toLocaleString("pt-BR") : "—"}
-                    </div>
-                  </div>
-
-                  <div className="text-sm sm:text-right">
-                    <div>
-                      Hoje: <b className="tabular-nums">{s.ticketsCreatedToday ?? 0}</b> criados
-                    </div>
-                    <div>
-                      Fechados: <b className="tabular-nums">{s.ticketsClosedToday ?? 0}</b>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!statsList.length ? <div className="text-sm text-white/60">Sem dados ainda.</div> : null}
+            <div className="mt-6">
+              <GuildSampleList stats={statsList} />
+            </div>
+              <div className="text-sm text-white/60">Sem dados ainda.</div>
             </div>
           </div>
 

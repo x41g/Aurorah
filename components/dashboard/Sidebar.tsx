@@ -1,8 +1,8 @@
 'use client'
 
+import { usePathname, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Settings, BarChart3, Shield } from 'lucide-react'
 
 type Item = { href: string; label: string; icon: React.ReactNode }
@@ -18,7 +18,23 @@ function cls(active: boolean) {
 
 
 export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: string }) {
-  const pathname = usePathname()
+const pathname = usePathname();
+const sp = useSearchParams();
+
+const currentTab = (sp.get("tab") || "config").toLowerCase();
+
+
+function isItemActive(href: string) {
+  const [path, query] = href.split("?");
+  if (pathname !== path) return false;
+
+  const hrefTab = new URLSearchParams(query || "").get("tab");
+  const normalized = (hrefTab || "config").toLowerCase();
+
+  return normalized === currentTab;
+}
+
+
 
   const [guildName, setGuildName] = useState<string>('')
   const [guildIconUrl, setGuildIconUrl] = useState<string>('')
@@ -63,10 +79,7 @@ export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: str
   const logoSrc = guildIconUrl || defaultLogo
   const subtitle = guildName ? guildName : 'Tickets'
 
-  const isActive = (href: string) => {
-    if (href.includes('?')) return pathname.startsWith(href.split('?')[0]!)
-    return pathname === href
-  }
+
 
   return (
     <aside className="w-[280px] shrink-0">
@@ -94,7 +107,7 @@ export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: str
 
         <nav className="space-y-2">
           {items.map((it) => {
-            const active = isActive(it.href)
+            const active = isItemActive(it.href);
             return (
               <Link key={it.href} href={it.href} className={cls(active)}>
                 {it.icon}
