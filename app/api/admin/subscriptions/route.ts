@@ -7,31 +7,23 @@ import type { PlanKey } from "@prisma/client";
 
 export const runtime = "nodejs";
 
-type SubscriptionStatus = "active" | "canceled" | "expired" | "past_due";
+type SubStatus = "active" | "canceled" | "expired" | "past_due";
+
+function normalizeStatus(input: unknown): SubStatus {
+  const raw = String(input || "active").toLowerCase();
+  return (["active", "canceled", "expired", "past_due"] as const).includes(raw as any) ? (raw as SubStatus) : "active";
+}
+
+function normalizePlanKey(input: unknown): PlanKey | null {
+  const raw = String(input || "").toUpperCase();
+  return (["STARTER", "PRO"] as const).includes(raw as any) ? (raw as PlanKey) : null;
+}
 
 async function assertAdmin() {
   const session = (await getServerSession(authOptions as any)) as any;
   const userId = session?.user?.id ?? null;
   if (!session?.user || !isAdminDiscordId(userId)) return null;
   return session;
-}
-
-function normalizePlanKey(input: unknown): PlanKey | null {
-  const raw = String(input || "").toUpperCase().trim();
-  const allowed: PlanKey[] = ["STARTER", "PRO"]; // mantenha igual ao seu enum no schema
-  return allowed.includes(raw as any) ? (raw as PlanKey) : null;
-}
-
-function normalizeStatus(input: unknown): SubscriptionStatus {
-  const raw = String(input || "active").toLowerCase().trim();
-  const allowed: SubscriptionStatus[] = ["active", "canceled", "expired", "past_due"];
-  return allowed.includes(raw as any) ? (raw as SubscriptionStatus) : "active";
-}
-
-function parseDateOrNull(v: unknown): Date | null {
-  if (v == null || v === "") return null;
-  const d = new Date(String(v));
-  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 export async function GET(req: Request) {
@@ -59,28 +51,24 @@ export async function PUT(req: Request) {
 
   const targetUserId = String(body?.userId || "").trim();
   const planKey = normalizePlanKey(body?.planKey);
-  if (!targetUserId || !planKey) {
-    return NextResponse.json({ error: "bad_request" }, { status: 400 });
-  }
+  if (!targetUserId || !planKey) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
   const status = normalizeStatus(body?.status);
-  const renewAt = parseDateOrNull(body?.renewAt);
-  const expiresAt = parseDateOrNull(body?.expiresAt);
 
   const sub = await prisma.subscription.upsert({
     where: { userId: targetUserId },
     create: {
       userId: targetUserId,
-      planKey,          // PlanKey do Prisma
-      status,           // string segura (seu schema usa String)
-      renewAt,
-      expiresAt,
+      planKey,
+      status,
+      renewAt: body?.renewAt ? new Date(body.renewAt) : null,
+      expiresAt: body?.expiresAt ? new Date(body.expiresAt) : null,
     },
     update: {
       planKey,
       status,
-      renewAt,
-      expiresAt,
+      renewAt: body?.renewAt === "" ? null : body?.renewAt ? new Date(body.renewAt) : undefined,
+      expiresAt: body?.expiresAt === "" ? null : body?.expiresAt ? new Date(body.expiresAt) : undefined,
     },
     include: { plan: true },
   });
