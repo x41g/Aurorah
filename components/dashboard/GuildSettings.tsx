@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { GuildConfig } from '@/lib/types'
-
+import { Tooltip } from '@/components/ui/Tooltip'
 
 
 type Props = { guildId: string; initial: GuildConfig }
@@ -212,12 +212,21 @@ const textChannelOptions = channels
         </div>
 
         <Field
-          label="Roles que podem abrir ticket (Role IDs, separados por vírgula)"
+          label="Cargos que podem abrir ticket (separados por vírgula)"
           value={allowOpenRoleIds}
           onChange={setAllowOpenRoleIds}
+          hint="Ex: 12345, 67890"
         />
-        <Field label="Máx tickets abertos por usuário" value={maxOpenTicketsPerUser} onChange={setMaxOpenTicketsPerUser} />
-        <Field label="Cooldown (segundos) por usuário" value={cooldownSeconds} onChange={setCooldownSeconds} />
+        <Field label="Máximo de tickets abertos por usuário"
+        value={maxOpenTicketsPerUser}
+        onChange={setMaxOpenTicketsPerUser}
+        hint="Quantos tickets um usuário pode ter aberto ao mesmo tempo?"
+        />
+        <Field label="Tempo de espera por usuário"
+        value={cooldownSeconds}
+         onChange={setCooldownSeconds}
+          hint="Tempo de espera entre abertura de tickets por usuário (em segundos)"
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mt-6">
@@ -235,28 +244,30 @@ const textChannelOptions = channels
           <pre className="mt-3 p-4 rounded-2xl bg-black/50 border border-white/10 overflow-auto text-xs">{JSON.stringify(preview, null, 2)}</pre>
         </details>
       </div>
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-  <label className="text-xs text-white/60">Imagem do Painel (URL)</label>
-  <input
-    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
-    value={panelImageUrl}
-    onChange={(e) => setPanelImageUrl(e.target.value)}
-    placeholder="https://..."
-  />
-  <p className="mt-2 text-xs text-white/50">
-    Dica: use PNG/JPG. Recomendado 512x512.
-  </p>
-</div>
 
     </div>
     
   )
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+  hint,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  hint?: string
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <label className="text-xs text-white/60">{label}</label>
+      <label className="flex items-center gap-2 text-xs text-white/60">
+        {label}
+        {hint ? <Tooltip text={hint} /> : null}
+      </label>
+
       <input
         className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
         value={value}

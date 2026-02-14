@@ -5,6 +5,17 @@ import type { GuildConfig } from "@/lib/types";
 
 const empty: GuildConfig = {};
 
+function slugify(input: string) {
+  return String(input || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 64);
+}
+
+
 export async function GET(_: Request, { params }: { params: { guildId: string } }) {
   const { guildId } = params;
   const access = await canManageGuild(guildId);
@@ -23,22 +34,47 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
   const body = (await req.json().catch(() => null)) as GuildConfig | null;
   if (!body) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-  const next: GuildConfig = {
-    staffRoleId: body.staffRoleId || undefined,
-    ticketCategoryId: body.ticketCategoryId || undefined,
-    logsChannelId: body.logsChannelId || undefined,
-    panelChannelId: body.panelChannelId || undefined,
+  const defaultTtl = Number(process.env.TRANSCRIPT_TTL_DAYS || 30);
+
+  // objeto final que realmente vai pro banco
+  const finalCfg: GuildConfig = {
+    staffRoleId: body.staffRoleId ? String(body.staffRoleId) : undefined,
+    ticketCategoryId: body.ticketCategoryId ? String(body.ticketCategoryId) : undefined,
+    logsChannelId: body.logsChannelId ? String(body.logsChannelId) : undefined,
+    panelChannelId: body.panelChannelId ? String(body.panelChannelId) : undefined,
+
     transcriptEnabled: Boolean(body.transcriptEnabled),
-    transcriptTtlDays: Number.isFinite(Number(body.transcriptTtlDays)) ? Number(body.transcriptTtlDays) : undefined,
-    allowOpenRoleIds: Array.isArray(body.allowOpenRoleIds) ? body.allowOpenRoleIds.map(String) : undefined,
-    maxOpenTicketsPerUser: Number.isFinite(Number(body.maxOpenTicketsPerUser)) ? Number(body.maxOpenTicketsPerUser) : undefined,
-    cooldownSeconds: Number.isFinite(Number(body.cooldownSeconds)) ? Number(body.cooldownSeconds) : undefined,
+    transcriptTtlDays:
+      body.transcriptTtlDays == null || body.transcriptTtlDays === ("" as any)
+        ? defaultTtl
+        : Number(body.transcriptTtlDays) || defaultTtl,
+
+    allowOpenRoleIds: Array.isArray(body.allowOpenRoleIds)
+      ? body.allowOpenRoleIds.map(String).filter(Boolean)
+      : undefined,
+
+    maxOpenTicketsPerUser:
+      Number.isFinite(Number(body.maxOpenTicketsPerUser)) ? Number(body.maxOpenTicketsPerUser) : undefined,
+
+    cooldownSeconds:
+      Number.isFinite(Number(body.cooldownSeconds)) ? Number(body.cooldownSeconds) : undefined,
   };
 
   await prisma.guildConfig.upsert({
     where: { guildId: String(guildId) },
-    create: { guildId: String(guildId), data: next as any },
-    update: { data: next as any },
+    create: { guildId: String(guildId), data: finalCfg as any },
+    update: { data: finalCfg as any },
   });
+
+  // se desativou transcript, invalida todos do servidor imediatamente
+if (finalCfg.transcriptEnabled === false) {
+  const guildSlug = slugify(access.guild.name);
+  await prisma.transcript.updateMany({
+    where: { guildSlug },
+    data: { expireAt: new Date() },
+  });
+}
+
+
   return NextResponse.json({ ok: true });
 }

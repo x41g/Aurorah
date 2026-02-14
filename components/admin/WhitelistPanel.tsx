@@ -100,16 +100,19 @@ export function WhitelistPanel() {
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <label className="inline-flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
-            className="h-4 w-4"
-            disabled={loading || saving}
-          />
-          Ativar whitelist
-        </label>
+<button
+  type="button"
+  disabled={loading || saving}
+  onClick={() => setEnabled((v) => !v)}
+  className={[
+    'px-4 py-2 rounded-2xl border text-sm transition',
+    enabled ? 'bg-violet-500/15 border-violet-400/40 text-violet-200' : 'bg-white/5 border-white/10 text-white/70',
+    (loading || saving) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-white/10',
+  ].join(' ')}
+>
+  {enabled ? 'Whitelist ativa' : 'Whitelist desativada'}
+</button>
+
 
         <span className="text-xs text-white/50">({ids.length} servidores)</span>
       </div>

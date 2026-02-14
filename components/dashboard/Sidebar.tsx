@@ -9,10 +9,13 @@ type Item = { href: string; label: string; icon: React.ReactNode }
 
 function cls(active: boolean) {
   return [
-    'flex items-center gap-3 rounded-2xl px-4 py-3 transition',
-    active ? 'bg-white/10 border border-white/15' : 'hover:bg-white/5 border border-transparent',
+    'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 border',
+    active
+      ? 'bg-violet-500/15 border-violet-400/40 shadow-lg shadow-violet-500/10'
+      : 'border-transparent hover:bg-white/5',
   ].join(' ')
 }
+
 
 export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: string }) {
   const pathname = usePathname()

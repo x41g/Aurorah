@@ -10,6 +10,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { GuildSettings } from "@/components/dashboard/GuildSettings";
 import { getBotGuildIds } from "@/lib/botPresence";
 import { isAdminDiscordId } from "@/lib/admin";
+import { StaffRow } from "@/components/dashboard/StaffRow";
 
 export default async function GuildPage({
   params,
@@ -28,7 +29,7 @@ export default async function GuildPage({
   const botInGuild = botGuildIds.includes(String(params.guildId));
   if (!botInGuild) redirect("/dashboard");
 
-  const tab = (searchParams.tab || "config").toLowerCase();
+  const tab = String(searchParams.tab || "config").toLowerCase();
 
   const [cfgRow, statsRow] = await Promise.all([
     prisma.guildConfig.findUnique({ where: { guildId: String(params.guildId) } }),
@@ -36,6 +37,7 @@ export default async function GuildPage({
   ]);
 
   const cfg = ((cfgRow?.data as any) || {}) as GuildConfig;
+
   const stats: GuildStats = {
     guildId: String(params.guildId),
     updatedAt: statsRow?.updatedAt ? statsRow.updatedAt.getTime() : 0,
@@ -44,6 +46,10 @@ export default async function GuildPage({
     ticketsClosedToday: statsRow?.ticketsClosedToday ?? 0,
     staff: (statsRow?.staff as any) || undefined,
   };
+
+  const created = Number(stats.ticketsCreatedToday ?? 0);
+  const closed = Number(stats.ticketsClosedToday ?? 0);
+  const closeRate = created > 0 ? Math.round((closed / created) * 100) : 0;
 
   const userId = session.user?.id ?? null;
   const isAdmin = isAdminDiscordId(userId);
@@ -54,40 +60,59 @@ export default async function GuildPage({
       <div className="flex-1 min-w-0">
         <Topbar title={access.guild.name} userName={session.user?.name} userImage={session.user?.image} />
 
+        {/* TOP STATS */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
-          <StatCard label="Tickets criados hoje" value={String(stats.ticketsCreatedToday ?? 0)} hint={stats.todayKey ? `Dia: ${stats.todayKey}` : undefined} />
-          <StatCard label="Tickets fechados hoje" value={String(stats.ticketsClosedToday ?? 0)} />
-          <StatCard label="Atualizado" value={stats.updatedAt ? new Date(stats.updatedAt).toLocaleTimeString('pt-BR') : '—'} />
+          <StatCard
+            label="Tickets criados hoje"
+            value={String(created)}
+            hint={stats.todayKey ? `Dia: ${stats.todayKey}` : undefined}
+          />
+          <StatCard label="Tickets fechados hoje" value={String(closed)} />
+          <StatCard
+            label="Atualizado"
+            value={stats.updatedAt ? new Date(stats.updatedAt).toLocaleTimeString("pt-BR") : "—"}
+          />
         </div>
 
-        {tab === "tickets" || tab === "staff" ? (
+        {/* TABS */}
+        {tab === "tickets" ? (
           <div className="card">
-            <h2 className="text-xl font-bold mb-2">{tab === "tickets" ? "Estatísticas de Tickets" : "Estatísticas de Staff"}</h2>
+            <h2 className="text-xl font-bold mb-2">Estatísticas de Tickets</h2>
             <p className="text-white/60 mb-4">
               O bot envia métricas automaticamente. Para resultados completos, mantenha o bot online.
             </p>
 
-            {tab === "staff" ? (
-              <div className="space-y-3">
-                {stats.staff && Object.keys(stats.staff).length ? (
-                  Object.entries(stats.staff).map(([id, s]) => (
-                    <div key={id} className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/5">
-                      <div className="text-sm text-white/70">Staff ID: {id}</div>
-                      <div className="text-sm">
-                        <span className="mr-4">Assumidos: <b>{s.claimed ?? 0}</b></span>
-                        <span>Fechados: <b>{s.closed ?? 0}</b></span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-white/60">Sem dados de staff ainda.</div>
-                )}
-              </div>
-            ) : (
-              <div className="text-sm text-white/60">
-                No momento, os contadores básicos estão no topo. Você pode expandir com SLA e tempo médio depois.
-              </div>
-            )}
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <StatCard label="Criados hoje" value={String(created)} />
+              <StatCard label="Fechados hoje" value={String(closed)} />
+              <StatCard label="Taxa de fechamento" value={`${closeRate}%`} hint="Fechados / Criados no dia" />
+            </div>
+
+            <div className="text-sm text-white/60">
+              Próximos upgrades recomendados: tempo médio de resposta, tempo até fechar, tickets por hora e pico do dia.
+            </div>
+          </div>
+        ) : tab === "staff" ? (
+          <div className="card">
+            <h2 className="text-xl font-bold mb-2">Estatísticas de Staff</h2>
+            <p className="text-white/60 mb-4">
+              Ranking e contadores por staff (assumidos/fechados).
+            </p>
+
+            <div className="space-y-3">
+              {stats.staff && Object.keys(stats.staff).length ? (
+                Object.entries(stats.staff).map(([id, s]) => (
+                  <StaffRow
+                    key={id}
+                    id={id}
+                    claimed={Number((s as any)?.claimed ?? 0)}
+                    closed={Number((s as any)?.closed ?? 0)}
+                  />
+                ))
+              ) : (
+                <div className="text-sm text-white/60">Sem dados de staff ainda.</div>
+              )}
+            </div>
           </div>
         ) : (
           <GuildSettings guildId={params.guildId} initial={cfg} />

@@ -42,6 +42,7 @@ model Whitelist {
 model Transcript {
   id        String   @id @default(cuid())
   slug      String   @unique
+  guildId   String   // <-- ADICIONA ISSO
   guildSlug String
   userId    String
   shortcode String
@@ -50,6 +51,7 @@ model Transcript {
   expireAt  DateTime
   createdAt DateTime @default(now())
 
+  @@index([guildId])
   @@index([guildSlug])
   @@index([userId])
   @@index([expireAt])
