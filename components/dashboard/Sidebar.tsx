@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { LayoutDashboard, Settings, BarChart3, Shield } from 'lucide-react'
+import { LayoutDashboard, Settings, BarChart3, Shield, CreditCard, Trash2  } from 'lucide-react'
 
 type Item = { href: string; label: string; icon: React.ReactNode }
 
@@ -76,6 +76,13 @@ function isItemActive(href: string) {
       ]
     : [{ href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> }]
 
+    const adminItems: Item[] = isAdmin
+  ? [
+      { href: "/admin", label: "Admin", icon: <Shield size={18} /> },
+      { href: "/admin/subscriptions", label: "Assinaturas", icon: <CreditCard size={18} /> },
+      // depois a gente coloca “Planos” também quando quiser
+    ]
+  : [];
   const logoSrc = guildIconUrl || defaultLogo
   const subtitle = guildName ? guildName : 'Tickets'
 
@@ -115,6 +122,32 @@ function isItemActive(href: string) {
               </Link>
             )
           })}
+
+          {/* Itens do guild / dashboard normal */}
+{items.map((it) => {
+  const active = isItemActive(it.href);
+  return (
+    <Link key={it.href} href={it.href} className={cls(active)}>
+      {it.icon}
+      <span className="font-medium">{it.label}</span>
+    </Link>
+  );
+})}
+
+{/* Separador admin */}
+{isAdmin ? <div className="my-3 border-t border-white/10" /> : null}
+
+{/* Itens admin */}
+{adminItems.map((it) => {
+  const active = pathname === it.href || pathname.startsWith(it.href + "/");
+  return (
+    <Link key={it.href} href={it.href} className={cls(active)}>
+      {it.icon}
+      <span className="font-medium">{it.label}</span>
+    </Link>
+  );
+})}
+
 
           {isAdmin ? (
             <Link href="/admin" className={cls(pathname.startsWith('/admin'))}>

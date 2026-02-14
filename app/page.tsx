@@ -65,6 +65,22 @@ export default function Home() {
           )}
         </button> */}
 
+        <button
+  onClick={async () => {
+    const ok = confirm("Tem certeza? Isso vai apagar configs e stats de TODOS os servidores.");
+    if (!ok) return;
+
+    const res = await fetch("/api/admin/reset", { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) alert(data?.error || "Falha ao limpar");
+    else alert("Database limpa!");
+  }}
+  className="h-10 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold inline-flex items-center gap-2"
+>
+  Limpar database
+</button>
+
+
 
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
