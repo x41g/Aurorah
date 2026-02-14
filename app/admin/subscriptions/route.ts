@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { isAdminDiscordId } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
   const session = (await getServerSession(authOptions as any)) as any;
   const userId = session?.user?.id ?? null;
+
   if (!session?.user || !isAdminDiscordId(userId)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
@@ -15,9 +18,7 @@ export async function GET(req: Request) {
   const q = (searchParams.get("q") || "").trim();
 
   const subs = await prisma.subscription.findMany({
-    where: q
-      ? { userId: { contains: q } }
-      : undefined,
+    where: q ? { userId: { contains: q } } : undefined,
     include: { plan: true },
     orderBy: { updatedAt: "desc" },
     take: 200,
@@ -29,6 +30,7 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   const session = (await getServerSession(authOptions as any)) as any;
   const userId = session?.user?.id ?? null;
+
   if (!session?.user || !isAdminDiscordId(userId)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }

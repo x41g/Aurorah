@@ -48,6 +48,15 @@ export function WhitelistPanel() {
   useEffect(() => {
     let cancelled = false;
 
+    async function readJsonSafe(res: Response) {
+  const ct = res.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Resposta não-JSON (status ${res.status}). Início: ${text.slice(0, 60)}`);
+  }
+  return res.json();
+}
+
     (async () => {
       try {
         setLoading(true);
