@@ -15,13 +15,13 @@ model GuildConfig {
 }
 
 model GuildStats {
-  guildId   String   @id
-  todayKey    String?
-  ticketsCreatedToday  Int @default(0)
-  ticketsClosedToday   Int @default(0)
-  staff              Json?
-  updatedAt   DateTime  @updatedAt
-  createdAt   DateTime  @default(now())
+  guildId             String   @id
+  todayKey            String?
+  ticketsCreatedToday Int      @default(0)
+  ticketsClosedToday  Int      @default(0)
+  staff               Json?
+  updatedAt           DateTime @updatedAt
+  createdAt           DateTime @default(now())
 }
 
 model BotState {
@@ -42,7 +42,7 @@ model Whitelist {
 model Transcript {
   id        String   @id @default(cuid())
   slug      String   @unique
-  guildId   String   // <-- ADICIONA ISSO
+  guildId   String // <-- ADICIONA ISSO
   guildSlug String?
   userId    String
   shortcode String
@@ -55,4 +55,69 @@ model Transcript {
   @@index([guildSlug])
   @@index([userId])
   @@index([expireAt])
+}
+
+enum PlanKey {
+  STARTER
+  PRO
+}
+
+model Plan {
+  key            PlanKey @id
+  name           String
+  description    String
+  priceCents     Int     @default(0)
+  active         Boolean @default(true)
+
+  maxGuilds          Int  @default(1)
+  maxTicketsPerMonth Int?
+
+  dashboardEnabled Boolean @default(true)
+  paymentsEnabled  Boolean @default(false)
+  safePayEnabled   Boolean @default(false)
+  aiEnabled        Boolean @default(false)
+  analyticsEnabled Boolean @default(false)
+  prioritySupport  Boolean @default(false)
+
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  planKey   PlanKey
+  status    String   @default("active") // active | canceled | past_due etc
+  renewAt   DateTime?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plan Plan @relation(fields: [planKey], references: [key])
+
+  @@index([planKey])
+  @@index([status])
+}
+
+model GuildOwner {
+  guildId   String   @id
+  ownerId   String // discord user id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model UsageMonthly {
+  id        String   @id @default(cuid())
+  userId    String // dono (discord user id)
+  monthKey  String // "2026-02" (UTC)
+  tickets   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, monthKey])
+  @@index([userId])
 }

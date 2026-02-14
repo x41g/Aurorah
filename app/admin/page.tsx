@@ -9,6 +9,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import type { GuildStats } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WhitelistPanel } from "@/components/admin/WhitelistPanel"; 
+import { SubscriptionsPanel } from "@/components/admin/SubscriptionsPanel";
 
 type BotGuilds = { guildIds: string[]; updatedAt?: number };
 
@@ -95,6 +96,7 @@ return (
 
           <div className="mt-6">
             <WhitelistPanel />
+            <SubscriptionsPanel />
           </div>
         </main>
       </div>
