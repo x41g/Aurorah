@@ -119,7 +119,7 @@ bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
               {config.botName}
             </span>
           </motion.div>
-
+            <div className="hidden md:flex">
           <motion.div
             className="flex gap-4"
             initial={{ opacity: 0, x: 20 }}
@@ -146,6 +146,7 @@ bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
             </a>
             <a href="/dashboard" className="btn-secondary px-5 py-2 rounded-full">Dashboard</a>
           </motion.div>
+          </div>
         </div>
       </nav>
 

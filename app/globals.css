@@ -151,6 +151,14 @@ html.light .section-dark {
   @apply max-w-6xl mx-auto;
 }
 
+
+.hidden md:flex {
+  gap: 15px; /* Espaçamento entre os links */
+  display: flex;                /* Ativa o Flexbox */
+  justify-content: space-between; /* Espaça os itens (esquerda, centro, direita) */
+  align-items: center;          /* Alinha verticalmente ao centro */
+  padding: 1rem 2rem;
+}
 /* Efeitos de Fundo */
 .blob { @apply absolute rounded-full blur-3xl opacity-25; }
 .blob-1 { @apply top-40 left-10 w-80 h-80 bg-pink-500; }
