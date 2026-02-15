@@ -18,15 +18,16 @@ export async function GET(req: Request) {
     const channelId = String(searchParams.get("channelId") || "").trim();
     if (!guildId || !channelId) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-    const mem = await prisma.ticketAiMemory.findUnique({
+    const mem = await prisma.ticketAIMemory.findUnique({
       where: { guildId_channelId: { guildId, channelId } },
     });
 
-    const msgs = await prisma.ticketAiMessage.findMany({
-      where: { guildId, channelId },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+const msgs = await prisma.ticketAIMessage.findMany({
+  where: { guildId, channelId },
+  orderBy: { createdAt: "desc" },
+  take: 20,
+});
+
 
     return NextResponse.json({
       summary: mem?.summary ?? "",
