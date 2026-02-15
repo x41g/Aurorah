@@ -19,6 +19,13 @@ type Props = {
 }
 
 const KNOWN_BANKS = ['inter', 'picpay', 'nubank', '99pay', 'pagseguro']
+const AI_MODELS = [
+  "openai/gpt-oss-120b",
+  "llama-3.1-8b-instant",
+  "llama-3.3-70b-versatile",
+  "mixtral-8x7b-32768",
+]
+const PIX_TYPES = ["Email", "Telefone", "CPF", "CNPJ", "Aleatoria"]
 
 function asArray(v: string) {
   return v
@@ -353,7 +360,13 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         <fieldset disabled={!canUseAI || saving} className="space-y-4 disabled:opacity-60">
           <Section title="IA">
             <Toggle label="IA habilitada" value={aiEnabled} onChange={setAiEnabled} />
-            <Field label="Modelo" value={aiModel} onChange={setAiModel} />
+            <SelectField
+              label="Modelo"
+              value={aiModel}
+              onChange={setAiModel}
+              options={AI_MODELS.map((m) => ({ value: m, label: m }))}
+              placeholder="Selecione um modelo"
+            />
             <JsonField label="Prompt da IA" value={aiPrompt} onChange={setAiPrompt} hint="Prompt com validações de segurança no backend." />
           </Section>
           <Section title="Seguranca de Prompt">
@@ -371,7 +384,13 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           <Section title="Semi-auto">
             <Toggle label="Semi-automatico" value={paymentSemiEnabled} onChange={setPaymentSemiEnabled} />
             <Field label="Chave PIX" value={paymentSemiKey} onChange={setPaymentSemiKey} />
-            <Field label="Tipo da chave" value={paymentSemiType} onChange={setPaymentSemiType} />
+            <SelectField
+              label="Tipo da chave"
+              value={paymentSemiType}
+              onChange={setPaymentSemiType}
+              options={PIX_TYPES.map((t) => ({ value: t, label: t }))}
+              placeholder="Selecione o tipo"
+            />
             <SelectField
               label="Cargo aprovador"
               value={paymentSemiApproverRoleId}

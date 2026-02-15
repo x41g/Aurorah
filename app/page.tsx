@@ -187,6 +187,16 @@ export default function Home() {
               Venda mais no Discord sem aumentar sua carga de trabalho.
             </motion.p>
 
+            {config.images?.botAvatar ? (
+              <motion.div variants={itemVariants} className="mb-8 flex justify-center">
+                <img
+                  src={config.images.botAvatar}
+                  alt={`${config.botName} avatar`}
+                  className="h-24 w-24 rounded-3xl border border-white/20 object-cover shadow-[0_20px_60px_rgba(168,85,247,0.25)]"
+                />
+              </motion.div>
+            ) : null}
+
             <motion.div
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center mb-16"

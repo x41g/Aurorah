@@ -32,8 +32,8 @@ export async function PUT(req: Request) {
   const key = String(body?.key || "").toUpperCase();
   if (!key) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-  const allowed: PlanKey[] = ["STARTER", "PRO"]; // se adicionar mais, coloque aqui
-  const planKey = (allowed.includes(key as any) ? key : null) as PlanKey | null;
+  const exists = await prisma.plan.findUnique({ where: { key: key as any }, select: { key: true } }).catch(() => null);
+  const planKey = (exists?.key || null) as PlanKey | null;
   if (!planKey) return NextResponse.json({ error: "invalid_plan_key" }, { status: 400 });
 
   const data = {

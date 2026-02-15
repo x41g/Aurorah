@@ -14,9 +14,11 @@ function normalizeStatus(input: unknown): SubStatus {
   return (["active", "canceled", "expired", "past_due"] as const).includes(raw as any) ? (raw as SubStatus) : "active";
 }
 
-function normalizePlanKey(input: unknown): PlanKey | null {
+async function normalizePlanKey(input: unknown): Promise<PlanKey | null> {
   const raw = String(input || "").toUpperCase();
-  return (["STARTER", "PRO"] as const).includes(raw as any) ? (raw as PlanKey) : null;
+  if (!raw) return null;
+  const exists = await prisma.plan.findUnique({ where: { key: raw as any }, select: { key: true } }).catch(() => null);
+  return exists?.key ? (exists.key as PlanKey) : null;
 }
 
 async function assertAdmin() {
@@ -50,7 +52,7 @@ export async function PUT(req: Request) {
   const body = await req.json().catch(() => null);
 
   const targetUserId = String(body?.userId || "").trim();
-  const planKey = normalizePlanKey(body?.planKey);
+  const planKey = await normalizePlanKey(body?.planKey);
   if (!targetUserId || !planKey) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
   const status = normalizeStatus(body?.status);

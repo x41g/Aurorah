@@ -146,6 +146,7 @@ accent: '#0f0f1a',
   
   images: {
     logo: '/icons/logo.png',
+    botAvatar: '/aurora.png',
   },
 
     dashboardPreview: {
