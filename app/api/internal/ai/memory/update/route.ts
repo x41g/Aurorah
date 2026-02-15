@@ -31,8 +31,8 @@ export async function POST(req: Request) {
     }
 
     if (summary !== null) {
-      await prisma.ticketAiMemory.upsert({
-        where: { guildId_channelId: { guildId, channelId } },
+      await prisma.ticketAIMemory.upsert({
+        where: { channelId },
         create: { guildId, channelId, summary },
         update: { summary },
       });
@@ -41,6 +41,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const msg = String(e?.message || e);
-    return NextResponse.json({ error: msg === "unauthorized" ? "unauthorized" : "server_error" }, { status: msg === "unauthorized" ? 401 : 500 });
+    return NextResponse.json(
+      { error: msg === "unauthorized" ? "unauthorized" : "server_error" },
+      { status: msg === "unauthorized" ? 401 : 500 }
+    );
   }
 }

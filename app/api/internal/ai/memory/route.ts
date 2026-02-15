@@ -18,8 +18,8 @@ export async function GET(req: Request) {
     const channelId = String(searchParams.get("channelId") || "").trim();
     if (!guildId || !channelId) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-    const mem = await prisma.ticketAiMemory.findUnique({
-      where: { guildId_channelId: { guildId, channelId } },
+    const mem = await prisma.ticketAIMemory.findUnique({
+      where: { channelId },
     });
 
     const msgs = await prisma.ticketAiMessage.findMany({
@@ -34,6 +34,9 @@ export async function GET(req: Request) {
     });
   } catch (e: any) {
     const msg = String(e?.message || e);
-    return NextResponse.json({ error: msg === "unauthorized" ? "unauthorized" : "server_error" }, { status: msg === "unauthorized" ? 401 : 500 });
+    return NextResponse.json(
+      { error: msg === "unauthorized" ? "unauthorized" : "server_error" },
+      { status: msg === "unauthorized" ? 401 : 500 }
+    );
   }
 }
