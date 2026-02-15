@@ -55,7 +55,7 @@ export default async function GuildPage({
   const userId = session.user?.id ?? null;
   const isAdmin = isAdminDiscordId(userId);
 
-  const ent = await getEntitlementsForGuild(params.guildId);
+  const ent = await getEntitlementsForGuild(params.guildId, session?.user?.id ?? null);
   const locked = ent.whitelistEnabled && !ent.hasActiveSubscription;
 
   return (

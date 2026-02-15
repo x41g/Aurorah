@@ -26,7 +26,7 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
 
   // Se a whitelist estiver ativa, o dono do servidor precisa ter assinatura ativa
   // para alterar configurações pelo dashboard.
-  const ent = await getEntitlementsForGuild(guildId);
+  const ent = await getEntitlementsForGuild(guildId, session?.user?.id ?? null);
   if (ent.whitelistEnabled && !ent.hasActiveSubscription) {
     return NextResponse.json({ error: "no_subscription" }, { status: 402 });
   }

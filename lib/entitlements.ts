@@ -55,7 +55,7 @@ async function resolveGuildOwnerId(guildId: string): Promise<string | null> {
  * - Whitelist DESATIVADA => não bloqueia nada por assinatura.
  * - Whitelist ATIVA => recursos podem travar se o dono do servidor não tiver assinatura ativa.
  */
-export async function getEntitlementsForGuild(guildId: string): Promise<Entitlements> {
+export async function getEntitlementsForGuild(guildId: string, requesterUserId?: string | null): Promise<Entitlements> {
   const gid = String(guildId || "").trim();
 
   const wl = await prisma.whitelist.findUnique({ where: { id: "singleton" } });
@@ -63,7 +63,7 @@ export async function getEntitlementsForGuild(guildId: string): Promise<Entitlem
   const wlIds = Array.isArray(wl?.guildIds) ? (wl!.guildIds as any).map(String) : [];
   const isWhitelisted = wlIds.includes(gid);
 
-  const ownerId = await resolveGuildOwnerId(gid);
+  const ownerId = (await resolveGuildOwnerId(gid)) ?? (requesterUserId ? String(requesterUserId) : null);
 
   const sub = ownerId
     ? await prisma.subscription.findUnique({ where: { userId: ownerId }, include: { plan: true } })

@@ -121,7 +121,7 @@ bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
           </motion.div>
             <div className="hidden md:flex">
           <motion.div
-            className="flex gap-4"
+            className="flex items-center gap-6"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -144,7 +144,7 @@ bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
             >
               FAQ
             </a>
-            <a href="/dashboard" className="btn-secondary px-5 py-2 rounded-full">Dashboard</a>
+            <a href="/dashboard" className="btn-secondary inline-flex items-center h-9 px-5 rounded-full">Dashboard</a>
           </motion.div>
           </div>
         </div>
