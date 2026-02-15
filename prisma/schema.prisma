@@ -141,17 +141,19 @@ model GuildAiConfig {
   createdAt DateTime @default(now())
 }
 
-model TicketAiMessage {
-  id        String @id @default(cuid())
+model TicketAIMessage {
+  id        String   @id @default(cuid())
   guildId   String
   channelId String
   authorId  String
-  role      String // "user" | "assistant" | "staff"
+  role      String   // "user" | "assistant" | "staff"
   content   String
   createdAt DateTime @default(now())
 
   @@index([guildId, channelId, createdAt])
+  @@index([guildId])
 }
+
 
 model GuildAIConfig {
   guildId   String  @id
@@ -171,16 +173,4 @@ model TicketAIMemory {
 
   @@unique([guildId, channelId])
   @@index([guildId])
-}
-
-model TicketAIMessage {
-  id        String   @id @default(cuid())
-  guildId   String
-  channelId String
-  role      String   // "user" | "assistant"
-  content   String
-  createdAt DateTime @default(now())
-
-  @@index([guildId])
-  @@index([guildId, channelId])
 }
