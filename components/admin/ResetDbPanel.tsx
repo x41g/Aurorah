@@ -15,24 +15,19 @@ export function ResetDbPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [confirmText, setConfirmText] = useState("");
 
   async function onReset() {
     setError("");
     setOk("");
 
-    if (confirmText.trim() !== "EU CONFIRMO") {
-      setError('Digite exatamente "EU CONFIRMO" para continuar.');
-      return;
-    }
+    const confirmed = confirm(
+      "Isso vai apagar configs, stats, owners, transcripts e uso mensal. (Planos/assinaturas podem ser mantidos).\n\nTem certeza?"
+    );
+    if (!confirmed) return;
 
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: confirmText.trim() }),
-      });
+      const res = await fetch("/api/admin/reset", { method: "POST" });
       const data = await readJsonSafe(res).catch(() => ({}));
       if (!res.ok) throw new Error(String((data as any)?.error || "Falha ao limpar"));
       setOk("Database limpa!");
@@ -54,22 +49,13 @@ export function ResetDbPanel() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <input
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder='Digite: EU CONFIRMO'
-            className="h-10 w-full sm:w-[200px] rounded-xl bg-black/40 border border-white/10 px-3 outline-none focus:border-white/25"
-            disabled={loading}
-          />
-          <button
-            onClick={onReset}
-            disabled={loading}
-            className="h-10 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold disabled:opacity-60"
-          >
-            {loading ? "Limpando..." : "Limpar database"}
-          </button>
-        </div>
+        <button
+          onClick={onReset}
+          disabled={loading}
+          className="h-10 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold disabled:opacity-60"
+        >
+          {loading ? "Limpando..." : "Limpar database"}
+        </button>
       </div>
 
       {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}

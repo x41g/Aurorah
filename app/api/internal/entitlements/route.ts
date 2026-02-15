@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getEntitlementsForGuild } from "@/lib/entitlements";
+import { getGuildEntitlements } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 
@@ -17,11 +17,10 @@ export async function GET(req: Request) {
     const guildId = String(searchParams.get("guildId") || "").trim();
     if (!guildId) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-    const ent = await getEntitlementsForGuild(guildId);
-    return NextResponse.json({ ok: true, guildId, entitlements: ent });
+    const ent = await getGuildEntitlements(guildId);
+    return NextResponse.json({ ok: true, entitlements: ent });
   } catch (e: any) {
     const msg = String(e?.message || e);
-    if (msg === "unauthorized") return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return NextResponse.json({ error: msg === "unauthorized" ? "unauthorized" : "server_error" }, { status: msg === "unauthorized" ? 401 : 500 });
   }
 }

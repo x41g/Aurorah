@@ -2,7 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { LayoutDashboard, Home, Settings, BarChart3, Shield, CreditCard, Trash2 } from 'lucide-react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import {
+  LayoutDashboard,
+  Settings,
+  BarChart3,
+  Shield,
+  CreditCard,
+  Trash2,
+} from 'lucide-react'
 
 type Item = { href: string; label: string; icon: React.ReactNode }
 
@@ -113,12 +121,7 @@ export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: str
           )}
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2 font-bold leading-tight truncate">
-              <span>Painel</span>
-              <Link href="/" className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition" title="Home">
-                <Home size={16} />
-              </Link>
-            </div>
+            <div className="font-bold leading-tight truncate">Painel</div>
             <div className="text-xs text-white/60 leading-tight truncate">{subtitle}</div>
           </div>
         </div>
@@ -146,6 +149,12 @@ export function Sidebar({ isAdmin, guildId }: { isAdmin?: boolean; guildId?: str
             )
           })}
         </nav>
+
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <Link href="/" className="text-sm text-white/70 hover:text-white transition">
+            Voltar para a landing
+          </Link>
+        </div>
       </div>
     </aside>
   )

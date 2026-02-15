@@ -24,15 +24,14 @@ export async function POST(req: Request) {
 
     if (!guildId || !channelId) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-    // grava mensagem (TicketAiMessage tem authorId no schema)
     if (role && authorId && content) {
       await prisma.ticketAiMessage.create({
         data: { guildId, channelId, authorId, role, content },
       });
     }
 
-    // grava/atualiza resumo (TicketAIMemory: channelId é @id)
     if (summary !== null) {
+      // No schema atual, o model é TicketAIMemory (caps AI) e o unique é channelId.
       await prisma.ticketAIMemory.upsert({
         where: { channelId },
         create: { guildId, channelId, summary },
@@ -43,9 +42,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const msg = String(e?.message || e);
-    return NextResponse.json(
-      { error: msg === "unauthorized" ? "unauthorized" : "server_error" },
-      { status: msg === "unauthorized" ? 401 : 500 }
-    );
+    return NextResponse.json({ error: msg === "unauthorized" ? "unauthorized" : "server_error" }, { status: msg === "unauthorized" ? 401 : 500 });
   }
 }

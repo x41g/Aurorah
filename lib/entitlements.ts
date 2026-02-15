@@ -1,87 +1,126 @@
 import { prisma } from "@/lib/prisma";
 
-type Entitlements = {
-  whitelistEnabled: boolean;
-  isWhitelisted: boolean;
-  ownerId: string | null;
+export type SubscriptionStatus = "active" | "past_due" | "canceled" | "expired";
 
-  hasActiveSubscription: boolean;
-  subscriptionStatus: string | null;
-  expiresAt: number | null;
-  planKey: string | null;
-  plan: any | null;
+export type PlanEntitlements = {
+  key: string;
+  name: string;
+  active: boolean;
+  maxGuilds: number;
+  maxTicketsPerMonth: number | null;
+  dashboardEnabled: boolean;
+  paymentsEnabled: boolean;
+  safePayEnabled: boolean;
+  aiEnabled: boolean;
+  analyticsEnabled: boolean;
+  prioritySupport: boolean;
 };
 
-function isSubActive(status: unknown) {
-  return String(status || "").toLowerCase() === "active";
+export type GuildEntitlements = {
+  guildId: string;
+  whitelistEnabled: boolean;
+  whitelisted: boolean;
+  ownerId: string | null;
+  subscriptionActive: boolean;
+  status: SubscriptionStatus | null;
+  plan: PlanEntitlements | null;
+  canUseDashboard: boolean;
+  canEditConfig: boolean;
+  canUseAI: boolean;
+  canUsePayments: boolean;
+  canUseSafePay: boolean;
+  canUseAnalytics: boolean;
+  reason: string | null;
+};
+
+function isSubActive(status: unknown, expiresAt: Date | null) {
+  const s = String(status || "").toLowerCase();
+  if (s !== "active") return false;
+  if (!expiresAt) return true;
+  return expiresAt.getTime() > Date.now();
 }
 
-async function resolveGuildOwnerId(guildId: string): Promise<string | null> {
-  const gid = String(guildId || "").trim();
-  if (!gid) return null;
-
-  // 1) DB cache
-  const existing = await prisma.guildOwner.findUnique({ where: { guildId: gid } });
-  if (existing?.ownerId) return String(existing.ownerId);
-
-  // 2) Discord API (bot precisa estar no servidor)
-  const botToken = (process.env.DISCORD_BOT_TOKEN || "").trim();
-  if (!botToken) return null;
-
-  try {
-    const res = await fetch(`https://discord.com/api/v10/guilds/${encodeURIComponent(gid)}`, {
-      headers: { Authorization: `Bot ${botToken}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const d = (await res.json().catch(() => null)) as any;
-    const ownerId = d?.owner_id ? String(d.owner_id) : null;
-    if (!ownerId) return null;
-
-    await prisma.guildOwner.upsert({
-      where: { guildId: gid },
-      create: { guildId: gid, ownerId },
-      update: { ownerId },
-    });
-
-    return ownerId;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Regras:
- * - Whitelist DESATIVADA => não bloqueia nada por assinatura.
- * - Whitelist ATIVA => recursos podem travar se o dono do servidor não tiver assinatura ativa.
- */
-export async function getEntitlementsForGuild(guildId: string, requesterUserId?: string | null): Promise<Entitlements> {
-  const gid = String(guildId || "").trim();
-
+export async function getWhitelistState() {
   const wl = await prisma.whitelist.findUnique({ where: { id: "singleton" } });
-  const whitelistEnabled = Boolean(wl?.enabled);
-  const wlIds = Array.isArray(wl?.guildIds) ? (wl!.guildIds as any).map(String) : [];
-  const isWhitelisted = wlIds.includes(gid);
+  const enabled = Boolean(wl?.enabled);
+  const guildIds = Array.isArray(wl?.guildIds) ? (wl!.guildIds as any).map(String) : [];
+  return { enabled, guildIds };
+}
 
-  const ownerId = (await resolveGuildOwnerId(gid)) ?? (requesterUserId ? String(requesterUserId) : null);
+export async function getGuildOwnerId(guildId: string): Promise<string | null> {
+  const row = await prisma.guildOwner.findUnique({ where: { guildId: String(guildId) } });
+  return row?.ownerId ? String(row.ownerId) : null;
+}
 
-  const sub = ownerId
-    ? await prisma.subscription.findUnique({ where: { userId: ownerId }, include: { plan: true } })
+export async function getActiveSubscriptionByUserId(userId: string) {
+  const sub = await prisma.subscription.findUnique({
+    where: { userId: String(userId) },
+    include: { plan: true },
+  });
+  if (!sub) return null;
+  const active = isSubActive(sub.status, sub.expiresAt);
+  return {
+    active,
+    status: (String(sub.status || "active").toLowerCase() as SubscriptionStatus) || "active",
+    sub,
+    plan: sub.plan,
+  };
+}
+
+export async function getGuildEntitlements(guildId: string): Promise<GuildEntitlements> {
+  const gid = String(guildId);
+  const wl = await getWhitelistState();
+  const whitelisted = !wl.enabled || wl.guildIds.includes(gid);
+
+  const ownerId = await getGuildOwnerId(gid);
+  const subInfo = ownerId ? await getActiveSubscriptionByUserId(ownerId) : null;
+
+  const plan = subInfo?.plan
+    ? {
+        key: String(subInfo.plan.key),
+        name: String(subInfo.plan.name),
+        active: Boolean(subInfo.plan.active),
+        maxGuilds: Number(subInfo.plan.maxGuilds || 1),
+        maxTicketsPerMonth: subInfo.plan.maxTicketsPerMonth == null ? null : Number(subInfo.plan.maxTicketsPerMonth),
+        dashboardEnabled: Boolean(subInfo.plan.dashboardEnabled),
+        paymentsEnabled: Boolean(subInfo.plan.paymentsEnabled),
+        safePayEnabled: Boolean(subInfo.plan.safePayEnabled),
+        aiEnabled: Boolean(subInfo.plan.aiEnabled),
+        analyticsEnabled: Boolean(subInfo.plan.analyticsEnabled),
+        prioritySupport: Boolean(subInfo.plan.prioritySupport),
+      }
     : null;
 
-  const expiresAt = sub?.expiresAt ? sub.expiresAt.getTime() : null;
-  const notExpired = expiresAt == null ? true : expiresAt > Date.now();
-  const active = Boolean(sub && isSubActive(sub.status) && notExpired);
+  const subscriptionActive = Boolean(subInfo?.active);
+  const canUseDashboard = whitelisted;
+
+  // Regra: sem assinatura ativa => somente leitura (stats). Com assinatura ativa, dashboardEnabled libera edição.
+  const canEditConfig = whitelisted && subscriptionActive && Boolean(plan?.dashboardEnabled);
+  const canUseAI = whitelisted && subscriptionActive && Boolean(plan?.aiEnabled);
+  const canUsePayments = whitelisted && subscriptionActive && Boolean(plan?.paymentsEnabled);
+  const canUseSafePay = whitelisted && subscriptionActive && Boolean(plan?.safePayEnabled);
+  const canUseAnalytics = whitelisted && subscriptionActive && Boolean(plan?.analyticsEnabled);
+
+  let reason: string | null = null;
+  if (!whitelisted) reason = "guild_not_whitelisted";
+  else if (!ownerId) reason = "owner_unknown";
+  else if (!subscriptionActive) reason = "no_active_subscription";
+  else if (subscriptionActive && !plan?.dashboardEnabled) reason = "plan_no_dashboard";
 
   return {
-    whitelistEnabled,
-    isWhitelisted,
+    guildId: gid,
+    whitelistEnabled: wl.enabled,
+    whitelisted,
     ownerId,
-
-    hasActiveSubscription: whitelistEnabled ? active : true,
-    subscriptionStatus: sub?.status ? String(sub.status) : null,
-    expiresAt,
-    planKey: (sub as any)?.planKey ? String((sub as any).planKey) : null,
-    plan: (sub as any)?.plan ?? null,
+    subscriptionActive,
+    status: subInfo?.status ?? null,
+    plan,
+    canUseDashboard,
+    canEditConfig,
+    canUseAI,
+    canUsePayments,
+    canUseSafePay,
+    canUseAnalytics,
+    reason,
   };
 }

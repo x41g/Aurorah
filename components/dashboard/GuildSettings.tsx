@@ -56,6 +56,7 @@ const textChannelOptions = channels
 
   const preview = useMemo(() => {
 const cfg: GuildConfig = {
+  panelImageUrl: panelImageUrl || undefined,
   staffRoleId: staffRoleId || undefined,
   ticketCategoryId: ticketCategoryId || undefined,
   logsChannelId: logsChannelId || undefined,
@@ -68,6 +69,7 @@ const cfg: GuildConfig = {
 }
     return cfg
   }, [
+    panelImageUrl,
     allowOpenRoleIds,
     cooldownSeconds,
     logsChannelId,
@@ -90,7 +92,12 @@ const cfg: GuildConfig = {
         body: JSON.stringify(preview),
       })
       if (!r.ok) {
-        setErr('Falha ao salvar. Verifique suas permissões e tente novamente.')
+        const data = await r.json().catch(() => ({} as any))
+        if (data?.error === 'subscription_required') {
+          setErr('Assinatura necessária: o dono do servidor não tem plano com Dashboard habilitado.')
+        } else {
+          setErr('Falha ao salvar. Verifique suas permissões e tente novamente.')
+        }
         return
       }
       setOk('Salvo com sucesso.')
@@ -101,23 +108,21 @@ const cfg: GuildConfig = {
     }
   }
 
-<div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-  <label className="text-xs text-white/60">Imagem do Painel (URL)</label>
-  <input
-    className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
-    value={panelImageUrl}
-    onChange={(e) => setPanelImageUrl(e.target.value)}
-    placeholder="https://..."
-  />
-  <p className="mt-2 text-xs text-white/50">
-    Dica: use PNG/JPG. Recomendado 512x512.
-  </p>
-</div>
-
   return (
     <div className="card">
       <h2 className="text-xl font-bold mb-2">Configurações</h2>
       <p className="text-white/60 mb-6">Cole IDs do Discord (canais, cargos e categorias).</p>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-5">
+        <label className="text-xs text-white/60">Imagem do Painel (URL)</label>
+        <input
+          className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25"
+          value={panelImageUrl}
+          onChange={(e) => setPanelImageUrl(e.target.value)}
+          placeholder="https://..."
+        />
+        <p className="mt-2 text-xs text-white/50">Dica: use PNG/JPG. Recomendado 512x512.</p>
+      </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">

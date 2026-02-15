@@ -11,7 +11,6 @@ import { GuildSettings } from "@/components/dashboard/GuildSettings";
 import { getBotGuildIds } from "@/lib/botPresence";
 import { isAdminDiscordId } from "@/lib/admin";
 import { StaffRow } from "@/components/dashboard/StaffRow";
-import { getEntitlementsForGuild } from "@/lib/entitlements";
 
 export default async function GuildPage({
   params,
@@ -55,23 +54,11 @@ export default async function GuildPage({
   const userId = session.user?.id ?? null;
   const isAdmin = isAdminDiscordId(userId);
 
-  const ent = await getEntitlementsForGuild(params.guildId, session?.user?.id ?? null);
-  const locked = ent.whitelistEnabled && !ent.hasActiveSubscription;
-
   return (
     <div className="flex gap-6">
       <Sidebar guildId={params.guildId} isAdmin={isAdmin} />
       <div className="flex-1 min-w-0">
         <Topbar title={access.guild.name} userName={session.user?.name} userImage={session.user?.image} />
-
-        {locked ? (
-          <div className="mt-6 rounded-3xl border border-amber-400/20 bg-amber-500/10 p-4">
-            <div className="font-semibold text-amber-100">Assinatura necessária</div>
-            <p className="text-sm text-white/70 mt-1">
-              O dono deste servidor não possui uma assinatura <b>ativa</b>. As configurações ficam bloqueadas.
-            </p>
-          </div>
-        ) : null}
 
         {/* TOP STATS */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
@@ -128,19 +115,7 @@ export default async function GuildPage({
             </div>
           </div>
         ) : (
-          <div className="relative">
-            <div className={locked ? "pointer-events-none opacity-50" : ""}>
-              <GuildSettings guildId={params.guildId} initial={cfg} />
-            </div>
-            {locked ? (
-              <div className="absolute inset-0 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                <div className="text-center px-6">
-                  <div className="text-lg font-bold">Configurações bloqueadas</div>
-                  <div className="text-sm text-white/70 mt-1">Ative uma assinatura para liberar o painel.</div>
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <GuildSettings guildId={params.guildId} initial={cfg} />
         )}
       </div>
     </div>

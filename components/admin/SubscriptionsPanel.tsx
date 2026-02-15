@@ -37,10 +37,6 @@ export function SubscriptionsPanel() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [q, setQ] = useState("");
 
-  const [users, setUsers] = useState<
-    Record<string, { id: string; username: string; globalName: string; avatar: string } | null>
-  >({});
-
   const [newUserId, setNewUserId] = useState("");
   const [newPlanKey, setNewPlanKey] = useState<string>("");
   const [newStatus, setNewStatus] = useState<string>("active");
@@ -74,17 +70,7 @@ async function readJsonSafe(res: Response) {
       if (!sRes.ok) throw new Error(sData?.error || "Falha ao carregar assinaturas");
 
       setPlans(Array.isArray(pData?.plans) ? pData.plans : []);
-      const subRows = Array.isArray(sData?.subscriptions) ? sData.subscriptions : [];
-      setSubs(subRows);
-
-      const ids = Array.from(new Set(subRows.map((s: any) => String(s?.userId || "")).filter(Boolean))).slice(0, 50);
-      if (ids.length) {
-        const uRes = await fetch(`/api/admin/discord-users?ids=${encodeURIComponent(ids.join(","))}`, {
-          cache: "no-store",
-        });
-        const uData = await uRes.json().catch(() => null);
-        if (uRes.ok && uData?.users) setUsers(uData.users);
-      }
+      setSubs(Array.isArray(sData?.subscriptions) ? sData.subscriptions : []);
     } catch (e: any) {
       setError(String(e?.message || e));
     } finally {
@@ -241,32 +227,11 @@ async function readJsonSafe(res: Response) {
           <div key={s.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  {users?.[s.userId]?.avatar ? (
-                    <img
-                      src={users[s.userId]!.avatar}
-                      alt=""
-                      className="h-10 w-10 rounded-2xl border border-white/10 object-cover"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10" />
-                  )}
-
-                  <div className="min-w-0">
-                    <div className="font-semibold truncate">
-                      {users?.[s.userId]?.globalName || users?.[s.userId]?.username || "Usuário"}
-                    </div>
-                    <div className="text-xs text-white/60 truncate">ID: {s.userId}</div>
-                  </div>
+                <div className="font-semibold truncate">
+                  User ID: <span className="text-white/80">{s.userId}</span>
                 </div>
-
-                <div className="text-xs text-white/60 mt-2">
-                  Plano: <b>{s.plan?.name || s.planKey}</b> • Status: <b>{s.status}</b>
-                  {s.expiresAt ? (
-                    <>
-                      {" "}• Expira em: <b>{new Date(s.expiresAt).toLocaleDateString("pt-BR")}</b>
-                    </>
-                  ) : null}
+                <div className="text-xs text-white/60 mt-1">
+                  Plano atual: <b>{s.plan?.name || s.planKey}</b> • Status: <b>{s.status}</b>
                 </div>
               </div>
 
@@ -290,10 +255,9 @@ async function readJsonSafe(res: Response) {
                   onChange={(e) => saveSub(s.userId, s.planKey, e.target.value)}
                   disabled={saving}
                 >
-                  <option value="active">Ativa</option>
-                  <option value="past_due">Atrasada</option>
-                  <option value="canceled">Cancelada</option>
-                  <option value="expired">Expirada</option>
+                  <option value="active">active</option>
+                  <option value="past_due">past_due</option>
+                  <option value="canceled">canceled</option>
                 </select>
 
                 <button

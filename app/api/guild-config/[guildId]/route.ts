@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { canManageGuild } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
 import type { GuildConfig } from "@/lib/types";
-import { getEntitlementsForGuild } from "@/lib/entitlements";
 
 const empty: GuildConfig = {};
 
@@ -16,7 +15,7 @@ export async function GET(_: Request, { params }: { params: { guildId: string } 
 
   const row = await prisma.guildConfig.findUnique({ where: { guildId: String(guildId) } });
   const cfg = (row?.data as any) || empty;
-  return NextResponse.json(cfg as GuildConfig);
+  return NextResponse.json({ config: cfg as GuildConfig, entitlements: (access as any).entitlements || null });
 }
 
 export async function PUT(req: Request, { params }: { params: { guildId: string } }) {
@@ -24,11 +23,9 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
   const access = await canManageGuild(guildId);
   if (!access.ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  // Se a whitelist estiver ativa, o dono do servidor precisa ter assinatura ativa
-  // para alterar configurações pelo dashboard.
-  const ent = await getEntitlementsForGuild(guildId, session?.user?.id ?? null);
-  if (ent.whitelistEnabled && !ent.hasActiveSubscription) {
-    return NextResponse.json({ error: "no_subscription" }, { status: 402 });
+  const ent = (access as any).entitlements;
+  if (ent && !ent.canEditConfig) {
+    return NextResponse.json({ error: "subscription_required", entitlements: ent }, { status: 403 });
   }
 
   const body = (await req.json().catch(() => null)) as GuildConfig | null;
