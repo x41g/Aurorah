@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { canManageGuild } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
 import type { GuildConfig } from "@/lib/types";
+import { getEntitlementsForGuild } from "@/lib/entitlements";
 
 const empty: GuildConfig = {};
 
@@ -22,6 +23,13 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
   const { guildId } = params;
   const access = await canManageGuild(guildId);
   if (!access.ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+
+  // Se a whitelist estiver ativa, o dono do servidor precisa ter assinatura ativa
+  // para alterar configurações pelo dashboard.
+  const ent = await getEntitlementsForGuild(guildId);
+  if (ent.whitelistEnabled && !ent.hasActiveSubscription) {
+    return NextResponse.json({ error: "no_subscription" }, { status: 402 });
+  }
 
   const body = (await req.json().catch(() => null)) as GuildConfig | null;
   if (!body) return NextResponse.json({ error: "bad_request" }, { status: 400 });

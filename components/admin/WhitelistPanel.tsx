@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { MoreHorizontal, Trash2, Plus, Copy } from "lucide-react";
+import { Trash2, Plus, Copy } from "lucide-react";
 
 type State = {
   enabled: boolean;
@@ -241,15 +240,6 @@ export function WhitelistPanel() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* 3 pontinhos: aqui pode virar dropdown depois */}
-                  <Link
-                    href={`/dashboard/${id}`}
-                    className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
-                    title="Gerenciar"
-                  >
-                    <MoreHorizontal size={18} />
-                  </Link>
-
                   <button
                     type="button"
                     onClick={() => onRemove(id)}
