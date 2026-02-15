@@ -49,7 +49,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={`${fredoka.className} bg-slate-950 text-white transition-colors duration-300 dark:bg-slate-950 dark:text-white`}>
+      <body className={`${fredoka.className} transition-colors duration-300`}>
         <Providers>{children}</Providers> 
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { signOut } from 'next-auth/react'
 import { useTheme } from '@/app/providers'
-import { Moon, Sun, LogOut } from 'lucide-react'
+import { Moon, Sun, LogOut, Heart } from 'lucide-react'
 import { useState } from 'react';
 type Props = {
   title: string
@@ -59,6 +59,17 @@ const [imgOk, setImgOk] = useState(true);
             <div className="text-white/50 text-xs">Discord</div>
           </div>
         </div>
+
+        <a
+          href="https://top.gg/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="h-10 px-3 inline-flex items-center gap-2 rounded-xl border border-pink-400/30 bg-pink-500/10 hover:bg-pink-500/20 transition text-sm"
+          title="Apoiar o bot no Top.gg"
+        >
+          <Heart size={16} />
+          <span className="hidden lg:inline">Apoiar</span>
+        </a>
 
         {/* LOGOUT */}
         <button

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { canManageGuild } from "@/lib/guard";
@@ -29,7 +29,7 @@ export default async function GuildPage({
   const botInGuild = botGuildIds.includes(String(params.guildId));
   if (!botInGuild) redirect("/dashboard");
 
-  const tab = String(searchParams.tab || "config").toLowerCase();
+  const tab = String(searchParams.tab || "panel").toLowerCase();
 
   const [cfgRow, statsRow] = await Promise.all([
     prisma.guildConfig.findUnique({ where: { guildId: String(params.guildId) } }),
@@ -53,14 +53,14 @@ export default async function GuildPage({
 
   const userId = session.user?.id ?? null;
   const isAdmin = isAdminDiscordId(userId);
+  const entitlements = (access as any).entitlements || null;
 
   return (
     <div className="flex gap-6">
-      <Sidebar guildId={params.guildId} isAdmin={isAdmin} />
+      <Sidebar guildId={params.guildId} isAdmin={isAdmin} entitlements={entitlements} />
       <div className="flex-1 min-w-0">
         <Topbar title={access.guild.name} userName={session.user?.name} userImage={session.user?.image} />
 
-        {/* TOP STATS */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
           <StatCard
             label="Tickets criados hoje"
@@ -70,16 +70,15 @@ export default async function GuildPage({
           <StatCard label="Tickets fechados hoje" value={String(closed)} />
           <StatCard
             label="Atualizado"
-            value={stats.updatedAt ? new Date(stats.updatedAt).toLocaleTimeString("pt-BR") : "—"}
+            value={stats.updatedAt ? new Date(stats.updatedAt).toLocaleTimeString("pt-BR") : "-"}
           />
         </div>
 
-        {/* TABS */}
-        {tab === "tickets" ? (
+        {tab === "stats" ? (
           <div className="card">
-            <h2 className="text-xl font-bold mb-2">Estatísticas de Tickets</h2>
+            <h2 className="text-xl font-bold mb-2">Estatisticas de Tickets</h2>
             <p className="text-white/60 mb-4">
-              O bot envia métricas automaticamente. Para resultados completos, mantenha o bot online.
+              O bot envia metricas automaticamente. Para resultados completos, mantenha o bot online.
             </p>
 
             <div className="grid md:grid-cols-3 gap-4 mb-6">
@@ -87,17 +86,11 @@ export default async function GuildPage({
               <StatCard label="Fechados hoje" value={String(closed)} />
               <StatCard label="Taxa de fechamento" value={`${closeRate}%`} hint="Fechados / Criados no dia" />
             </div>
-
-            <div className="text-sm text-white/60">
-              Próximos upgrades recomendados: tempo médio de resposta, tempo até fechar, tickets por hora e pico do dia.
-            </div>
           </div>
         ) : tab === "staff" ? (
           <div className="card">
-            <h2 className="text-xl font-bold mb-2">Estatísticas de Staff</h2>
-            <p className="text-white/60 mb-4">
-              Ranking e contadores por staff (assumidos/fechados).
-            </p>
+            <h2 className="text-xl font-bold mb-2">Estatisticas de Staff</h2>
+            <p className="text-white/60 mb-4">Ranking e contadores por staff (assumidos/fechados).</p>
 
             <div className="space-y-3">
               {stats.staff && Object.keys(stats.staff).length ? (
@@ -115,9 +108,10 @@ export default async function GuildPage({
             </div>
           </div>
         ) : (
-          <GuildSettings guildId={params.guildId} initial={cfg} />
+          <GuildSettings guildId={params.guildId} initial={cfg} tab={tab} entitlements={entitlements} />
         )}
       </div>
     </div>
   );
 }
+
