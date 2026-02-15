@@ -18,6 +18,7 @@ export async function GET(req: Request) {
     const channelId = String(searchParams.get("channelId") || "").trim();
     if (!guildId || !channelId) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
+    // No schema atual, TicketAIMemory tem channelId como @id (channelId é global no Discord, então é ok)
     const mem = await prisma.ticketAIMemory.findUnique({
       where: { channelId },
     });

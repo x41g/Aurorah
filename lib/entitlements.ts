@@ -16,6 +16,40 @@ function isSubActive(status: unknown) {
   return String(status || "").toLowerCase() === "active";
 }
 
+async function resolveGuildOwnerId(guildId: string): Promise<string | null> {
+  const gid = String(guildId || "").trim();
+  if (!gid) return null;
+
+  // 1) DB cache
+  const existing = await prisma.guildOwner.findUnique({ where: { guildId: gid } });
+  if (existing?.ownerId) return String(existing.ownerId);
+
+  // 2) Discord API (bot precisa estar no servidor)
+  const botToken = (process.env.DISCORD_BOT_TOKEN || "").trim();
+  if (!botToken) return null;
+
+  try {
+    const res = await fetch(`https://discord.com/api/v10/guilds/${encodeURIComponent(gid)}`, {
+      headers: { Authorization: `Bot ${botToken}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const d = (await res.json().catch(() => null)) as any;
+    const ownerId = d?.owner_id ? String(d.owner_id) : null;
+    if (!ownerId) return null;
+
+    await prisma.guildOwner.upsert({
+      where: { guildId: gid },
+      create: { guildId: gid, ownerId },
+      update: { ownerId },
+    });
+
+    return ownerId;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Regras:
  * - Whitelist DESATIVADA => não bloqueia nada por assinatura.
@@ -29,8 +63,7 @@ export async function getEntitlementsForGuild(guildId: string): Promise<Entitlem
   const wlIds = Array.isArray(wl?.guildIds) ? (wl!.guildIds as any).map(String) : [];
   const isWhitelisted = wlIds.includes(gid);
 
-  const ownerRow = await prisma.guildOwner.findUnique({ where: { guildId: gid } });
-  const ownerId = ownerRow?.ownerId ? String(ownerRow.ownerId) : null;
+  const ownerId = await resolveGuildOwnerId(gid);
 
   const sub = ownerId
     ? await prisma.subscription.findUnique({ where: { userId: ownerId }, include: { plan: true } })
