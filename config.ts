@@ -2,23 +2,23 @@ import { BsTicketDetailedFill, BsCreditCardFill, BsAwardFill, BsShieldFillCheck,
 import { GiBrain } from "react-icons/gi";
 
 export const config = {
-  botName: 'V5・Aurora',
+  botName: '・Aurora',
   botDescription: 'O melhor bot de tickets do Discord',
   tagline: 'Automatize as vendas do seu Discord',
   
   // 🔗 Links
   discordLink: 'https://discord.com/oauth2/authorize?client_id=1470481135321485455',
-  buyLink: '',
+  buyLink: 'https://discord.gg/6FrSDf7dSc',
   
   colors: {
 primary: '#8B5CF6',
 dark: '#EC4899',
 light: '#60A5FA',     
-accent: '#0f0f1a',
+accent: '#12071f',
 
   },
   stats: [
-    { number: '2+', label: 'Servidores Ativos' },
+    { number: '3+', label: 'Servidores Ativos' },
     { number: '10+', label: 'Tickets Processados p/ servidor' },
     { number: '99.9%', label: 'Uptime' },
   ],

@@ -82,7 +82,7 @@ export default function Home() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="space-y-4">
-            <div className="card p-3 sm:p-4 fx-hover-lift">
+            <div className="card p-1.5 sm:p-2 fx-hover-lift">
               <DashboardPreview />
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 inline-flex items-center gap-2">
@@ -134,7 +134,7 @@ export default function Home() {
                   <span className="text-3xl font-bold">{p.price}</span>
                   <span className="text-white/60">{p.period}</span>
                 </div>
-                <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className={p.popular ? 'btn-primary w-full fx-hover-lift' : 'btn-secondary w-full fx-hover-lift'}>
+                <a href={config.buyLink} target="_blank" rel="noopener noreferrer" className={p.popular ? 'btn-primary w-full fx-hover-lift' : 'btn-secondary w-full fx-hover-lift'}>
                   Comecar
                 </a>
                 <ul className="mt-6 space-y-2">
