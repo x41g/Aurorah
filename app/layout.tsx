@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     siteName: '- Auroxe Group -',
     images: [
       {
-        url: '/aurora.png', // A imagem deve estar na pasta 'public'
+        url: '/aurorabanner.png', // A imagem deve estar na pasta 'public'
         width: 1200,
         height: 630,
         alt: 'Preview do Aurora Bot',

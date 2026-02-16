@@ -179,7 +179,7 @@ export default function DashboardGeminiPreview() {
         </div>
 
         {/* Sidebar Esquerda (Servers) */}
-        <div className="hidden md:flex flex-col items-center w-16 bg-slate-950/50 py-4 gap-4 border-r border-white/5 z-20">
+        <div className="hidden md:flex flex-col items-center w-14 lg:w-16 bg-slate-950/50 py-4 gap-4 border-r border-white/5 z-20">
           <div className="group relative">
             <img
               src={SERVER_ICON_URL}
@@ -198,7 +198,7 @@ export default function DashboardGeminiPreview() {
         </div>
 
         {/* Sidebar Meio (Canais) */}
-        <div className="hidden md:flex flex-col w-56 bg-slate-900/50 border-r border-white/5 p-4 z-20">
+        <div className="hidden md:flex flex-col w-44 lg:w-56 bg-slate-900/50 border-r border-white/5 p-3 lg:p-4 z-20">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-bold text-sm text-slate-200">Sua Loja</h2>
             <ChevronRight size={14} className="text-slate-500" />

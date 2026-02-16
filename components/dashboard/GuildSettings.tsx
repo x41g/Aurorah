@@ -33,6 +33,48 @@ const AI_MODELS = [
   "mixtral-8x7b-32768",
 ]
 const PIX_TYPES = ["Email", "Telefone", "CPF", "CNPJ", "Aleatoria"]
+const TICKET_FUNCTIONS_PLACEHOLDER = `[
+  {
+    "name": "Suporte",
+    "preDescription": "Preciso de ajuda com um pedido",
+    "emoji": "🎫"
+  },
+  {
+    "name": "Financeiro",
+    "preDescription": "Assuntos de pagamento e reembolso",
+    "emoji": "💳"
+  }
+]`
+const TICKET_FORMS_PLACEHOLDER = `{
+  "Suporte": {
+    "enabled": true,
+    "title": "Form de suporte",
+    "questions": [
+      { "id": "pedido", "label": "Numero do pedido", "style": "SHORT" },
+      { "id": "detalhes", "label": "Descreva o problema", "style": "PARAGRAPH" }
+    ]
+  }
+}`
+const TRIGGERS_PLACEHOLDER = `[
+  {
+    "enabled": true,
+    "matchType": "equals",
+    "trigger": "+vip",
+    "responseType": "content",
+    "content": "Ola {client.user}, seu VIP foi ativado no ticket {ticket.channel}!"
+  },
+  {
+    "enabled": true,
+    "matchType": "startsWith",
+    "trigger": "+plano",
+    "responseType": "embed",
+    "embed": {
+      "title": "Plano VIP",
+      "description": "{author.user}, confira os detalhes com a equipe.",
+      "color": "#C084FC"
+    }
+  }
+]`
 
 function asArray(v: string) {
   return v
@@ -58,6 +100,14 @@ function defaultFunctionsFromCfg(cfg: GuildConfig) {
 function defaultFormsFromCfg(cfg: GuildConfig) {
   if (cfg.ticketForms && typeof cfg.ticketForms === 'object') return cfg.ticketForms
   return {}
+}
+
+function previewMacros(input: string) {
+  return String(input || '')
+    .replaceAll('{client.user}', '@AuroraBot')
+    .replaceAll('{author.user}', '@Cliente')
+    .replaceAll('{ticket.channel}', '#ticket-2041')
+    .replaceAll('{ticket.id}', 'ticket-2041')
 }
 
 export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = null }: Props) {
@@ -451,11 +501,34 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
             <Toggle label="Sistema de ticket" value={ticketSystemEnabled} onChange={setTicketSystemEnabled} />
             <Reveal show={ticketSystemEnabled}>
               <div className="space-y-3">
-                <Toggle label="Modo de abertura (Select)" value={ticketOpenMode === 'select'} onChange={(v) => setTicketOpenMode(v ? 'select' : 'buttons')} />
-                <Toggle label="Modo de criação (Tópico)" value={ticketCreateMode === 'thread'} onChange={(v) => setTicketCreateMode(v ? 'thread' : 'category')} />
+                <SelectField
+                  label="Modo de abertura"
+                  value={ticketOpenMode}
+                  onChange={(v) => setTicketOpenMode(v === 'select' ? 'select' : 'buttons')}
+                  options={[
+                    { value: 'buttons', label: 'Botao' },
+                    { value: 'select', label: 'Select de opcoes' },
+                  ]}
+                  placeholder="Escolha o modo de abertura"
+                />
+                <SelectField
+                  label="Modo de criacao"
+                  value={ticketCreateMode}
+                  onChange={(v) => setTicketCreateMode(v === 'thread' ? 'thread' : 'category')}
+                  options={[
+                    { value: 'category', label: 'Categoria (canal)' },
+                    { value: 'thread', label: 'Topico (thread)' },
+                  ]}
+                  placeholder="Escolha o modo de criacao"
+                />
                 <div className="grid md:grid-cols-2 gap-3">
                   <Field label="Emoji do botão" value={ticketButtonEmoji} onChange={setTicketButtonEmoji} />
-                  <Field label="Style do botão (1-4)" value={ticketButtonStyle} onChange={setTicketButtonStyle} />
+                  <Field
+                    label="Style do botao (1-4)"
+                    value={ticketButtonStyle}
+                    onChange={setTicketButtonStyle}
+                    hint="1=Azul (Primary), 2=Cinza (Secondary), 3=Verde (Success), 4=Vermelho (Danger)."
+                  />
                 </div>
               </div>
             </Reveal>
@@ -496,6 +569,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 value={ticketFunctionsText}
                 onChange={setTicketFunctionsText}
                 hint='Exemplo: [{"name":"Suporte","preDescription":"Preciso de ajuda","emoji":"??"}]'
+                placeholder={TICKET_FUNCTIONS_PLACEHOLDER}
               />
             </Section>
           </Reveal>
@@ -507,6 +581,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 value={ticketFormsText}
                 onChange={setTicketFormsText}
                 hint='Exemplo: {"Suporte":{"enabled":true,"title":"Form","questions":[{"id":"q1","label":"Qual seu problema?","style":"SHORT"}]}}'
+                placeholder={TICKET_FORMS_PLACEHOLDER}
               />
             </Section>
           </Reveal>
@@ -530,14 +605,25 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       ) : tab === 'triggers' ? (
         <fieldset disabled={!canEdit || saving} className="space-y-4 disabled:opacity-60 fx-stagger">
           <Section title="Sistema de Triggers">
-            <p className="text-sm text-white/70">
-              Configure palavras/comandos como <code>+vip</code> para resposta automatica dentro do ticket.
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <p className="text-sm text-white/70 max-w-2xl">
+                Configure palavras/comandos como <code>+vip</code> para resposta automatica dentro do ticket.
+              </p>
+              <a
+                href="/docs"
+                className="btn-secondary shrink-0 px-3 py-1.5 text-xs rounded-xl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ajuda / Docs
+              </a>
+            </div>
             <JsonField
               label="Triggers (JSON)"
               value={customTriggersText}
               onChange={setCustomTriggersText}
-              hint='Exemplo: [{"enabled":true,"matchType":"equals","trigger":"+vip","responseType":"content","content":"Ola {client.user}, seu VIP foi ativado!"}]'
+              hint='Campos práticos: enabled, matchType, trigger, responseType, content/embed.'
+              placeholder={TRIGGERS_PLACEHOLDER}
             />
           </Section>
 
@@ -549,13 +635,16 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                     <div className="text-xs text-white/60 mb-1">
                       Trigger: <code>{String(t?.trigger || '')}</code> | Match: <code>{String(t?.matchType || 'equals')}</code>
                     </div>
+                    <div className="text-xs text-fuchsia-200/80 mb-2">
+                      Simulacao de entrada: <code>{String(t?.trigger || '')}</code>
+                    </div>
                     {String(t?.responseType || 'content') === 'embed' ? (
                       <div className="rounded-lg border border-white/15 p-3">
-                        <div className="font-semibold">{String(t?.embed?.title || 'Sem titulo')}</div>
-                        <div className="text-sm text-white/75 mt-1">{String(t?.embed?.description || 'Sem descricao')}</div>
+                        <div className="font-semibold">{previewMacros(String(t?.embed?.title || 'Sem titulo'))}</div>
+                        <div className="text-sm text-white/75 mt-1">{previewMacros(String(t?.embed?.description || 'Sem descricao'))}</div>
                       </div>
                     ) : (
-                      <div className="text-sm text-white/85">{String(t?.content || 'Sem conteudo')}</div>
+                      <div className="text-sm text-white/85">{previewMacros(String(t?.content || 'Sem conteudo'))}</div>
                     )}
                   </div>
                 ))
@@ -769,7 +858,7 @@ function Field({ label, value, onChange, hint, className = '' }: { label: string
   )
 }
 
-function JsonField({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
+function JsonField({ label, value, onChange, hint, placeholder }: { label: string; value: string; onChange: (v: string) => void; hint?: string; placeholder?: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
       <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/65">
@@ -779,6 +868,7 @@ function JsonField({ label, value, onChange, hint }: { label: string; value: str
       <textarea
         className="mt-2 w-full min-h-[140px] rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 font-mono text-xs fx-focus-ring"
         value={value}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
     </div>
