@@ -422,7 +422,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   return (
     <div className="card p-5 sm:p-6 fx-fade-in">
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <span className="inline-flex items-center rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-200">
+        <span className="inline-flex items-center rounded-full border border-fuchsia-300/30 bg-fuchsia-300/10 px-3 py-1 text-xs font-semibold tracking-wide text-fuchsia-200">
           Aba ativa: {tabLabel}
         </span>
         <span className="text-xs text-white/60">Atualizacao em tempo real entre sessoes habilitada</span>
@@ -660,7 +660,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         {!ok && !err && autosaveStatus === 'saving' ? <span className="text-sm text-white/60">Atualizando em tempo real...</span> : null}
         {!ok && !err && autosaveStatus === 'saved' ? <span className="text-sm text-emerald-300">Atualizado em tempo real.</span> : null}
         {!ok && !err && autosaveStatus === 'error' ? <span className="text-sm text-amber-300">Falha no auto-update. Use Salvar.</span> : null}
-        {remoteSyncMsg ? <span className="text-sm text-cyan-300">{remoteSyncMsg}</span> : null}
+        {remoteSyncMsg ? <span className="text-sm text-fuchsia-300">{remoteSyncMsg}</span> : null}
       </div>
 
       <div className="mt-6">
@@ -688,7 +688,7 @@ function LockMsg({ text }: { text: string }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-4 sm:p-5 fx-hover-lift">
-      <h3 className="font-semibold mb-3 text-cyan-100 tracking-wide">{title}</h3>
+      <h3 className="font-semibold mb-3 text-fuchsia-100 tracking-wide">{title}</h3>
       <div className="space-y-3">{children}</div>
     </div>
   )
@@ -716,7 +716,7 @@ function Field({ label, value, onChange, hint, className = '' }: { label: string
         {label}
         {hint ? <Tooltip text={hint} /> : null}
       </label>
-      <input className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-cyan-300/40 fx-focus-ring" value={value} onChange={(e) => onChange(e.target.value)} />
+      <input className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 fx-focus-ring" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   )
 }
@@ -729,7 +729,7 @@ function JsonField({ label, value, onChange, hint }: { label: string; value: str
         {hint ? <Tooltip text={hint} /> : null}
       </label>
       <textarea
-        className="mt-2 w-full min-h-[140px] rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-cyan-300/40 font-mono text-xs fx-focus-ring"
+        className="mt-2 w-full min-h-[140px] rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 font-mono text-xs fx-focus-ring"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -741,7 +741,7 @@ function SelectField({ label, value, onChange, options, placeholder }: { label: 
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
       <label className="text-[11px] uppercase tracking-wider text-white/65">{label}</label>
-      <select className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-cyan-300/40 fx-focus-ring" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 fx-focus-ring" value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">{placeholder}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -752,4 +752,5 @@ function SelectField({ label, value, onChange, options, placeholder }: { label: 
     </div>
   )
 }
+
 

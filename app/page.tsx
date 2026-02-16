@@ -46,7 +46,7 @@ export default function Home() {
       <section className="section pt-20 sm:pt-24 relative z-10">
         <div className="container-max grid lg:grid-cols-[1.05fr_0.95fr] gap-10 items-center">
           <motion.div variants={container} initial="hidden" animate="visible" className="space-y-7">
-            <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 text-sm fx-pulse-soft">
+            <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-fuchsia-300/30 bg-fuchsia-400/10 text-fuchsia-100 text-sm fx-pulse-soft">
               <Sparkles size={16} />
               <span>{config.botDescription}</span>
             </motion.div>
@@ -105,7 +105,7 @@ export default function Home() {
               return (
                 <motion.article key={i} variants={item} className="card group">
                   <div className="h-12 w-12 rounded-2xl border border-white/15 bg-white/5 flex items-center justify-center mb-4 group-hover:scale-105 transition">
-                    <Icon className="h-6 w-6 text-cyan-200" />
+                    <Icon className="h-6 w-6 text-fuchsia-200" />
                   </div>
                   <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
                   <p className="text-white/65 text-sm leading-relaxed">{f.description}</p>
@@ -125,8 +125,8 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-5">
             {config.plans.map((p, i) => (
-              <article key={i} className={["card fx-hover-lift fx-shimmer", p.popular ? 'ring-2 ring-cyan-300/45 shadow-[0_18px_50px_rgba(34,211,238,0.16)]' : ''].join(' ')}>
-                {p.popular ? <div className="inline-flex mb-3 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-300/20 border border-cyan-300/35">Mais escolhido</div> : null}
+              <article key={i} className={["card fx-hover-lift fx-shimmer", p.popular ? 'ring-2 ring-fuchsia-300/45 shadow-[0_18px_50px_rgba(244,114,182,0.2)]' : ''].join(' ')}>
+                {p.popular ? <div className="inline-flex mb-3 px-3 py-1 rounded-full text-xs font-semibold bg-fuchsia-300/20 border border-fuchsia-300/35">Mais escolhido</div> : null}
                 <h3 className="text-2xl font-bold">{p.name}</h3>
                 <p className="text-white/65 text-sm mt-1">{p.description}</p>
                 <div className="mt-5 mb-4">
@@ -139,7 +139,7 @@ export default function Home() {
                 <ul className="mt-6 space-y-2">
                   {p.features.map((ft, j) => (
                     <li key={j} className="flex items-start gap-2 text-sm text-white/80">
-                      <Check size={16} className="mt-0.5 text-cyan-300" />
+                      <Check size={16} className="mt-0.5 text-fuchsia-300" />
                       <span>{ft}</span>
                     </li>
                   ))}

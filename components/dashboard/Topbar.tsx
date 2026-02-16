@@ -41,7 +41,7 @@ export function Topbar({ title, userName, userImage }: Props) {
               onError={() => setImgOk(false)}
             />
           ) : (
-            <div className="h-9 w-9 flex items-center justify-center rounded-full bg-cyan-400 text-slate-900 font-semibold">
+            <div className="h-9 w-9 flex items-center justify-center rounded-full bg-fuchsia-300 text-slate-900 font-semibold">
               {initial}
             </div>
           )}
@@ -56,7 +56,7 @@ export function Topbar({ title, userName, userImage }: Props) {
           href="https://top.gg/"
           target="_blank"
           rel="noopener noreferrer"
-          className="h-10 px-3 inline-flex items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-400/10 hover:bg-cyan-400/20 transition text-sm fx-hover-lift fx-shimmer"
+          className="h-10 px-3 inline-flex items-center gap-2 rounded-xl border border-fuchsia-300/30 bg-fuchsia-400/10 hover:bg-fuchsia-400/20 transition text-sm fx-hover-lift fx-shimmer"
           title="Apoiar o bot no Top.gg"
         >
           <Heart size={16} />
@@ -74,3 +74,4 @@ export function Topbar({ title, userName, userImage }: Props) {
     </div>
   )
 }
+

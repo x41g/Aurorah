@@ -35,7 +35,7 @@ function cls(active: boolean, disabled = false) {
   return [
     'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 border',
     active
-      ? 'bg-cyan-400/15 border-cyan-300/45 shadow-lg shadow-cyan-400/10'
+      ? 'bg-fuchsia-400/15 border-fuchsia-300/45 shadow-lg shadow-fuchsia-400/10'
       : 'border-transparent hover:bg-white/5',
     disabled ? 'opacity-45 pointer-events-none' : '',
   ].join(' ')
@@ -225,3 +225,4 @@ export function Sidebar({
     </>
   )
 }
+
