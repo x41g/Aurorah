@@ -19,6 +19,13 @@ type Props = {
 }
 
 const KNOWN_BANKS = ['inter', 'picpay', 'nubank', '99pay', 'pagseguro']
+const SAFE_PAY_BANK_META: Record<string, { label: string; emojiId: string }> = {
+  inter: { label: 'Inter', emojiId: '1470528688331296851' },
+  picpay: { label: 'PicPay', emojiId: '1470501475309453344' },
+  nubank: { label: 'Nubank', emojiId: '1470528685395410965' },
+  '99pay': { label: '99Pay', emojiId: '1470528684078399638' },
+  pagseguro: { label: 'PagSeguro', emojiId: '1470528686964084890' },
+}
 const AI_MODELS = [
   "openai/gpt-oss-120b",
   "llama-3.1-8b-instant",
@@ -471,15 +478,30 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
             <Reveal show={safePayEnabled}>
               <div className="grid sm:grid-cols-2 gap-2 mt-2">
                 {KNOWN_BANKS.map((bank) => (
-                  <label key={bank} className="rounded-xl border border-white/10 px-3 py-2 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={safePayBanksOff.includes(bank)}
-                      onChange={() => toggleBank(bank)}
-                      className="accent-violet-400"
-                    />
-                    <span className="text-sm">{bank}</span>
-                  </label>
+                  <button
+                    key={bank}
+                    type="button"
+                    onClick={() => toggleBank(bank)}
+                    aria-pressed={!safePayBanksOff.includes(bank)}
+                    className="rounded-xl border border-white/10 px-3 py-2 flex items-center justify-between gap-3 bg-white/5 hover:bg-white/[0.08] transition"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img
+                        src={`https://cdn.discordapp.com/emojis/${SAFE_PAY_BANK_META[bank]?.emojiId || '1470501457026486332'}.png?size=64&quality=lossless`}
+                        alt={`Logo ${SAFE_PAY_BANK_META[bank]?.label || bank}`}
+                        className="h-5 w-5 rounded-sm object-contain"
+                      />
+                      <span className="text-sm truncate">{SAFE_PAY_BANK_META[bank]?.label || bank}</span>
+                    </div>
+                    <span
+                      className={[
+                        'inline-flex items-center justify-center h-7 min-w-7 px-2 rounded-lg text-xs font-semibold border',
+                        safePayBanksOff.includes(bank) ? 'bg-red-500/20 border-red-400/40 text-red-200' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200',
+                      ].join(' ')}
+                    >
+                      {safePayBanksOff.includes(bank) ? 'X' : 'V'}
+                    </span>
+                  </button>
                 ))}
               </div>
             </Reveal>
