@@ -19,12 +19,12 @@ type Props = {
 }
 
 const KNOWN_BANKS = ['inter', 'picpay', 'nubank', '99pay', 'pagseguro']
-const SAFE_PAY_BANK_META: Record<string, { label: string; emojiId: string }> = {
-  inter: { label: 'Inter', emojiId: '1470528688331296851' },
-  picpay: { label: 'PicPay', emojiId: '1470501475309453344' },
-  nubank: { label: 'Nubank', emojiId: '1470528685395410965' },
-  '99pay': { label: '99Pay', emojiId: '1470528684078399638' },
-  pagseguro: { label: 'PagSeguro', emojiId: '1470528686964084890' },
+const SAFE_PAY_BANK_META: Record<string, { label: string; logoUrl: string }> = {
+  inter: { label: 'Inter', logoUrl: 'https://logo.clearbit.com/inter.co' },
+  picpay: { label: 'PicPay', logoUrl: 'https://logo.clearbit.com/picpay.com' },
+  nubank: { label: 'Nubank', logoUrl: 'https://logo.clearbit.com/nubank.com.br' },
+  '99pay': { label: '99Pay', logoUrl: 'https://logo.clearbit.com/99app.com' },
+  pagseguro: { label: 'PagSeguro', logoUrl: 'https://logo.clearbit.com/pagbank.com.br' },
 }
 const AI_MODELS = [
   "openai/gpt-oss-120b",
@@ -571,29 +571,30 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           <Section title="SafePay">
             <Toggle label="SafePay habilitado" value={safePayEnabled} onChange={setSafePayEnabled} />
             <Reveal show={safePayEnabled}>
-              <div className="mt-2 mb-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80">
+              <div className="mt-2 mb-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs sm:text-sm text-white/80">
                 V = liberado para uso | X = bloqueado no SafePay
               </div>
-              <div className="grid sm:grid-cols-2 gap-2 mt-2">
+              <div className="grid sm:grid-cols-2 gap-3 mt-2">
                 {KNOWN_BANKS.map((bank) => (
                   <button
                     key={bank}
                     type="button"
                     onClick={() => toggleBank(bank)}
                     aria-pressed={!safePayBanksOff.includes(bank)}
-                    className="rounded-xl border border-white/10 px-3 py-2 flex items-center justify-between gap-3 bg-white/5 hover:bg-white/[0.08] transition"
+                    className="min-h-14 rounded-xl border border-white/10 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between gap-3 bg-white/5 hover:bg-white/[0.08] transition"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <img
-                        src={`https://cdn.discordapp.com/emojis/${SAFE_PAY_BANK_META[bank]?.emojiId || '1470501457026486332'}.png?size=64&quality=lossless`}
+                        src={SAFE_PAY_BANK_META[bank]?.logoUrl || 'https://logo.clearbit.com/discord.com'}
                         alt={`Logo ${SAFE_PAY_BANK_META[bank]?.label || bank}`}
-                        className="h-5 w-5 rounded-sm object-contain"
+                        className="h-7 w-7 sm:h-8 sm:w-8 rounded-md object-contain bg-white"
+                        referrerPolicy="no-referrer"
                       />
-                      <span className="text-[15px] font-medium text-white/90 truncate">{SAFE_PAY_BANK_META[bank]?.label || bank}</span>
+                      <span className="text-sm sm:text-base font-semibold text-white/90 truncate">{SAFE_PAY_BANK_META[bank]?.label || bank}</span>
                     </div>
                     <span
                       className={[
-                        'inline-flex items-center justify-center h-7 min-w-7 px-2 rounded-lg text-xs font-semibold border',
+                        'inline-flex items-center justify-center h-8 min-w-12 px-2 rounded-lg text-xs sm:text-sm font-semibold border whitespace-nowrap',
                         safePayBanksOff.includes(bank) ? 'bg-red-500/20 border-red-400/40 text-red-200' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200',
                       ].join(' ')}
                     >
@@ -641,9 +642,11 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       )}
 
       <div className="flex flex-wrap items-center gap-3 mt-6">
-        <button type="button" className="btn-primary px-6 py-3 rounded-2xl disabled:opacity-60" onClick={() => void save('manual')} disabled={saving || (tab === 'ai' && !canUseAI) || ((tab === 'payments') && !canUsePayments) || ((tab === 'safepay') && !canUseSafePay) || ((tab === 'tickets' || tab === 'panel') && !canEdit)}>
-          {saving ? 'Salvando...' : 'Salvar'}
-        </button>
+        {(saving || autosaveStatus === 'error') ? (
+          <button type="button" className="btn-primary px-6 py-3 rounded-2xl disabled:opacity-60" onClick={() => void save('manual')} disabled={saving || (tab === 'ai' && !canUseAI) || ((tab === 'payments') && !canUsePayments) || ((tab === 'safepay') && !canUseSafePay) || ((tab === 'tickets' || tab === 'panel') && !canEdit)}>
+            {saving ? 'Salvando...' : 'Salvar agora'}
+          </button>
+        ) : null}
 
         {ok ? <span className="text-sm text-emerald-300">{ok}</span> : null}
         {err ? <span className="text-sm text-red-300">{err}</span> : null}

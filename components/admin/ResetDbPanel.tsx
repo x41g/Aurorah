@@ -15,15 +15,11 @@ export function ResetDbPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function onReset() {
     setError("");
     setOk("");
-
-    const confirmed = confirm(
-      "Isso vai apagar configs, stats, owners, transcripts e uso mensal. (Planos/assinaturas podem ser mantidos).\n\nTem certeza?"
-    );
-    if (!confirmed) return;
 
     try {
       setLoading(true);
@@ -50,7 +46,7 @@ export function ResetDbPanel() {
         </div>
 
         <button
-          onClick={onReset}
+          onClick={() => setConfirmOpen(true)}
           disabled={loading}
           className="h-10 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold disabled:opacity-60"
         >
@@ -60,6 +56,36 @@ export function ResetDbPanel() {
 
       {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
       {ok ? <div className="mt-3 text-sm text-emerald-200">{ok}</div> : null}
+
+      {confirmOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#151622] p-5 shadow-2xl">
+            <div className="text-lg font-semibold">Confirmar limpeza</div>
+            <p className="mt-2 text-sm text-white/70">
+              Isso vai apagar configs, stats, owners, transcripts e uso mensal. Planos/assinaturas podem ser mantidos.
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                className="px-4 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-sm"
+              >
+                Não
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmOpen(false);
+                  void onReset();
+                }}
+                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold"
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
