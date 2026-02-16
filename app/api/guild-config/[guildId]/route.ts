@@ -7,6 +7,7 @@ import {
   sanitizePrompt,
   validatePromptSecurity,
 } from "@/lib/promptSecurity";
+import { publishGuildConfig } from "@/lib/guildConfigEvents";
 
 const empty: GuildConfig = {};
 
@@ -147,6 +148,12 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
     where: { guildId: String(guildId) },
     create: { guildId: String(guildId), data: finalCfg as any },
     update: { data: finalCfg as any },
+  });
+
+  publishGuildConfig({
+    guildId: String(guildId),
+    updatedAt: Date.now(),
+    clientId: req.headers.get("x-dashboard-client-id"),
   });
 
   // se desativou transcript, invalida todos do servidor imediatamente

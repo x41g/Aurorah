@@ -67,6 +67,9 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const [err, setErr] = useState<string | null>(null)
   const didInitAutosave = useRef(false)
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const suppressNextAutosaveRef = useRef(false)
+  const clientIdRef = useRef(`dash-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  const [remoteSyncMsg, setRemoteSyncMsg] = useState<string | null>(null)
 
   const canEdit = Boolean(entitlements?.canEditConfig)
   const canUseAI = Boolean(entitlements?.canUseAI)
@@ -125,6 +128,56 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
   const [channels, setChannels] = useState<{ id: string; name: string; type: number }[]>([])
 
+  function applyConfigToForm(cfg: GuildConfig) {
+    setStaffRoleId(cfg.staffRoleId ?? '')
+    setTicketCategoryId(cfg.ticketCategoryId ?? '')
+    setLogsChannelId(cfg.logsChannelId ?? '')
+    setPanelChannelId(cfg.panelChannelId ?? '')
+
+    setTranscriptEnabled(Boolean(cfg.transcriptEnabled ?? true))
+    setTranscriptTtlDays(String(cfg.transcriptTtlDays ?? 30))
+    setAllowOpenRoleIds((cfg.allowOpenRoleIds ?? []).join(', '))
+    setMaxOpenTicketsPerUser(String(cfg.maxOpenTicketsPerUser ?? 1))
+    setCooldownSeconds(String(cfg.cooldownSeconds ?? 0))
+
+    setTicketSystemEnabled(Boolean(cfg.ticketSystemEnabled ?? true))
+    setTicketOpenMode(cfg.ticketOpenMode === 'select' ? 'select' : 'buttons')
+    setTicketCreateMode(cfg.ticketCreateMode === 'thread' ? 'thread' : 'category')
+    setTicketButtonEmoji(cfg.ticketButtonEmoji ?? '??')
+    setTicketButtonStyle(String(cfg.ticketButtonStyle ?? 1))
+    setTicketAppearanceMode(cfg.ticketAppearanceMode === 'content' ? 'content' : 'embed')
+    setTicketEmbedTitle(cfg.ticketEmbedTitle ?? 'Sistema de Tickets')
+    setTicketEmbedDescription(cfg.ticketEmbedDescription ?? 'Clique abaixo para abrir seu atendimento.')
+    setTicketEmbedColor(cfg.ticketEmbedColor ?? '#4800ff')
+    setTicketEmbedBannerUrl(cfg.ticketEmbedBannerUrl ?? '')
+    setTicketEmbedThumbUrl(cfg.ticketEmbedThumbUrl ?? '')
+    setTicketContentText(cfg.ticketContentText ?? 'Olá! Clique abaixo para abrir ticket.')
+    setTicketFunctionsText(JSON.stringify(defaultFunctionsFromCfg(cfg), null, 2))
+    setTicketFormsText(JSON.stringify(defaultFormsFromCfg(cfg), null, 2))
+
+    setAiEnabled(Boolean(cfg.aiEnabled ?? false))
+    setAiModel(cfg.aiModel ?? 'openai/gpt-oss-120b')
+    setAiPrompt(cfg.aiPrompt ?? '')
+    setAiStripMentions(cfg.aiPromptSecurity?.stripMentions ?? true)
+    setAiStripLinks(cfg.aiPromptSecurity?.stripLinks ?? true)
+    setAiBlockJailbreakHints(cfg.aiPromptSecurity?.blockJailbreakHints ?? true)
+
+    setPaymentAutoEnabled(Boolean(cfg.paymentAutoEnabled ?? false))
+    setPaymentAccessToken(cfg.paymentAccessToken ?? '')
+    setPaymentSemiEnabled(Boolean(cfg.paymentSemiEnabled ?? false))
+    setPaymentSemiKey(cfg.paymentSemiKey ?? '')
+    setPaymentSemiType(cfg.paymentSemiType ?? 'Email')
+    setPaymentSemiApproverRoleId(cfg.paymentSemiApproverRoleId ?? '')
+
+    setSafePayEnabled(Boolean(cfg.safePayEnabled ?? false))
+    setSafePayBanksOff(Array.isArray(cfg.safePayBanksOff) ? cfg.safePayBanksOff : [])
+
+    setFeatureRenameTicket(Boolean(cfg.featureRenameTicket ?? false))
+    setFeatureNotifyUser(Boolean(cfg.featureNotifyUser ?? false))
+    setFeatureAddUser(Boolean(cfg.featureAddUser ?? false))
+    setFeatureRemoveUser(Boolean(cfg.featureRemoveUser ?? false))
+  }
+
   useEffect(() => {
     fetch(`/api/discord/guilds/${guildId}/roles`)
       .then((r) => r.json())
@@ -135,6 +188,41 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       .then((r) => r.json())
       .then((data) => setChannels(Array.isArray(data) ? data : []))
       .catch(() => setChannels([]))
+  }, [guildId])
+
+  useEffect(() => {
+    const source = new EventSource(`/api/guild-config/${guildId}/events`)
+    let msgTimer: ReturnType<typeof setTimeout> | null = null
+
+    const onConfig = async (ev: MessageEvent) => {
+      const data = safeJsonParse<{ clientId?: string | null }>(String(ev.data || '{}'), {})
+      if (data.clientId && data.clientId === clientIdRef.current) return
+
+      const r = await fetch(`/api/guild-config/${guildId}`, { cache: 'no-store' }).catch(() => null)
+      if (!r || !r.ok) return
+      const json = (await r.json().catch(() => null)) as { config?: GuildConfig } | null
+      if (!json?.config) return
+
+      suppressNextAutosaveRef.current = true
+      applyConfigToForm(json.config)
+      setRemoteSyncMsg('Atualizado ao vivo por outra sessão.')
+      if (msgTimer) clearTimeout(msgTimer)
+      msgTimer = setTimeout(() => setRemoteSyncMsg(null), 2000)
+    }
+    const onConfigEvent: EventListener = (ev) => {
+      void onConfig(ev as MessageEvent)
+    }
+
+    source.addEventListener('config', onConfigEvent)
+    source.onerror = () => {
+      // reconnection is automatic in EventSource
+    }
+
+    return () => {
+      source.removeEventListener('config', onConfigEvent)
+      source.close()
+      if (msgTimer) clearTimeout(msgTimer)
+    }
   }, [guildId])
 
   const roleOptions = roles.map((r) => ({ value: r.id, label: r.name }))
@@ -272,7 +360,10 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     try {
       const r = await fetch(`/api/guild-config/${guildId}`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'x-dashboard-client-id': clientIdRef.current,
+        },
         body: JSON.stringify(preview),
       })
       if (!r.ok) {
@@ -304,6 +395,10 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
 
   useEffect(() => {
     if (!canAutoSave || saving) return
+    if (suppressNextAutosaveRef.current) {
+      suppressNextAutosaveRef.current = false
+      return
+    }
     if (!didInitAutosave.current) {
       didInitAutosave.current = true
       return
@@ -476,6 +571,9 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           <Section title="SafePay">
             <Toggle label="SafePay habilitado" value={safePayEnabled} onChange={setSafePayEnabled} />
             <Reveal show={safePayEnabled}>
+              <div className="mt-2 mb-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80">
+                V = liberado para uso | X = bloqueado no SafePay
+              </div>
               <div className="grid sm:grid-cols-2 gap-2 mt-2">
                 {KNOWN_BANKS.map((bank) => (
                   <button
@@ -491,7 +589,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                         alt={`Logo ${SAFE_PAY_BANK_META[bank]?.label || bank}`}
                         className="h-5 w-5 rounded-sm object-contain"
                       />
-                      <span className="text-sm truncate">{SAFE_PAY_BANK_META[bank]?.label || bank}</span>
+                      <span className="text-[15px] font-medium text-white/90 truncate">{SAFE_PAY_BANK_META[bank]?.label || bank}</span>
                     </div>
                     <span
                       className={[
@@ -499,7 +597,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                         safePayBanksOff.includes(bank) ? 'bg-red-500/20 border-red-400/40 text-red-200' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200',
                       ].join(' ')}
                     >
-                      {safePayBanksOff.includes(bank) ? 'X' : 'V'}
+                      {safePayBanksOff.includes(bank) ? 'X Bloq.' : 'V Livre'}
                     </span>
                   </button>
                 ))}
@@ -552,6 +650,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         {!ok && !err && autosaveStatus === 'saving' ? <span className="text-sm text-white/60">Atualizando em tempo real...</span> : null}
         {!ok && !err && autosaveStatus === 'saved' ? <span className="text-sm text-emerald-300">Atualizado em tempo real.</span> : null}
         {!ok && !err && autosaveStatus === 'error' ? <span className="text-sm text-amber-300">Falha no auto-update. Use Salvar.</span> : null}
+        {remoteSyncMsg ? <span className="text-sm text-cyan-300">{remoteSyncMsg}</span> : null}
       </div>
 
       <div className="mt-6">
