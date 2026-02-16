@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 
 export default function NoServersPage() {
   return (
@@ -19,6 +20,7 @@ export default function NoServersPage() {
               <Link href="/" className="btn-primary px-6 py-3 rounded-2xl">
                 Voltar para a landing
               </Link>
+              <SignOutButton className="btn-secondary px-6 py-3 rounded-2xl" />
             </div>
 
             <div className="mt-6 text-sm text-white/50">

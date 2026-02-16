@@ -12,6 +12,8 @@ import {
   BarChart3,
   Home,
   CreditCard,
+  Menu,
+  X,
 } from 'lucide-react'
 
 type Item = {
@@ -52,6 +54,7 @@ export function Sidebar({
   guildId?: string
   entitlements?: EntitlementsLike
 }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
   const sp = useSearchParams()
   const currentTab = (sp.get('tab') || 'panel').toLowerCase()
@@ -128,60 +131,98 @@ export function Sidebar({
     ]
   }, [isAdmin])
 
-  return (
-    <aside className="w-[280px] shrink-0">
-      <div className="card sticky top-6 p-4">
-        <div className="flex items-center gap-3 mb-2">
-          {logoSrc ? (
-            <img
-              src={logoSrc}
-              alt="Logo"
-              className="h-10 w-10 rounded-2xl border border-white/10 object-cover"
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).style.display = 'none'
-              }}
-            />
-          ) : (
-            <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10" />
-          )}
+  const content = (
+    <>
+      <div className="flex items-center gap-3 mb-2">
+        {logoSrc ? (
+          <img
+            src={logoSrc}
+            alt="Logo"
+            className="h-10 w-10 rounded-2xl border border-white/10 object-cover"
+            onError={(e) => {
+              ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+            }}
+          />
+        ) : (
+          <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10" />
+        )}
 
-          <div className="min-w-0 flex-1">
-            <div className="font-bold leading-tight truncate">Painel</div>
-            <div className="text-xs text-white/60 leading-tight truncate">{subtitle}</div>
-          </div>
-
-          <Link href="/" title="Home" className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center justify-center transition">
-            <Home size={16} />
-          </Link>
+        <div className="min-w-0 flex-1">
+          <div className="font-bold leading-tight truncate">Painel</div>
+          <div className="text-xs text-white/60 leading-tight truncate">{subtitle}</div>
         </div>
 
-        <nav className="space-y-2">
-          {sectionTitle(guildId ? 'Servidor' : 'Geral')}
-          {mainItems.map((it) => {
-            const active = it.href.includes('?') ? isItemActive(it.href) : pathname === it.href
-            return (
-              <div key={it.href} title={it.disabled ? it.disabledHint : ''}>
-                <Link href={it.disabled ? '#' : it.href} className={cls(active, it.disabled)}>
-                  {it.icon}
-                  <span className="font-medium">{it.label}</span>
-                </Link>
-              </div>
-            )
-          })}
+        <Link href="/" title="Home" className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center justify-center transition">
+          <Home size={16} />
+        </Link>
+      </div>
 
-          {adminItems.length ? sectionTitle('Administração') : null}
-          {adminItems.map((it) => {
-            const active = pathname === it.href || pathname.startsWith(it.href + '/')
-            return (
-              <Link key={it.href} href={it.href} className={cls(active)}>
+      <nav className="space-y-2">
+        {sectionTitle(guildId ? 'Servidor' : 'Geral')}
+        {mainItems.map((it) => {
+          const active = it.href.includes('?') ? isItemActive(it.href) : pathname === it.href
+          return (
+            <div key={it.href} title={it.disabled ? it.disabledHint : ''}>
+              <Link href={it.disabled ? '#' : it.href} className={cls(active, it.disabled)} onClick={() => setMobileOpen(false)}>
                 {it.icon}
                 <span className="font-medium">{it.label}</span>
               </Link>
-            )
-          })}
-        </nav>
+            </div>
+          )
+        })}
+
+        {adminItems.length ? sectionTitle('Administração') : null}
+        {adminItems.map((it) => {
+          const active = pathname === it.href || pathname.startsWith(it.href + '/')
+          return (
+            <Link key={it.href} href={it.href} className={cls(active)} onClick={() => setMobileOpen(false)}>
+              {it.icon}
+              <span className="font-medium">{it.label}</span>
+            </Link>
+          )
+        })}
+      </nav>
+    </>
+  )
+
+  return (
+    <>
+      <div className="lg:hidden mb-2">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="h-10 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition inline-flex items-center gap-2"
+        >
+          <Menu size={16} />
+          <span className="text-sm font-medium">Menu</span>
+        </button>
       </div>
-    </aside>
+
+      {mobileOpen ? (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/60">
+          <div className="absolute left-0 top-0 h-full w-[86%] max-w-[320px] p-3">
+            <div className="card h-full overflow-auto p-4">
+              <div className="flex items-center justify-end mb-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center justify-center"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              {content}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <aside className="hidden lg:block w-[280px] shrink-0">
+        <div className="card sticky top-6 p-4">
+          {content}
+        </div>
+      </aside>
+    </>
   )
 }
 
