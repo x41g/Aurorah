@@ -123,6 +123,30 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
     featureNotifyUser: body.featureNotifyUser === undefined ? undefined : Boolean(body.featureNotifyUser),
     featureAddUser: body.featureAddUser === undefined ? undefined : Boolean(body.featureAddUser),
     featureRemoveUser: body.featureRemoveUser === undefined ? undefined : Boolean(body.featureRemoveUser),
+
+    customTriggers: Array.isArray(body.customTriggers)
+      ? body.customTriggers
+          .map((t: any) => ({
+            enabled: t?.enabled !== false,
+            matchType: ["equals", "startsWith", "includes", "regex"].includes(String(t?.matchType))
+              ? (String(t.matchType) as "equals" | "startsWith" | "includes" | "regex")
+              : "equals",
+            trigger: String(t?.trigger || "").trim().slice(0, 120),
+            responseType: (String(t?.responseType || "content") === "embed" ? "embed" : "content") as "embed" | "content",
+            content: t?.content ? String(t.content).slice(0, 1800) : "",
+            embed:
+              t?.embed && typeof t.embed === "object"
+                ? {
+                    title: t.embed?.title ? String(t.embed.title).slice(0, 256) : "",
+                    description: t.embed?.description ? String(t.embed.description).slice(0, 1800) : "",
+                    color: t.embed?.color ? String(t.embed.color).slice(0, 16) : "",
+                  }
+                : undefined,
+            deleteUserMessage: Boolean(t?.deleteUserMessage),
+          }))
+          .filter((t: any) => t.trigger.length > 0)
+          .slice(0, 40)
+      : undefined,
   };
 
   // Enforce plan capabilities on the backend as well.

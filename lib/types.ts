@@ -69,6 +69,21 @@ export type GuildConfig = {
   featureNotifyUser?: boolean
   featureAddUser?: boolean
   featureRemoveUser?: boolean
+
+  // Custom triggers
+  customTriggers?: Array<{
+    enabled?: boolean
+    matchType?: "equals" | "startsWith" | "includes" | "regex"
+    trigger: string
+    responseType?: "content" | "embed"
+    content?: string
+    embed?: {
+      title?: string
+      description?: string
+      color?: string
+    }
+    deleteUserMessage?: boolean
+  }>
 }
 
 export type GuildStats = {

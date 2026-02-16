@@ -102,6 +102,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
 
   const [ticketFunctionsText, setTicketFunctionsText] = useState(JSON.stringify(defaultFunctionsFromCfg(initial), null, 2))
   const [ticketFormsText, setTicketFormsText] = useState(JSON.stringify(defaultFormsFromCfg(initial), null, 2))
+  const [customTriggersText, setCustomTriggersText] = useState(JSON.stringify(Array.isArray(initial.customTriggers) ? initial.customTriggers : [], null, 2))
 
   const [aiEnabled, setAiEnabled] = useState(Boolean(initial.aiEnabled ?? false))
   const [aiModel, setAiModel] = useState(initial.aiModel ?? 'openai/gpt-oss-120b')
@@ -154,6 +155,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     setTicketContentText(cfg.ticketContentText ?? 'Olá! Clique abaixo para abrir ticket.')
     setTicketFunctionsText(JSON.stringify(defaultFunctionsFromCfg(cfg), null, 2))
     setTicketFormsText(JSON.stringify(defaultFormsFromCfg(cfg), null, 2))
+    setCustomTriggersText(JSON.stringify(Array.isArray(cfg.customTriggers) ? cfg.customTriggers : [], null, 2))
 
     setAiEnabled(Boolean(cfg.aiEnabled ?? false))
     setAiModel(cfg.aiModel ?? 'openai/gpt-oss-120b')
@@ -237,6 +239,10 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     () => safeJsonParse<GuildConfig['ticketForms']>(ticketFormsText, {}),
     [ticketFormsText]
   )
+  const parsedCustomTriggers = useMemo(
+    () => safeJsonParse<GuildConfig['customTriggers']>(customTriggersText, []),
+    [customTriggersText]
+  )
 
   const preview = useMemo(() => {
     const cfg: GuildConfig = {
@@ -265,6 +271,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       ticketContentText: ticketContentText || undefined,
       ticketFunctions: Array.isArray(parsedTicketFunctions) ? parsedTicketFunctions : [],
       ticketForms: parsedTicketForms && typeof parsedTicketForms === 'object' ? parsedTicketForms : {},
+      customTriggers: Array.isArray(parsedCustomTriggers) ? parsedCustomTriggers : [],
 
       aiEnabled,
       aiModel: aiModel || undefined,
@@ -315,6 +322,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     ticketContentText,
     parsedTicketFunctions,
     parsedTicketForms,
+    parsedCustomTriggers,
     aiEnabled,
     aiModel,
     aiPrompt,
@@ -336,10 +344,11 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   ])
 
   const ticketTabLocked = !canEdit && tab === 'tickets'
+  const triggerTabLocked = !canEdit && tab === 'triggers'
   const aiTabLocked = !canUseAI && tab === 'ai'
   const paymentTabLocked = !canUsePayments && tab === 'payments'
   const safePayTabLocked = !canUseSafePay && tab === 'safepay'
-  const tabLabel = tab === 'tickets' ? 'Tickets' : tab === 'ai' ? 'IA' : tab === 'payments' ? 'Pagamentos' : tab === 'safepay' ? 'SafePay' : 'Painel'
+  const tabLabel = tab === 'tickets' ? 'Tickets' : tab === 'triggers' ? 'Triggers' : tab === 'ai' ? 'IA' : tab === 'payments' ? 'Pagamentos' : tab === 'safepay' ? 'SafePay' : 'Painel'
 
   const canAutoSave =
     tab === 'ai'
@@ -431,6 +440,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       <p className="text-white/70 mb-6">Acoes bloqueadas pelo plano aparecem desativadas automaticamente.</p>
 
       {ticketTabLocked ? <LockMsg text="Seu plano atual não libera edição de Tickets." /> : null}
+      {triggerTabLocked ? <LockMsg text="Seu plano atual não libera edição de Triggers." /> : null}
       {aiTabLocked ? <LockMsg text="Seu plano atual não libera configuração de IA." /> : null}
       {paymentTabLocked ? <LockMsg text="Seu plano atual não libera configuração de pagamentos." /> : null}
       {safePayTabLocked ? <LockMsg text="Seu plano atual não libera configuração de SafePay." /> : null}
@@ -516,6 +526,44 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
               )}
             </Section>
           </Reveal>
+        </fieldset>
+      ) : tab === 'triggers' ? (
+        <fieldset disabled={!canEdit || saving} className="space-y-4 disabled:opacity-60 fx-stagger">
+          <Section title="Sistema de Triggers">
+            <p className="text-sm text-white/70">
+              Configure palavras/comandos como <code>+vip</code> para resposta automatica dentro do ticket.
+            </p>
+            <JsonField
+              label="Triggers (JSON)"
+              value={customTriggersText}
+              onChange={setCustomTriggersText}
+              hint='Exemplo: [{"enabled":true,"matchType":"equals","trigger":"+vip","responseType":"content","content":"Ola {client.user}, seu VIP foi ativado!"}]'
+            />
+          </Section>
+
+          <Section title="Preview de Resposta">
+            <div className="space-y-3">
+              {Array.isArray(parsedCustomTriggers) && parsedCustomTriggers.length ? (
+                parsedCustomTriggers.slice(0, 3).map((t: any, i: number) => (
+                  <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="text-xs text-white/60 mb-1">
+                      Trigger: <code>{String(t?.trigger || '')}</code> | Match: <code>{String(t?.matchType || 'equals')}</code>
+                    </div>
+                    {String(t?.responseType || 'content') === 'embed' ? (
+                      <div className="rounded-lg border border-white/15 p-3">
+                        <div className="font-semibold">{String(t?.embed?.title || 'Sem titulo')}</div>
+                        <div className="text-sm text-white/75 mt-1">{String(t?.embed?.description || 'Sem descricao')}</div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-white/85">{String(t?.content || 'Sem conteudo')}</div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-white/60">Sem triggers configurados.</div>
+              )}
+            </div>
+          </Section>
         </fieldset>
       ) : tab === 'ai' ? (
         <fieldset disabled={!canUseAI || saving} className="space-y-4 disabled:opacity-60 fx-stagger">

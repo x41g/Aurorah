@@ -38,6 +38,7 @@ export default function Home() {
             <a href="#features" className="text-white/75 hover:text-white transition">Features</a>
             <a href="#pricing" className="text-white/75 hover:text-white transition">Precos</a>
             <a href="#faq" className="text-white/75 hover:text-white transition">FAQ</a>
+            <a href="/docs" className="text-white/75 hover:text-white transition">Docs</a>
             <a href="/dashboard" className="btn-secondary px-4 py-2">Dashboard</a>
           </div>
         </div>

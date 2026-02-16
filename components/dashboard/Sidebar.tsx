@@ -115,11 +115,13 @@ export function Sidebar({
     return [
       { href: `/dashboard/${guildId}?tab=panel`, label: 'Painel', icon: <LayoutDashboard size={18} /> },
       { href: `/dashboard/${guildId}?tab=tickets`, label: 'Tickets', icon: <Bot size={18} />, disabled: !canEditConfig, disabledHint: 'Exige dashboard editavel no plano.' },
+      { href: `/dashboard/${guildId}?tab=triggers`, label: 'Triggers', icon: <Bot size={18} />, disabled: !canEditConfig, disabledHint: 'Exige dashboard editavel no plano.' },
       { href: `/dashboard/${guildId}?tab=ai`, label: 'IA', icon: <Sparkles size={18} />, disabled: !canUseAI, disabledHint: 'Seu plano atual nao inclui IA.' },
       { href: `/dashboard/${guildId}?tab=payments`, label: 'Pagamentos', icon: <Wallet size={18} />, disabled: !canUsePayments, disabledHint: 'Seu plano atual nao inclui pagamentos.' },
       { href: `/dashboard/${guildId}?tab=safepay`, label: 'SafePay', icon: <Shield size={18} />, disabled: !canUseSafePay, disabledHint: 'Seu plano atual nao inclui SafePay.' },
       { href: `/dashboard/${guildId}?tab=stats`, label: 'Estatisticas', icon: <BarChart3 size={18} /> },
       { href: `/dashboard/${guildId}?tab=staff`, label: 'Staff', icon: <BarChart3 size={18} /> },
+      { href: '/docs', label: 'Docs', icon: <CreditCard size={18} /> },
     ]
   }, [guildId, canEditConfig, canUseAI, canUsePayments, canUseSafePay])
 
