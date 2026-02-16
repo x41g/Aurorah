@@ -25,6 +25,7 @@ type ConfirmState = {
 
 export function PlansPanel() {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [priceInput, setPriceInput] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [ok, setOk] = useState("");
@@ -38,7 +39,13 @@ export function PlansPanel() {
       const res = await fetch("/api/admin/plans", { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Falha ao carregar planos");
-      setPlans(Array.isArray(data?.plans) ? (data.plans as Plan[]) : []);
+      const nextPlans = Array.isArray(data?.plans) ? (data.plans as Plan[]) : [];
+      setPlans(nextPlans);
+      const nextPriceInput: Record<string, string> = {};
+      for (const p of nextPlans) {
+        nextPriceInput[p.key] = centsToBrlInput(p.priceCents ?? 0);
+      }
+      setPriceInput(nextPriceInput);
     } catch (e: any) {
       setError(String(e?.message || e));
     } finally {
@@ -107,9 +114,13 @@ export function PlansPanel() {
               <Field label="Key" value={p.key} onChange={() => undefined} disabled />
               <Field label="Nome" value={p.name} onChange={(v) => patchPlan(p.key, { name: v })} />
               <Field
-                label="Preco (centavos)"
-                value={String(p.priceCents ?? 0)}
-                onChange={(v) => patchPlan(p.key, { priceCents: Number(v || 0) || 0 })}
+                label="Preco (R$)"
+                value={priceInput[p.key] ?? centsToBrlInput(p.priceCents ?? 0)}
+                onChange={(v) => {
+                  setPriceInput((prev) => ({ ...prev, [p.key]: v }));
+                  patchPlan(p.key, { priceCents: brlToCents(v) });
+                }}
+                placeholder="Ex: 10,50"
               />
               <Field
                 label="Max servidores"
@@ -133,6 +144,10 @@ export function PlansPanel() {
             </div>
 
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+              <div className="rounded-xl border border-white/10 px-3 py-2 bg-black/30 sm:col-span-2 xl:col-span-3">
+                <span className="text-xs text-white/60">Preview preço:</span>{" "}
+                <span className="text-sm font-semibold">{formatBrl(p.priceCents ?? 0)}</span>
+              </div>
               <Toggle label="Ativo" value={p.active} onChange={(v) => patchPlan(p.key, { active: v })} />
               <Toggle
                 label="Dashboard editavel"
@@ -259,3 +274,23 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   );
 }
 
+function brlToCents(input: string): number {
+  const raw = String(input || "").trim();
+  if (!raw) return 0;
+  const normalized = raw.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+  const value = Number(normalized);
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return Math.round(value * 100);
+}
+
+function centsToBrlInput(cents: number): string {
+  const value = Number(cents || 0) / 100;
+  return value.toFixed(2).replace(".", ",");
+}
+
+function formatBrl(cents: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format((Number(cents || 0) || 0) / 100);
+}

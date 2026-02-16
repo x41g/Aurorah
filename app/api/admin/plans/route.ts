@@ -28,12 +28,15 @@ export async function PUT(req: Request) {
   if (!session) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
-  const key = String(body?.key || "").toUpperCase();
-  if (!key) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  const keyRaw = String(body?.key || "").trim();
+  if (!keyRaw) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-  const exists = await prisma.plan.findUnique({ where: { key }, select: { key: true } }).catch(() => null);
-  const planKey = (exists?.key || null) as string | null;
-  if (!planKey) return NextResponse.json({ error: "invalid_plan_key" }, { status: 400 });
+  // Aceita key em qualquer capitalização para evitar falhas de edição no painel.
+  const exists = await prisma.plan.findFirst({
+    where: { key: { equals: keyRaw, mode: "insensitive" } },
+    select: { key: true },
+  }).catch(() => null);
+  const planKey = (exists?.key || keyRaw.toUpperCase()) as string;
 
   const data = {
     key: planKey,
