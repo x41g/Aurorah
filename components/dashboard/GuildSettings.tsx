@@ -110,6 +110,83 @@ function previewMacros(input: string) {
     .replaceAll('{ticket.id}', 'ticket-2041')
 }
 
+type TicketFunctionDraft = {
+  name: string
+  preDescription: string
+  emoji: string
+}
+
+type TicketFormQuestionDraft = {
+  id: string
+  label: string
+  style: 'SHORT' | 'PARAGRAPH'
+}
+
+type TicketFormDraft = {
+  enabled: boolean
+  title: string
+  questions: TicketFormQuestionDraft[]
+}
+
+type TriggerDraft = {
+  enabled: boolean
+  matchType: 'equals' | 'startsWith' | 'includes'
+  trigger: string
+  responseType: 'content' | 'embed'
+  content: string
+  embedTitle: string
+  embedDescription: string
+  embedColor: string
+}
+
+function normalizeFunctions(input: any): TicketFunctionDraft[] {
+  if (!Array.isArray(input)) return []
+  return input.map((f) => ({
+    name: String(f?.name || '').trim(),
+    preDescription: String(f?.preDescription || '').trim(),
+    emoji: String(f?.emoji || '').trim(),
+  }))
+}
+
+function normalizeForms(input: any): Record<string, TicketFormDraft> {
+  if (!input || typeof input !== 'object') return {}
+  const out: Record<string, TicketFormDraft> = {}
+  for (const [category, raw] of Object.entries(input)) {
+    const r: any = raw || {}
+    out[String(category)] = {
+      enabled: Boolean(r.enabled ?? true),
+      title: String(r.title || ''),
+      questions: Array.isArray(r.questions)
+        ? r.questions.map((q: any, i: number) => ({
+            id: String(q?.id || `q${i + 1}`),
+            label: String(q?.label || ''),
+            style: String(q?.style || 'SHORT').toUpperCase() === 'PARAGRAPH' ? 'PARAGRAPH' : 'SHORT',
+          }))
+        : [],
+    }
+  }
+  return out
+}
+
+function normalizeTriggers(input: any): TriggerDraft[] {
+  if (!Array.isArray(input)) return []
+  return input.map((t) => ({
+    enabled: Boolean(t?.enabled ?? true),
+    matchType:
+      String(t?.matchType || 'equals') === 'startsWith'
+        ? 'startsWith'
+        : String(t?.matchType || 'equals') === 'includes'
+          ? 'includes'
+          : 'equals',
+    trigger: String(t?.trigger || '').trim(),
+    responseType: String(t?.responseType || 'content') === 'embed' ? 'embed' : 'content',
+    content: String(t?.content || ''),
+    embedTitle: String(t?.embed?.title || ''),
+    embedDescription: String(t?.embed?.description || ''),
+    embedColor: String(t?.embed?.color || '#C084FC'),
+  }))
+}
+
 export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = null }: Props) {
   const [saving, setSaving] = useState(false)
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -178,6 +255,13 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
 
   const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
   const [channels, setChannels] = useState<{ id: string; name: string; type: number }[]>([])
+  const [showFunctionsModal, setShowFunctionsModal] = useState(false)
+  const [showFormsModal, setShowFormsModal] = useState(false)
+  const [showTriggersModal, setShowTriggersModal] = useState(false)
+  const [functionDraft, setFunctionDraft] = useState<TicketFunctionDraft[]>([])
+  const [formsDraft, setFormsDraft] = useState<Record<string, TicketFormDraft>>({})
+  const [selectedFormCategory, setSelectedFormCategory] = useState('')
+  const [triggerDraft, setTriggerDraft] = useState<TriggerDraft[]>([])
 
   function applyConfigToForm(cfg: GuildConfig) {
     setStaffRoleId(cfg.staffRoleId ?? '')
@@ -293,6 +377,83 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     () => safeJsonParse<GuildConfig['customTriggers']>(customTriggersText, []),
     [customTriggersText]
   )
+
+  function openFunctionsConfigurator() {
+    setFunctionDraft(normalizeFunctions(parsedTicketFunctions))
+    setShowFunctionsModal(true)
+  }
+
+  function saveFunctionsConfigurator() {
+    const cleaned = functionDraft
+      .map((f) => ({
+        name: String(f.name || '').trim(),
+        preDescription: String(f.preDescription || '').trim(),
+        emoji: String(f.emoji || '').trim() || undefined,
+      }))
+      .filter((f) => f.name.length > 0)
+    setTicketFunctionsText(JSON.stringify(cleaned, null, 2))
+    setShowFunctionsModal(false)
+  }
+
+  function openFormsConfigurator() {
+    const normalized = normalizeForms(parsedTicketForms)
+    setFormsDraft(normalized)
+    const firstCategory = Object.keys(normalized)[0] || normalizeFunctions(parsedTicketFunctions)[0]?.name || ''
+    setSelectedFormCategory(firstCategory)
+    setShowFormsModal(true)
+  }
+
+  function saveFormsConfigurator() {
+    const out: Record<string, any> = {}
+    for (const [k, form] of Object.entries(formsDraft)) {
+      const category = String(k || '').trim()
+      if (!category) continue
+      const questions = (form.questions || [])
+        .map((q, i) => ({
+          id: `q${i + 1}`,
+          label: String(q.label || '').trim(),
+          style: q.style === 'PARAGRAPH' ? 'PARAGRAPH' : 'SHORT',
+        }))
+        .filter((q) => q.label.length > 0)
+      out[category] = {
+        enabled: Boolean(form.enabled),
+        title: String(form.title || '').trim() || `Formulario - ${category}`,
+        questions,
+      }
+    }
+    setTicketFormsText(JSON.stringify(out, null, 2))
+    setShowFormsModal(false)
+  }
+
+  function openTriggersConfigurator() {
+    setTriggerDraft(normalizeTriggers(parsedCustomTriggers))
+    setShowTriggersModal(true)
+  }
+
+  function saveTriggersConfigurator() {
+    const out = triggerDraft
+      .map((t) => {
+        const base: any = {
+          enabled: Boolean(t.enabled),
+          matchType: t.matchType,
+          trigger: String(t.trigger || '').trim(),
+          responseType: t.responseType,
+        }
+        if (t.responseType === 'embed') {
+          base.embed = {
+            title: String(t.embedTitle || '').trim(),
+            description: String(t.embedDescription || '').trim(),
+            color: String(t.embedColor || '#C084FC').trim() || '#C084FC',
+          }
+        } else {
+          base.content = String(t.content || '')
+        }
+        return base
+      })
+      .filter((t) => t.trigger.length > 0)
+    setCustomTriggersText(JSON.stringify(out, null, 2))
+    setShowTriggersModal(false)
+  }
 
   const preview = useMemo(() => {
     const cfg: GuildConfig = {
@@ -564,25 +725,53 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 <Toggle label="Adicionar Usuario" value={featureAddUser} onChange={setFeatureAddUser} />
                 <Toggle label="Remover Usuario" value={featureRemoveUser} onChange={setFeatureRemoveUser} />
               </div>
-              <JsonField
-                label="Categorias do ticket (JSON)"
-                value={ticketFunctionsText}
-                onChange={setTicketFunctionsText}
-                hint='Exemplo: [{"name":"Suporte","preDescription":"Preciso de ajuda","emoji":"??"}]'
-                placeholder={TICKET_FUNCTIONS_PLACEHOLDER}
-              />
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm text-white/85">Categorias do ticket</div>
+                  <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={openFunctionsConfigurator}>
+                    Configurar por modal
+                  </button>
+                </div>
+                <p className="text-xs text-white/60 mt-2">Use o modal para adicionar nome, descricao curta e emoji sem editar JSON manualmente.</p>
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs text-white/70">Modo avancado (JSON)</summary>
+                  <div className="mt-3">
+                    <JsonField
+                      label="Categorias do ticket (JSON)"
+                      value={ticketFunctionsText}
+                      onChange={setTicketFunctionsText}
+                      hint='Exemplo: [{"name":"Suporte","preDescription":"Preciso de ajuda","emoji":"??"}]'
+                      placeholder={TICKET_FUNCTIONS_PLACEHOLDER}
+                    />
+                  </div>
+                </details>
+              </div>
             </Section>
           </Reveal>
 
           <Reveal show={ticketSystemEnabled}>
             <Section title="Formularios">
-              <JsonField
-                label="Formularios por categoria (JSON)"
-                value={ticketFormsText}
-                onChange={setTicketFormsText}
-                hint='Exemplo: {"Suporte":{"enabled":true,"title":"Form","questions":[{"id":"q1","label":"Qual seu problema?","style":"SHORT"}]}}'
-                placeholder={TICKET_FORMS_PLACEHOLDER}
-              />
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm text-white/85">Formularios por categoria</div>
+                  <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={openFormsConfigurator}>
+                    Configurar por modal
+                  </button>
+                </div>
+                <p className="text-xs text-white/60 mt-2">Configure perguntas sem mexer com chaves JSON.</p>
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs text-white/70">Modo avancado (JSON)</summary>
+                  <div className="mt-3">
+                    <JsonField
+                      label="Formularios por categoria (JSON)"
+                      value={ticketFormsText}
+                      onChange={setTicketFormsText}
+                      hint='Exemplo: {"Suporte":{"enabled":true,"title":"Form","questions":[{"id":"q1","label":"Qual seu problema?","style":"SHORT"}]}}'
+                      placeholder={TICKET_FORMS_PLACEHOLDER}
+                    />
+                  </div>
+                </details>
+              </div>
             </Section>
           </Reveal>
 
@@ -625,6 +814,11 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
               hint='Campos práticos: enabled, matchType, trigger, responseType, content/embed.'
               placeholder={TRIGGERS_PLACEHOLDER}
             />
+            <div className="flex justify-end">
+              <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={openTriggersConfigurator}>
+                Configurar Triggers por modal
+              </button>
+            </div>
           </Section>
 
           <Section title="Preview de Resposta">
@@ -806,6 +1000,218 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           <pre className="mt-3 p-4 rounded-2xl bg-black/50 border border-white/10 overflow-auto text-xs">{JSON.stringify(preview, null, 2)}</pre>
         </details>
       </div>
+
+      {showFunctionsModal ? (
+        <ModalShell title="Categorias do Ticket" onClose={() => setShowFunctionsModal(false)} onSave={saveFunctionsConfigurator}>
+          <div className="space-y-2">
+            {functionDraft.map((f, idx) => (
+              <div key={idx} className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
+                <div className="grid sm:grid-cols-3 gap-2">
+                  <Field label="Nome" value={f.name} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, name: v } : x)))} />
+                  <Field label="Descricao curta" value={f.preDescription} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, preDescription: v } : x)))} />
+                  <Field label="Emoji" value={f.emoji} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, emoji: v } : x)))} />
+                </div>
+                <div className="flex justify-end">
+                  <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={() => setFunctionDraft((p) => p.filter((_, i) => i !== idx))}>
+                    Remover
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn-secondary px-3 py-1.5 text-xs rounded-xl"
+              onClick={() => setFunctionDraft((p) => [...p, { name: '', preDescription: '', emoji: '' }])}
+            >
+              Adicionar categoria
+            </button>
+          </div>
+        </ModalShell>
+      ) : null}
+
+      {showFormsModal ? (
+        <ModalShell title="Formularios do Ticket" onClose={() => setShowFormsModal(false)} onSave={saveFormsConfigurator}>
+          <div className="space-y-3">
+            <SelectField
+              label="Categoria"
+              value={selectedFormCategory}
+              onChange={setSelectedFormCategory}
+              options={normalizeFunctions(parsedTicketFunctions)
+                .filter((f) => f.name.trim().length > 0)
+                .map((f) => ({ value: f.name, label: f.name }))}
+              placeholder="Selecione uma categoria"
+            />
+            {selectedFormCategory ? (
+              <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-3">
+                <Toggle
+                  label="Formulario ativo"
+                  value={Boolean(formsDraft[selectedFormCategory]?.enabled ?? true)}
+                  onChange={(v) =>
+                    setFormsDraft((prev) => ({
+                      ...prev,
+                      [selectedFormCategory]: {
+                        enabled: v,
+                        title: prev[selectedFormCategory]?.title || `Formulario - ${selectedFormCategory}`,
+                        questions: prev[selectedFormCategory]?.questions || [],
+                      },
+                    }))
+                  }
+                />
+                <Field
+                  label="Titulo do formulario"
+                  value={formsDraft[selectedFormCategory]?.title || ''}
+                  onChange={(v) =>
+                    setFormsDraft((prev) => ({
+                      ...prev,
+                      [selectedFormCategory]: {
+                        enabled: prev[selectedFormCategory]?.enabled ?? true,
+                        title: v,
+                        questions: prev[selectedFormCategory]?.questions || [],
+                      },
+                    }))
+                  }
+                />
+                <div className="space-y-2">
+                  {(formsDraft[selectedFormCategory]?.questions || []).map((q, qIdx) => (
+                    <div key={qIdx} className="rounded-lg border border-white/10 bg-black/20 p-2">
+                      <div className="grid sm:grid-cols-3 gap-2">
+                        <Field
+                          label={`Pergunta ${qIdx + 1}`}
+                          value={q.label}
+                          onChange={(v) =>
+                            setFormsDraft((prev) => {
+                              const current = prev[selectedFormCategory] || { enabled: true, title: '', questions: [] }
+                              const next = [...(current.questions || [])]
+                              next[qIdx] = { ...next[qIdx], label: v }
+                              return { ...prev, [selectedFormCategory]: { ...current, questions: next } }
+                            })
+                          }
+                        />
+                        <SelectField
+                          label="Estilo"
+                          value={q.style}
+                          onChange={(v) =>
+                            setFormsDraft((prev) => {
+                              const current = prev[selectedFormCategory] || { enabled: true, title: '', questions: [] }
+                              const next = [...(current.questions || [])]
+                              next[qIdx] = { ...next[qIdx], style: v === 'PARAGRAPH' ? 'PARAGRAPH' : 'SHORT' }
+                              return { ...prev, [selectedFormCategory]: { ...current, questions: next } }
+                            })
+                          }
+                          options={[
+                            { value: 'SHORT', label: 'Curta' },
+                            { value: 'PARAGRAPH', label: 'Longa' },
+                          ]}
+                          placeholder="Selecione"
+                        />
+                        <div className="flex items-end">
+                          <button
+                            type="button"
+                            className="btn-secondary px-3 py-1.5 text-xs rounded-xl"
+                            onClick={() =>
+                              setFormsDraft((prev) => {
+                                const current = prev[selectedFormCategory] || { enabled: true, title: '', questions: [] }
+                                return {
+                                  ...prev,
+                                  [selectedFormCategory]: { ...current, questions: current.questions.filter((_, i) => i !== qIdx) },
+                                }
+                              })
+                            }
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn-secondary px-3 py-1.5 text-xs rounded-xl"
+                    onClick={() =>
+                      setFormsDraft((prev) => {
+                        const current = prev[selectedFormCategory] || { enabled: true, title: `Formulario - ${selectedFormCategory}`, questions: [] }
+                        return {
+                          ...prev,
+                          [selectedFormCategory]: {
+                            ...current,
+                            questions: [...current.questions, { id: `q${current.questions.length + 1}`, label: '', style: 'SHORT' }],
+                          },
+                        }
+                      })
+                    }
+                  >
+                    Adicionar pergunta
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-white/70">Crie uma categoria primeiro no modal de categorias.</div>
+            )}
+          </div>
+        </ModalShell>
+      ) : null}
+
+      {showTriggersModal ? (
+        <ModalShell title="Configurador de Triggers" onClose={() => setShowTriggersModal(false)} onSave={saveTriggersConfigurator}>
+          <div className="space-y-2">
+            {triggerDraft.map((t, idx) => (
+              <div key={idx} className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
+                <Toggle label="Ativo" value={t.enabled} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, enabled: v } : x)))} />
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <SelectField
+                    label="Match"
+                    value={t.matchType}
+                    onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, matchType: (v as any) || 'equals' } : x)))}
+                    options={[
+                      { value: 'equals', label: 'Igual' },
+                      { value: 'startsWith', label: 'Comeca com' },
+                      { value: 'includes', label: 'Contem' },
+                    ]}
+                    placeholder="Selecione"
+                  />
+                  <SelectField
+                    label="Resposta"
+                    value={t.responseType}
+                    onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, responseType: v === 'embed' ? 'embed' : 'content' } : x)))}
+                    options={[
+                      { value: 'content', label: 'Texto' },
+                      { value: 'embed', label: 'Embed' },
+                    ]}
+                    placeholder="Selecione"
+                  />
+                </div>
+                <Field label="Comando gatilho" value={t.trigger} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, trigger: v } : x)))} />
+                {t.responseType === 'embed' ? (
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    <Field label="Titulo da embed" value={t.embedTitle} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedTitle: v } : x)))} />
+                    <Field label="Cor da embed" value={t.embedColor} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedColor: v } : x)))} />
+                    <Field label="Descricao da embed" value={t.embedDescription} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedDescription: v } : x)))} className="sm:col-span-2" />
+                  </div>
+                ) : (
+                  <Field label="Mensagem de resposta" value={t.content} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, content: v } : x)))} />
+                )}
+                <div className="flex justify-end">
+                  <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={() => setTriggerDraft((p) => p.filter((_, i) => i !== idx))}>
+                    Remover trigger
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn-secondary px-3 py-1.5 text-xs rounded-xl"
+              onClick={() =>
+                setTriggerDraft((p) => [
+                  ...p,
+                  { enabled: true, matchType: 'equals', trigger: '', responseType: 'content', content: '', embedTitle: '', embedDescription: '', embedColor: '#C084FC' },
+                ])
+              }
+            >
+              Adicionar trigger
+            </button>
+          </div>
+        </ModalShell>
+      ) : null}
     </div>
   )
 }
@@ -827,6 +1233,37 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-4 sm:p-5 fx-hover-lift">
       <h3 className="font-semibold mb-3 text-fuchsia-100 tracking-wide">{title}</h3>
       <div className="space-y-3">{children}</div>
+    </div>
+  )
+}
+
+function ModalShell({
+  title,
+  children,
+  onClose,
+  onSave,
+}: {
+  title: string
+  children: React.ReactNode
+  onClose: () => void
+  onSave: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-6 flex items-center justify-center">
+      <div className="w-full max-w-4xl max-h-[88vh] overflow-auto rounded-2xl border border-white/10 bg-[#0b0f1d] p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h4 className="text-base sm:text-lg font-semibold">{title}</h4>
+          <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={onClose}>
+            Fechar
+          </button>
+        </div>
+        {children}
+        <div className="mt-4 flex justify-end">
+          <button type="button" className="btn-primary px-4 py-2 rounded-xl" onClick={onSave}>
+            Salvar configuracao
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

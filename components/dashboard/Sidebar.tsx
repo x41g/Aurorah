@@ -202,7 +202,7 @@ export function Sidebar({
 
       {mobileOpen ? (
         <div className="lg:hidden fixed inset-0 z-50 bg-black/60">
-          <div className="absolute left-0 top-0 h-full w-[86%] max-w-[320px] p-3">
+          <div className="absolute left-0 top-0 h-full w-[90%] max-w-[360px] p-3">
             <div className="card h-full overflow-auto p-4 fx-fade-in">
               <div className="flex items-center justify-end mb-2">
                 <button
