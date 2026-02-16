@@ -9,7 +9,17 @@ export async function GET(req: Request) {
     if (!assertInternalAuth(req)) throw new Error("unauthorized");
     const { searchParams } = new URL(req.url);
     const guildId = String(searchParams.get("guildId") || "").trim();
+    const ownerId = String(searchParams.get("ownerId") || "").trim();
     if (!guildId) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+
+    if (ownerId) {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.guildOwner.upsert({
+        where: { guildId },
+        create: { guildId, ownerId },
+        update: { ownerId },
+      });
+    }
 
     const ent = await getGuildEntitlements(guildId);
     return NextResponse.json({ ok: true, entitlements: ent });

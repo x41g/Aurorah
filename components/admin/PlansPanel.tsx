@@ -265,10 +265,10 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
       <span
         className={[
           "px-2 py-1 rounded-md border text-xs font-semibold",
-          value ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-200" : "bg-white/5 border-white/10 text-white/80",
+          value ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-200" : "bg-red-500/15 border-red-300/35 text-red-200",
         ].join(" ")}
       >
-        {value ? "Sim" : "Nao"}
+        {value ? "V" : "X"}
       </span>
     </button>
   );

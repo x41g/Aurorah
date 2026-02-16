@@ -1007,9 +1007,9 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
             {functionDraft.map((f, idx) => (
               <div key={idx} className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
                 <div className="grid sm:grid-cols-3 gap-2">
-                  <Field label="Nome" value={f.name} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, name: v } : x)))} />
-                  <Field label="Descricao curta" value={f.preDescription} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, preDescription: v } : x)))} />
-                  <Field label="Emoji" value={f.emoji} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, emoji: v } : x)))} />
+                  <Field label="Nome" placeholder="Ex.: Suporte" value={f.name} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, name: v } : x)))} />
+                  <Field label="Descricao curta" placeholder="Ex.: Dúvidas gerais e ajuda" value={f.preDescription} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, preDescription: v } : x)))} />
+                  <Field label="Emoji" placeholder="Ex.: 🎫 ou 1470501482573857032" value={f.emoji} onChange={(v) => setFunctionDraft((p) => p.map((x, i) => (i === idx ? { ...x, emoji: v } : x)))} />
                 </div>
                 <div className="flex justify-end">
                   <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={() => setFunctionDraft((p) => p.filter((_, i) => i !== idx))}>
@@ -1059,6 +1059,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 />
                 <Field
                   label="Titulo do formulario"
+                  placeholder={`Ex.: Formulário de ${selectedFormCategory || 'suporte'}`}
                   value={formsDraft[selectedFormCategory]?.title || ''}
                   onChange={(v) =>
                     setFormsDraft((prev) => ({
@@ -1077,6 +1078,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                       <div className="grid sm:grid-cols-3 gap-2">
                         <Field
                           label={`Pergunta ${qIdx + 1}`}
+                          placeholder={qIdx === 0 ? 'Ex.: Qual é o número do pedido?' : 'Ex.: Descreva seu problema'}
                           value={q.label}
                           onChange={(v) =>
                             setFormsDraft((prev) => {
@@ -1180,15 +1182,15 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                     placeholder="Selecione"
                   />
                 </div>
-                <Field label="Comando gatilho" value={t.trigger} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, trigger: v } : x)))} />
+                <Field label="Comando gatilho" placeholder="Ex.: +vip" value={t.trigger} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, trigger: v } : x)))} />
                 {t.responseType === 'embed' ? (
                   <div className="grid sm:grid-cols-2 gap-2">
-                    <Field label="Titulo da embed" value={t.embedTitle} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedTitle: v } : x)))} />
-                    <Field label="Cor da embed" value={t.embedColor} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedColor: v } : x)))} />
-                    <Field label="Descricao da embed" value={t.embedDescription} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedDescription: v } : x)))} className="sm:col-span-2" />
+                    <Field label="Titulo da embed" placeholder="Ex.: Plano VIP" value={t.embedTitle} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedTitle: v } : x)))} />
+                    <Field label="Cor da embed" placeholder="Ex.: #C084FC" value={t.embedColor} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedColor: v } : x)))} />
+                    <Field label="Descricao da embed" placeholder="Ex.: {author.user}, confira os detalhes com a equipe." value={t.embedDescription} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedDescription: v } : x)))} className="sm:col-span-2" />
                   </div>
                 ) : (
-                  <Field label="Mensagem de resposta" value={t.content} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, content: v } : x)))} />
+                  <Field label="Mensagem de resposta" placeholder="Ex.: Olá {client.user}, seu VIP foi ativado!" value={t.content} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, content: v } : x)))} />
                 )}
                 <div className="flex justify-end">
                   <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={() => setTriggerDraft((p) => p.filter((_, i) => i !== idx))}>
@@ -1275,22 +1277,25 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
       <button
         type="button"
         onClick={() => onChange(!value)}
-        className={['px-3 py-1 rounded-full border text-xs font-semibold transition fx-hover-lift', value ? 'bg-emerald-500/20 border-emerald-300/50 text-emerald-100' : 'bg-white/5 border-white/15 text-white/75'].join(' ')}
+        className={[
+          'px-3 py-1 rounded-full border text-xs font-semibold transition fx-hover-lift min-w-10 text-center',
+          value ? 'bg-emerald-500/20 border-emerald-300/50 text-emerald-100' : 'bg-red-500/15 border-red-300/35 text-red-100',
+        ].join(' ')}
       >
-        {value ? 'Sim' : 'Nao'}
+        {value ? 'V' : 'X'}
       </button>
     </div>
   )
 }
 
-function Field({ label, value, onChange, hint, className = '' }: { label: string; value: string; onChange: (v: string) => void; hint?: string; className?: string }) {
+function Field({ label, value, onChange, hint, placeholder, className = '' }: { label: string; value: string; onChange: (v: string) => void; hint?: string; placeholder?: string; className?: string }) {
   return (
     <div className={`rounded-2xl border border-white/10 bg-black/20 p-4 ${className}`}>
       <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/65">
         {label}
         {hint ? <Tooltip text={hint} /> : null}
       </label>
-      <input className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 fx-focus-ring" value={value} onChange={(e) => onChange(e.target.value)} />
+      <input className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 fx-focus-ring" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
     </div>
   )
 }

@@ -55,6 +55,24 @@ export async function PUT(req: Request) {
   if (!targetUserId || !planKey) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
   const status = normalizeStatus(body?.status);
+  const rawRenewAt = body?.renewAt;
+  const rawExpiresAt = body?.expiresAt;
+  const renewAtValue =
+    rawRenewAt === ""
+      ? null
+      : rawRenewAt
+        ? new Date(rawRenewAt)
+        : status === "active"
+          ? null
+          : undefined;
+  const expiresAtValue =
+    rawExpiresAt === ""
+      ? null
+      : rawExpiresAt
+        ? new Date(rawExpiresAt)
+        : status === "active"
+          ? null
+          : undefined;
 
   const sub = await prisma.subscription.upsert({
     where: { userId: targetUserId },
@@ -62,14 +80,14 @@ export async function PUT(req: Request) {
       userId: targetUserId,
       planKey,
       status,
-      renewAt: body?.renewAt ? new Date(body.renewAt) : null,
-      expiresAt: body?.expiresAt ? new Date(body.expiresAt) : null,
+      renewAt: renewAtValue === undefined ? null : renewAtValue,
+      expiresAt: expiresAtValue === undefined ? null : expiresAtValue,
     },
     update: {
       planKey,
       status,
-      renewAt: body?.renewAt === "" ? null : body?.renewAt ? new Date(body.renewAt) : undefined,
-      expiresAt: body?.expiresAt === "" ? null : body?.expiresAt ? new Date(body.expiresAt) : undefined,
+      renewAt: renewAtValue,
+      expiresAt: expiresAtValue,
     },
     include: { plan: true },
   });
