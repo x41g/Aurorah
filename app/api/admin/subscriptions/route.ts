@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { isAdminDiscordId } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import type { PlanKey } from "@prisma/client";
 
 export const runtime = "nodejs";
 
@@ -14,11 +13,11 @@ function normalizeStatus(input: unknown): SubStatus {
   return (["active", "canceled", "expired", "past_due"] as const).includes(raw as any) ? (raw as SubStatus) : "active";
 }
 
-async function normalizePlanKey(input: unknown): Promise<PlanKey | null> {
+async function normalizePlanKey(input: unknown): Promise<string | null> {
   const raw = String(input || "").toUpperCase();
   if (!raw) return null;
-  const exists = await prisma.plan.findUnique({ where: { key: raw as any }, select: { key: true } }).catch(() => null);
-  return exists?.key ? (exists.key as PlanKey) : null;
+  const exists = await prisma.plan.findUnique({ where: { key: raw }, select: { key: true } }).catch(() => null);
+  return exists?.key ? String(exists.key) : null;
 }
 
 async function assertAdmin() {

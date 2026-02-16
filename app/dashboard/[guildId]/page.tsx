@@ -56,12 +56,12 @@ export default async function GuildPage({
   const entitlements = (access as any).entitlements || null;
 
   return (
-    <div className="flex gap-6">
+    <div className="dashboard-shell flex gap-6">
       <Sidebar guildId={params.guildId} isAdmin={isAdmin} entitlements={entitlements} />
       <div className="flex-1 min-w-0">
         <Topbar title={access.guild.name} userName={session.user?.name} userImage={session.user?.image} />
 
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="dashboard-stagger grid md:grid-cols-3 gap-4 mb-6">
           <StatCard
             label="Tickets criados hoje"
             value={String(created)}

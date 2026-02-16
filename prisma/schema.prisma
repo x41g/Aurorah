@@ -57,13 +57,8 @@ model Transcript {
   @@index([expireAt])
 }
 
-enum PlanKey {
-  STARTER
-  PRO
-}
-
 model Plan {
-  key            PlanKey @id
+  key            String @id
   name           String
   description    String
   priceCents     Int     @default(0)
@@ -88,7 +83,7 @@ model Plan {
 model Subscription {
   id        String   @id @default(cuid())
   userId    String   @unique
-  planKey   PlanKey
+  planKey   String
   status    String   @default("active") // active | canceled | past_due etc
   renewAt   DateTime?
   expiresAt DateTime?

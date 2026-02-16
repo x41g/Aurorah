@@ -26,11 +26,11 @@ export default async function DashboardHome() {
   if (eligible.length === 0) redirect("/no-servers");
 
   return (
-    <div className="flex gap-6">
+    <div className="dashboard-shell flex gap-6">
       <Sidebar isAdmin={isAdmin} />
       <div className="flex-1 min-w-0">
         <Topbar title="Seus servidores" userName={session.user?.name} userImage={session.user?.image} />
-        <div className="grid gap-4">
+        <div className="dashboard-stagger grid gap-4">
           {eligible.map((g) => (
             <GuildCard key={g.id} guild={g} botInGuild={true} />
           ))}

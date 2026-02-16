@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { isAdminDiscordId } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import type { PlanKey } from "@prisma/client";
 
 export const runtime = "nodejs";
 
@@ -32,8 +31,8 @@ export async function PUT(req: Request) {
   const key = String(body?.key || "").toUpperCase();
   if (!key) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
-  const exists = await prisma.plan.findUnique({ where: { key: key as any }, select: { key: true } }).catch(() => null);
-  const planKey = (exists?.key || null) as PlanKey | null;
+  const exists = await prisma.plan.findUnique({ where: { key }, select: { key: true } }).catch(() => null);
+  const planKey = (exists?.key || null) as string | null;
   if (!planKey) return NextResponse.json({ error: "invalid_plan_key" }, { status: 400 });
 
   const data = {
