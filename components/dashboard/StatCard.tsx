@@ -1,4 +1,4 @@
-export function StatCard({
+﻿export function StatCard({
   label,
   value,
   hint,
@@ -8,10 +8,10 @@ export function StatCard({
   hint?: string
 }) {
   return (
-    <div className="card p-5">
-      <div className="text-sm text-white/60">{label}</div>
-      <div className="text-3xl font-bold mt-2">{value}</div>
-      {hint ? <div className="text-xs text-white/50 mt-2">{hint}</div> : null}
+    <div className="card p-5 fx-hover-lift fx-fade-in">
+      <div className="text-xs uppercase tracking-wider text-white/50">{label}</div>
+      <div className="text-3xl font-bold mt-2 gradient-text">{value}</div>
+      {hint ? <div className="text-xs text-white/60 mt-2">{hint}</div> : null}
     </div>
   )
 }

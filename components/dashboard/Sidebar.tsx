@@ -35,14 +35,14 @@ function cls(active: boolean, disabled = false) {
   return [
     'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 border',
     active
-      ? 'bg-violet-500/15 border-violet-400/40 shadow-lg shadow-violet-500/10'
+      ? 'bg-cyan-400/15 border-cyan-300/45 shadow-lg shadow-cyan-400/10'
       : 'border-transparent hover:bg-white/5',
-    disabled ? 'opacity-40 pointer-events-none' : '',
+    disabled ? 'opacity-45 pointer-events-none' : '',
   ].join(' ')
 }
 
 function sectionTitle(text: string) {
-  return <div className="mt-4 mb-2 text-[11px] uppercase tracking-wider text-white/40 px-2">{text}</div>
+  return <div className="mt-4 mb-2 text-[11px] uppercase tracking-wider text-white/45 px-2">{text}</div>
 }
 
 export function Sidebar({
@@ -114,11 +114,11 @@ export function Sidebar({
 
     return [
       { href: `/dashboard/${guildId}?tab=panel`, label: 'Painel', icon: <LayoutDashboard size={18} /> },
-      { href: `/dashboard/${guildId}?tab=tickets`, label: 'Tickets', icon: <Bot size={18} />, disabled: !canEditConfig, disabledHint: 'Exige dashboard editável no plano.' },
-      { href: `/dashboard/${guildId}?tab=ai`, label: 'IA', icon: <Sparkles size={18} />, disabled: !canUseAI, disabledHint: 'Seu plano atual não inclui IA.' },
-      { href: `/dashboard/${guildId}?tab=payments`, label: 'Pagamentos', icon: <Wallet size={18} />, disabled: !canUsePayments, disabledHint: 'Seu plano atual não inclui pagamentos.' },
-      { href: `/dashboard/${guildId}?tab=safepay`, label: 'SafePay', icon: <Shield size={18} />, disabled: !canUseSafePay, disabledHint: 'Seu plano atual não inclui SafePay.' },
-      { href: `/dashboard/${guildId}?tab=stats`, label: 'Estatísticas', icon: <BarChart3 size={18} /> },
+      { href: `/dashboard/${guildId}?tab=tickets`, label: 'Tickets', icon: <Bot size={18} />, disabled: !canEditConfig, disabledHint: 'Exige dashboard editavel no plano.' },
+      { href: `/dashboard/${guildId}?tab=ai`, label: 'IA', icon: <Sparkles size={18} />, disabled: !canUseAI, disabledHint: 'Seu plano atual nao inclui IA.' },
+      { href: `/dashboard/${guildId}?tab=payments`, label: 'Pagamentos', icon: <Wallet size={18} />, disabled: !canUsePayments, disabledHint: 'Seu plano atual nao inclui pagamentos.' },
+      { href: `/dashboard/${guildId}?tab=safepay`, label: 'SafePay', icon: <Shield size={18} />, disabled: !canUseSafePay, disabledHint: 'Seu plano atual nao inclui SafePay.' },
+      { href: `/dashboard/${guildId}?tab=stats`, label: 'Estatisticas', icon: <BarChart3 size={18} /> },
       { href: `/dashboard/${guildId}?tab=staff`, label: 'Staff', icon: <BarChart3 size={18} /> },
     ]
   }, [guildId, canEditConfig, canUseAI, canUsePayments, canUseSafePay])
@@ -163,7 +163,7 @@ export function Sidebar({
           const active = it.href.includes('?') ? isItemActive(it.href) : pathname === it.href
           return (
             <div key={it.href} title={it.disabled ? it.disabledHint : ''}>
-              <Link href={it.disabled ? '#' : it.href} className={cls(active, it.disabled)} onClick={() => setMobileOpen(false)}>
+              <Link href={it.disabled ? '#' : it.href} className={`${cls(active, it.disabled)} fx-hover-lift`} onClick={() => setMobileOpen(false)}>
                 {it.icon}
                 <span className="font-medium">{it.label}</span>
               </Link>
@@ -171,11 +171,11 @@ export function Sidebar({
           )
         })}
 
-        {adminItems.length ? sectionTitle('Administração') : null}
+        {adminItems.length ? sectionTitle('Administracao') : null}
         {adminItems.map((it) => {
           const active = pathname === it.href || pathname.startsWith(it.href + '/')
           return (
-            <Link key={it.href} href={it.href} className={cls(active)} onClick={() => setMobileOpen(false)}>
+            <Link key={it.href} href={it.href} className={`${cls(active)} fx-hover-lift`} onClick={() => setMobileOpen(false)}>
               {it.icon}
               <span className="font-medium">{it.label}</span>
             </Link>
@@ -201,7 +201,7 @@ export function Sidebar({
       {mobileOpen ? (
         <div className="lg:hidden fixed inset-0 z-50 bg-black/60">
           <div className="absolute left-0 top-0 h-full w-[86%] max-w-[320px] p-3">
-            <div className="card h-full overflow-auto p-4">
+            <div className="card h-full overflow-auto p-4 fx-fade-in">
               <div className="flex items-center justify-end mb-2">
                 <button
                   type="button"
@@ -218,11 +218,10 @@ export function Sidebar({
       ) : null}
 
       <aside className="hidden lg:block w-[280px] shrink-0">
-        <div className="card sticky top-6 p-4">
+        <div className="card sticky top-6 p-4 fx-fade-in">
           {content}
         </div>
       </aside>
     </>
   )
 }
-

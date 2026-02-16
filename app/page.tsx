@@ -1,497 +1,194 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronDown, Check, } from 'lucide-react' 
-{/*ADICIONAR  Moon, Sun,*/}
-{/* import { useTheme } from './providers' */}
-import { config } from '../config'  
-import DashboardPreview from "@/components/DashboardPreview";
-import TestimonialCarousel from "@/components/TestimonialCarousel";
-import { MdAdd } from "react-icons/md";
+import { ChevronDown, Check, Sparkles, ArrowRight, PlayCircle } from 'lucide-react'
+import { config } from '../config'
+import DashboardPreview from '@/components/DashboardPreview'
+import TestimonialCarousel from '@/components/TestimonialCarousel'
 
 export default function Home() {
-  {/* const { theme, toggleTheme } = useTheme() */}
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
 
-  const containerVariants = {
+  const container = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: 'easeOut' },
-    },
+  const item = {
+    hidden: { opacity: 0, y: 18 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.55 } },
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950 text-white dark:text-white overflow-hidden">
-      {/* Theme Toggle */}
-        {/* <button
-          onClick={toggleTheme}
-          className={[
-            "fixed bottom-6 left-6 z-50",
-            "flex items-center gap-2",
-            "px-4 py-3 rounded-full",
-            "bg-black/35 backdrop-blur-md",
-            "border border-white/10",
-            "shadow-lg shadow-black/30",
-            "hover:bg-black/55 hover:border-white/20",
-            "transition-all duration-300",
-          ].join(" ")}
-          aria-label="Alternar tema"
-          title="Alternar tema"
-        >
-          {theme === "dark" ? (
-            <>
-              <Sun className="w-5 h-5" />
-              <span className="text-sm text-white/80">Claro</span>
-            </>
-          ) : (
-            <>
-              <Moon className="w-5 h-5" />
-              <span className="text-sm text-slate-900/80">Escuro</span>
-            </>
-          )}
-        </button> */}
-
-
-
-
-
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="blob blob-1"
-          animate={{
-            x: [0, 100, 0],
-            y: [0, 50, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="blob blob-2"
-          animate={{
-            x: [0, -100, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
+    <div className="min-h-screen text-white overflow-hidden fx-fade-in">
+      <div className="fixed inset-0 pointer-events-none">
+        <motion.div className="blob blob-1" animate={{ x: [0, 80, 0], y: [0, -30, 0] }} transition={{ duration: 10, repeat: Infinity }} />
+        <motion.div className="blob blob-2" animate={{ x: [0, -90, 0], y: [0, 25, 0] }} transition={{ duration: 10, repeat: Infinity }} />
       </div>
 
-      {/* Navbar */}
-      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-6xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
-        <div className="container-max px-4 py-4 flex justify-between items-center">
-          <motion.div
-            className="flex items-center gap-3"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {config.images?.logo ? (
-              <img
-                src={config.images.logo}
-                alt={`${config.botName} logo`}
-                className="h-8 w-8 rounded-md object-contain"
-              />
-            ) : null}
+      <nav className="sticky top-3 z-40 px-4 sm:px-6">
+        <div className="container-max rounded-2xl border border-white/10 bg-black/30 backdrop-blur-xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            {config.images?.logo ? <img src={config.images.logo} alt="Logo" className="h-9 w-9 rounded-xl object-cover border border-white/10" /> : null}
+            <strong className="text-lg sm:text-xl gradient-text truncate">{config.botName}</strong>
+          </div>
 
-            <span className="text-2xl font-bold gradient-text">
-              {config.botName}
-            </span>
-          </motion.div>
-          <motion.div
-            className="hidden md:flex items-center gap-4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <a
-              href="#features"
-              className="text-gray-300 hover:text-white transition"
-            >
-              Features
-            </a>
-            <a
-              href="#pricing"
-              className="text-gray-300 hover:text-white transition"
-            >
-              Preços
-            </a>
-            <a
-              href="#faq"
-              className="text-gray-300 hover:text-white transition"
-            >
-              FAQ
-            </a>
-            <a href="/dashboard" className="btn-secondary px-5 py-2 rounded-full leading-none">Dashboard</a>
-          </motion.div>
+          <div className="hidden md:flex items-center gap-5 text-sm">
+            <a href="#features" className="text-white/75 hover:text-white transition">Features</a>
+            <a href="#pricing" className="text-white/75 hover:text-white transition">Precos</a>
+            <a href="#faq" className="text-white/75 hover:text-white transition">FAQ</a>
+            <a href="/dashboard" className="btn-secondary px-4 py-2">Dashboard</a>
+          </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 relative z-10">
-        <div className="container-max">
-          <motion.div
-            className="text-center mb-16"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div
-              variants={itemVariants}
-              className="inline-block mb-6 px-4 py-2 bg-purple-500/20 border border-purple-400/50 rounded-full"
-            >
-              <span className="text-purple-300 text-sm font-semibold">
-                ✨ {config.botDescription}
-              </span>
+      <section className="section pt-20 sm:pt-24 relative z-10">
+        <div className="container-max grid lg:grid-cols-[1.05fr_0.95fr] gap-10 items-center">
+          <motion.div variants={container} initial="hidden" animate="visible" className="space-y-7">
+            <motion.div variants={item} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 text-sm fx-pulse-soft">
+              <Sparkles size={16} />
+              <span>{config.botDescription}</span>
             </motion.div>
 
-            <motion.h1
-              variants={itemVariants}
-              className="text-6xl md:text-7xl font-bold mb-6 leading-tight"
-            >
-              {config.tagline.split(' ').map((word, i) => (
-                <span key={i}>
-                  {word}{' '}
-                </span>
-              ))}
-              <br />
-              <span className="gradient-text">
-                com a Aurora
-              </span>
+            <motion.h1 variants={item} className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05]">
+              Suporte de Discord
+              <span className="gradient-text block">mais rapido e mais limpo</span>
             </motion.h1>
 
-            <motion.p
-              variants={itemVariants}
-              className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed"
-            >
-              Venda mais no Discord sem aumentar sua carga de trabalho.
+            <motion.p variants={item} className="text-white/70 text-base sm:text-lg max-w-2xl">
+              Configure tickets, IA e pagamentos com uma experiencia clara no bot e no dashboard, sem travar seu atendimento.
             </motion.p>
 
-            {config.images?.botAvatar ? (
-              <motion.div variants={itemVariants} className="mb-8 flex justify-center">
-                <img
-                  src={config.images.botAvatar}
-                  alt={`${config.botName} avatar`}
-                  className="h-24 w-24 rounded-3xl border border-white/20 object-cover shadow-[0_20px_60px_rgba(168,85,247,0.25)]"
-                />
-              </motion.div>
-            ) : null}
-
-            <motion.div
-              variants={itemVariants}
-              className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
-            >
-            <a
-              href={config.discordLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary inline-flex items-center gap-2"
-            >
-              <MdAdd className="h-5 w-5 shrink-0" />
-              <span className="leading-none">Adicionar ao servidor</span>
-            </a>
-              <a
-                
-                className="btn-secondary"
-                    onClick={() => {
-    document.getElementById("pricing")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }}
-  >
-                Ver Planos
+            <motion.div variants={item} className="flex flex-wrap gap-3">
+              <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className="btn-primary fx-hover-lift fx-shimmer">
+                Adicionar no servidor
+                <ArrowRight size={16} />
+              </a>
+              <a href="#pricing" className="btn-secondary fx-hover-lift">
+                Ver planos
               </a>
             </motion.div>
 
-            {/* Stats */}
-            <motion.div
-              variants={itemVariants}
-              className="grid grid-cols-3 gap-8 max-w-2xl mx-auto"
-            >
-              {config.stats.map((stat, i) => (
-                <div key={i}>
-                  <div className="text-3xl font-bold gradient-text">{stat.number}</div>
-                  <div className="text-gray-400">{stat.label}</div>
+            <motion.div variants={item} className="grid grid-cols-3 gap-3 sm:gap-4 max-w-xl fx-stagger">
+              {config.stats.map((s, i) => (
+                <div key={i} className="card p-4 sm:p-5 text-center fx-hover-lift">
+                  <div className="text-xl sm:text-2xl font-bold gradient-text">{s.number}</div>
+                  <div className="text-xs sm:text-sm text-white/65">{s.label}</div>
                 </div>
               ))}
             </motion.div>
           </motion.div>
 
-          {/* Hero Image */}
-          <motion.div
-            className="relative mt-20 rounded-2xl overflow-hidden border border-purple-500/30 shadow-2xl"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            <DashboardPreview />
-
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="section section-dark relative z-10">
-        <div className="container-max">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-5xl font-bold mb-4">
-              Recursos <span className="gradient-text">Poderosos</span>
-            </h2>
-            <p className="text-white/65 text-lg">
-              Tudo que você precisa para gerenciar tickets profissionalmente
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {config.features.map((feature, i) => (
-              <motion.div
-                key={i}
-                variants={itemVariants}
-                className="card group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(236,72,153,0.18)]"
-              >
-<div className="mb-4">
-  <div className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-    {/* glow fofinho */}
-    <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-pink-400/25 via-purple-400/25 to-sky-400/25 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-    
-    {/* ícone */}
-    <div className="relative z-10">
-      {(() => {
-        const Icon = feature.icon;
-        return <Icon className="h-6 w-6 text-pink-300" />;
-      })()}
-    </div>
-  </div>
-</div> 
-                
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-gray-400">{feature.description}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="section relative z-10">
-        <div className="container-max">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-5xl font-bold mb-4">
-              Planos <span className="gradient-text">Acessíveis</span>
-            </h2>
-            <p className="text-white/65 text-lg">
-              Escolha o plano perfeito para seu servidor
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="grid md:grid-cols-3 gap-8"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {config.plans.map((plan, i) => (
-              <motion.div
-                key={i}
-                variants={itemVariants}
-                className={`p-8 rounded-xl border transition transform hover:scale-105 ${
-                  plan.popular
-                    ? 'bg-gradient-to-br from-purple-600 to-pink-600 border-purple-400 shadow-2xl shadow-purple-500/50 md:scale-105'
-                    : 'card'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="mb-4 inline-block px-3 py-1 bg-white/20 rounded-full text-sm font-bold">
-                    ⭐ Mais Popular
-                  </div>
-                )}
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <p className="text-gray-200 mb-6">{plan.description}</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-gray-300">{plan.period}</span>
-                </div>
-                <button
-                className={`w-full py-3 rounded-lg font-bold transition ${
-                    plan.popular
-                      ? 'bg-white text-purple-600 hover:bg-gray-100'
-                      : 'border-2 border-purple-400 hover:bg-purple-400/10'
-                  }`}
-                >
-                  <a href={config.discordLink}>Começar Agora</a>
-                </button>
-                <ul className="space-y-3 mt-8">
-                  {plan.features.map((feature, j) => (
-                    <li key={j} className="flex items-center gap-2">
-                      <Check className="w-5 h-5 text-green-400" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="section section-dark relative z-10">
-        <div className="container-max">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-5xl font-bold mb-4">
-              O que <span className="gradient-text">Clientes Dizem</span>
-            </h2>
-          </motion.div>
-
-            <TestimonialCarousel />
-
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="section relative z-10">
-        <div className="container-max max-w-3xl">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-5xl font-bold mb-4">
-              Perguntas <span className="gradient-text">Frequentes</span>
-            </h2>
-          </motion.div>
-
-          <motion.div
-            className="space-y-4"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {config.faq.map((item, i) => (
-              <motion.div
-                key={i}
-                variants={itemVariants}
-                className="border border-purple-500/30 rounded-lg overflow-hidden"
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full p-6 bg-gradient-to-r from-purple-900/30 to-pink-900/30 hover:from-purple-900/50 hover:to-pink-900/50 transition flex justify-between items-center"
-                >
-                  <span className="font-bold text-lg text-left">{item.q}</span>
-                  <motion.div
-                    animate={{ rotate: openFaq === i ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ChevronDown className="w-5 h-5" />
-                  </motion.div>
-                </button>
-                {openFaq === i && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    transition={{ duration: 0.3 }}
-                    className="p-6 bg-black/30 border-t border-purple-500/30"
-                  >
-                    <p className="text-gray-300">{item.a}</p>
-                  </motion.div>
-                )}
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Final */}
-      <section className="section relative z-10">
-        <div className="container-max text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-5xl font-bold mb-6">
-              Pronto para <span className="gradient-text">Começar?</span>
-            </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              Junte-se a milhares de servidores que já usam o {config.botName}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href={config.discordLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-              >
-                🔥 Começar Agora
-              </a>
-              <a
-                href={config.buyLink}
-                className="btn-secondary"
-              >
-                Ver Planos
-              </a>
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="space-y-4">
+            <div className="card p-3 sm:p-4 fx-hover-lift">
+              <DashboardPreview />
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 inline-flex items-center gap-2">
+              <PlayCircle size={16} />
+              Preview ao vivo da experiencia V5
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-purple-500/20 py-12 px-4 bg-black/50 relative z-10">
+      <section id="features" className="section section-dark relative z-10">
         <div className="container-max">
-          <div className="text-center text-gray-400">
-            <p>&copy; 2026 {config.botName}. Todos os direitos reservados.</p>
-            <p>Powered by Auroxe Group</p>
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold">Recursos que vendem com voce</h2>
+            <p className="text-white/65 mt-3">Fluxo claro para dono, staff e cliente final.</p>
+          </motion.div>
+
+          <motion.div variants={container} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {config.features.map((f, i) => {
+              const Icon = f.icon
+              return (
+                <motion.article key={i} variants={item} className="card group">
+                  <div className="h-12 w-12 rounded-2xl border border-white/15 bg-white/5 flex items-center justify-center mb-4 group-hover:scale-105 transition">
+                    <Icon className="h-6 w-6 text-cyan-200" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
+                  <p className="text-white/65 text-sm leading-relaxed">{f.description}</p>
+                </motion.article>
+              )
+            })}
+          </motion.div>
+        </div>
+      </section>
+
+      <section id="pricing" className="section relative z-10">
+        <div className="container-max">
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold">Planos simples, foco no resultado</h2>
+            <p className="text-white/65 mt-3">Escolha o nivel que faz sentido para sua operacao.</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            {config.plans.map((p, i) => (
+              <article key={i} className={["card fx-hover-lift fx-shimmer", p.popular ? 'ring-2 ring-cyan-300/45 shadow-[0_18px_50px_rgba(34,211,238,0.16)]' : ''].join(' ')}>
+                {p.popular ? <div className="inline-flex mb-3 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-300/20 border border-cyan-300/35">Mais escolhido</div> : null}
+                <h3 className="text-2xl font-bold">{p.name}</h3>
+                <p className="text-white/65 text-sm mt-1">{p.description}</p>
+                <div className="mt-5 mb-4">
+                  <span className="text-3xl font-bold">{p.price}</span>
+                  <span className="text-white/60">{p.period}</span>
+                </div>
+                <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className={p.popular ? 'btn-primary w-full fx-hover-lift' : 'btn-secondary w-full fx-hover-lift'}>
+                  Comecar
+                </a>
+                <ul className="mt-6 space-y-2">
+                  {p.features.map((ft, j) => (
+                    <li key={j} className="flex items-start gap-2 text-sm text-white/80">
+                      <Check size={16} className="mt-0.5 text-cyan-300" />
+                      <span>{ft}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
           </div>
+        </div>
+      </section>
+
+      <section className="section section-dark relative z-10">
+        <div className="container-max">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10">Feedback de quem usa</h2>
+          <TestimonialCarousel />
+        </div>
+      </section>
+
+      <section id="faq" className="section relative z-10">
+        <div className="container-max max-w-3xl">
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10">FAQ</h2>
+          <div className="space-y-3">
+            {config.faq.map((f, i) => (
+              <div key={i} className="card p-0 overflow-hidden">
+                <button className="w-full p-5 text-left flex items-center justify-between" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                  <span className="font-semibold">{f.q}</span>
+                  <ChevronDown size={18} className={["transition", openFaq === i ? 'rotate-180' : ''].join(' ')} />
+                </button>
+                {openFaq === i ? <div className="px-5 pb-5 text-white/70 text-sm">{f.a}</div> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section relative z-10">
+        <div className="container-max text-center card">
+          <h2 className="text-3xl sm:text-4xl font-bold">Pronto para lancar a V5?</h2>
+          <p className="text-white/70 mt-3 mb-6">Ative o bot no servidor e configure tudo no seu ritmo.</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className="btn-primary">Adicionar agora</a>
+            <a href="/dashboard" className="btn-secondary">Abrir dashboard</a>
+          </div>
+        </div>
+      </section>
+
+      <footer className="py-10 px-4 border-t border-white/10 relative z-10">
+        <div className="container-max flex flex-col sm:flex-row gap-2 items-center justify-between text-sm text-white/60">
+          <span>© 2026 {config.botName}. Todos os direitos reservados.</span>
+          <span>Powered by Auroxe Group</span>
         </div>
       </footer>
     </div>

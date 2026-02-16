@@ -339,6 +339,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const aiTabLocked = !canUseAI && tab === 'ai'
   const paymentTabLocked = !canUsePayments && tab === 'payments'
   const safePayTabLocked = !canUseSafePay && tab === 'safepay'
+  const tabLabel = tab === 'tickets' ? 'Tickets' : tab === 'ai' ? 'IA' : tab === 'payments' ? 'Pagamentos' : tab === 'safepay' ? 'SafePay' : 'Painel'
 
   const canAutoSave =
     tab === 'ai'
@@ -419,9 +420,15 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   }
 
   return (
-    <div className="card">
-      <h2 className="text-xl font-bold mb-2">Configuração V5</h2>
-      <p className="text-white/60 mb-6">As ações do plano ficam inativas quando o benefício não está liberado.</p>
+    <div className="card p-5 sm:p-6 fx-fade-in">
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <span className="inline-flex items-center rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-200">
+          Aba ativa: {tabLabel}
+        </span>
+        <span className="text-xs text-white/60">Atualizacao em tempo real entre sessoes habilitada</span>
+      </div>
+      <h2 className="text-xl sm:text-2xl font-bold mb-1 gradient-text">Configuracao V5</h2>
+      <p className="text-white/70 mb-6">Acoes bloqueadas pelo plano aparecem desativadas automaticamente.</p>
 
       {ticketTabLocked ? <LockMsg text="Seu plano atual não libera edição de Tickets." /> : null}
       {aiTabLocked ? <LockMsg text="Seu plano atual não libera configuração de IA." /> : null}
@@ -429,7 +436,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       {safePayTabLocked ? <LockMsg text="Seu plano atual não libera configuração de SafePay." /> : null}
 
       {tab === 'tickets' ? (
-        <fieldset disabled={!canEdit || saving} className="space-y-4 disabled:opacity-60">
+        <fieldset disabled={!canEdit || saving} className="space-y-4 disabled:opacity-60 fx-stagger">
           <Section title="Sistema">
             <Toggle label="Sistema de ticket" value={ticketSystemEnabled} onChange={setTicketSystemEnabled} />
             <Reveal show={ticketSystemEnabled}>
@@ -511,7 +518,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           </Reveal>
         </fieldset>
       ) : tab === 'ai' ? (
-        <fieldset disabled={!canUseAI || saving} className="space-y-4 disabled:opacity-60">
+        <fieldset disabled={!canUseAI || saving} className="space-y-4 disabled:opacity-60 fx-stagger">
           <Section title="IA">
             <Toggle label="IA habilitada" value={aiEnabled} onChange={setAiEnabled} />
             <Reveal show={aiEnabled}>
@@ -536,7 +543,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           </Reveal>
         </fieldset>
       ) : tab === 'payments' ? (
-        <fieldset disabled={!canUsePayments || saving} className="space-y-4 disabled:opacity-60">
+        <fieldset disabled={!canUsePayments || saving} className="space-y-4 disabled:opacity-60 fx-stagger">
           <Section title="Automatico">
             <Toggle label="Pagamento automatico" value={paymentAutoEnabled} onChange={setPaymentAutoEnabled} />
             <Reveal show={paymentAutoEnabled}>
@@ -567,7 +574,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           </Section>
         </fieldset>
       ) : tab === 'safepay' ? (
-        <fieldset disabled={!canUseSafePay || saving} className="space-y-4 disabled:opacity-60">
+        <fieldset disabled={!canUseSafePay || saving} className="space-y-4 disabled:opacity-60 fx-stagger">
           <Section title="SafePay">
             <Toggle label="SafePay habilitado" value={safePayEnabled} onChange={setSafePayEnabled} />
             <Reveal show={safePayEnabled}>
@@ -607,7 +614,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           </Section>
         </fieldset>
       ) : (
-        <fieldset disabled={!canEdit || saving} className="grid md:grid-cols-2 gap-4 disabled:opacity-60">
+        <fieldset disabled={!canEdit || saving} className="grid md:grid-cols-2 gap-4 disabled:opacity-60 fx-stagger">
           <SelectField label="Cargo Staff" value={staffRoleId} onChange={setStaffRoleId} options={roleOptions} placeholder="Selecione um cargo" />
           <SelectField label="Categoria de Tickets" value={ticketCategoryId} onChange={setTicketCategoryId} options={categoryOptions} placeholder="Selecione uma categoria" />
           <SelectField label="Canal de Logs" value={logsChannelId} onChange={setLogsChannelId} options={textChannelOptions} placeholder="Selecione um canal" />
@@ -641,9 +648,9 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         </fieldset>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 mt-6">
+      <div className="flex flex-wrap items-center gap-3 mt-6 rounded-2xl border border-white/10 bg-white/5 p-3">
         {(saving || autosaveStatus === 'error') ? (
-          <button type="button" className="btn-primary px-6 py-3 rounded-2xl disabled:opacity-60" onClick={() => void save('manual')} disabled={saving || (tab === 'ai' && !canUseAI) || ((tab === 'payments') && !canUsePayments) || ((tab === 'safepay') && !canUseSafePay) || ((tab === 'tickets' || tab === 'panel') && !canEdit)}>
+          <button type="button" className="btn-primary px-6 py-3 rounded-2xl disabled:opacity-60 fx-hover-lift fx-shimmer" onClick={() => void save('manual')} disabled={saving || (tab === 'ai' && !canUseAI) || ((tab === 'payments') && !canUsePayments) || ((tab === 'safepay') && !canUseSafePay) || ((tab === 'tickets' || tab === 'panel') && !canEdit)}>
             {saving ? 'Salvando...' : 'Salvar agora'}
           </button>
         ) : null}
@@ -657,7 +664,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       </div>
 
       <div className="mt-6">
-        <details className="text-sm text-white/70">
+        <details className="text-sm text-white/75 rounded-2xl border border-white/10 bg-white/5 p-3">
           <summary className="cursor-pointer select-none">Preview do JSON final</summary>
           <pre className="mt-3 p-4 rounded-2xl bg-black/50 border border-white/10 overflow-auto text-xs">{JSON.stringify(preview, null, 2)}</pre>
         </details>
@@ -668,20 +675,20 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
 
 function Reveal({ show, children }: { show: boolean; children: React.ReactNode }) {
   return (
-    <div className={['grid transition-all duration-300 ease-out', show ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'].join(' ')}>
+    <div className={['grid transition-all duration-300 ease-out', show ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 pointer-events-none'].join(' ')}>
       <div className="overflow-hidden">{children}</div>
     </div>
   )
 }
 
 function LockMsg({ text }: { text: string }) {
-  return <div className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{text}</div>
+  return <div className="mb-4 rounded-xl border border-amber-300/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">{text}</div>
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <h3 className="font-semibold mb-3">{title}</h3>
+    <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-4 sm:p-5 fx-hover-lift">
+      <h3 className="font-semibold mb-3 text-cyan-100 tracking-wide">{title}</h3>
       <div className="space-y-3">{children}</div>
     </div>
   )
@@ -689,9 +696,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2">
-      <span className="text-sm">{label}</span>
-      <button type="button" onClick={() => onChange(!value)} className={['px-3 py-1 rounded-lg border text-sm', value ? 'bg-emerald-500/20 border-emerald-400/40' : 'bg-white/5 border-white/10'].join(' ')}>
+    <div className="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2.5 bg-black/20">
+      <span className="text-sm text-white/90">{label}</span>
+      <button
+        type="button"
+        onClick={() => onChange(!value)}
+        className={['px-3 py-1 rounded-full border text-xs font-semibold transition fx-hover-lift', value ? 'bg-emerald-500/20 border-emerald-300/50 text-emerald-100' : 'bg-white/5 border-white/15 text-white/75'].join(' ')}
+      >
         {value ? 'Sim' : 'Nao'}
       </button>
     </div>
@@ -700,25 +711,25 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
 
 function Field({ label, value, onChange, hint, className = '' }: { label: string; value: string; onChange: (v: string) => void; hint?: string; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 ${className}`}>
-      <label className="flex items-center gap-2 text-xs text-white/60">
+    <div className={`rounded-2xl border border-white/10 bg-black/20 p-4 ${className}`}>
+      <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/65">
         {label}
         {hint ? <Tooltip text={hint} /> : null}
       </label>
-      <input className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25" value={value} onChange={(e) => onChange(e.target.value)} />
+      <input className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-cyan-300/40 fx-focus-ring" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   )
 }
 
 function JsonField({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <label className="flex items-center gap-2 text-xs text-white/60">
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/65">
         {label}
         {hint ? <Tooltip text={hint} /> : null}
       </label>
       <textarea
-        className="mt-2 w-full min-h-[140px] rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25 font-mono text-xs"
+        className="mt-2 w-full min-h-[140px] rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-cyan-300/40 font-mono text-xs fx-focus-ring"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -728,9 +739,9 @@ function JsonField({ label, value, onChange, hint }: { label: string; value: str
 
 function SelectField({ label, value, onChange, options, placeholder }: { label: string; value: string; onChange: (v: string) => void; options: Array<{ value: string; label: string }>; placeholder: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <label className="text-xs text-white/60">{label}</label>
-      <select className="mt-2 w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 outline-none focus:border-white/25" value={value} onChange={(e) => onChange(e.target.value)}>
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <label className="text-[11px] uppercase tracking-wider text-white/65">{label}</label>
+      <select className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-cyan-300/40 fx-focus-ring" value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">{placeholder}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
