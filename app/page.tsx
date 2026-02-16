@@ -21,7 +21,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen text-white overflow-hidden fx-fade-in">
+    <div className="landing-page min-h-screen text-white overflow-hidden fx-fade-in">
       <div className="fixed inset-0 pointer-events-none">
         <motion.div className="blob blob-1" animate={{ x: [0, 80, 0], y: [0, -30, 0] }} transition={{ duration: 10, repeat: Infinity }} />
         <motion.div className="blob blob-2" animate={{ x: [0, -90, 0], y: [0, 25, 0] }} transition={{ duration: 10, repeat: Infinity }} />

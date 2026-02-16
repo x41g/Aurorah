@@ -309,3 +309,40 @@ html.light .dashboard-shell .border-white\/10 {
 html.light .dashboard-shell .border-white\/20 {
   border-color: rgba(15, 23, 42, 0.16);
 }
+
+/* Landing contrast fix for light theme (mobile/system light) */
+html.light .landing-page .text-white,
+html.light .landing-page .text-white\/90,
+html.light .landing-page .text-white\/80,
+html.light .landing-page .text-white\/75,
+html.light .landing-page .text-white\/70,
+html.light .landing-page .text-white\/65,
+html.light .landing-page .text-white\/60 {
+  color: rgba(17, 24, 39, 0.92);
+}
+
+html.light .landing-page .text-fuchsia-100 {
+  color: rgba(134, 25, 143, 0.95);
+}
+
+html.light .landing-page .border-white\/10 {
+  border-color: rgba(30, 41, 59, 0.14);
+}
+
+html.light .landing-page .border-white\/15,
+html.light .landing-page .border-white\/20 {
+  border-color: rgba(30, 41, 59, 0.18);
+}
+
+html.light .landing-page .bg-black\/30 {
+  background-color: rgba(255, 255, 255, 0.78);
+}
+
+html.light .landing-page .bg-white\/5 {
+  background-color: rgba(15, 23, 42, 0.05);
+}
+
+html.light .landing-page .btn-secondary {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.16);
+}

@@ -28,8 +28,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
     setMounted(true)
 
     const saved = localStorage.getItem('theme') as Theme | null
-    const systemPrefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches
-    const preferred: Theme = saved ?? (systemPrefersLight ? 'light' : 'dark')
+    const preferred: Theme = saved ?? 'dark'
 
     setTheme(preferred)
 
