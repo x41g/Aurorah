@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getActiveSubscriptionByUserId, getWhitelistState } from "@/lib/entitlements";
+import { assertInternalAuth } from "@/lib/internalAuth";
 
 export const runtime = "nodejs";
-
-function assertAuth(req: Request) {
-  const auth = req.headers.get("authorization") || "";
-  const alt = req.headers.get("x-bot-secret") || "";
-  const expected = process.env.BOT_API_SECRET || "";
-  if (!expected) throw new Error("BOT_API_SECRET missing");
-  if (auth !== `Bearer ${expected}` && alt !== expected) throw new Error("unauthorized");
-}
 
 function monthKeyUTC(d = new Date()) {
   const y = d.getUTCFullYear();
@@ -20,7 +13,7 @@ function monthKeyUTC(d = new Date()) {
 
 export async function POST(req: Request) {
   try {
-    assertAuth(req);
+    if (!assertInternalAuth(req)) throw new Error("unauthorized");
     const body = await req.json().catch(() => null);
 
     const guildId = String(body?.guildId || "").trim();
