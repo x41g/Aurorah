@@ -5,9 +5,10 @@ export const runtime = "nodejs";
 
 function assertAuth(req: Request) {
   const auth = req.headers.get("authorization") || "";
+  const alt = req.headers.get("x-bot-secret") || "";
   const expected = process.env.BOT_API_SECRET || "";
   if (!expected) throw new Error("BOT_API_SECRET missing");
-  if (auth !== `Bearer ${expected}`) throw new Error("unauthorized");
+  if (auth !== `Bearer ${expected}` && alt !== expected) throw new Error("unauthorized");
 }
 
 export async function GET(req: Request) {
