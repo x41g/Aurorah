@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GuildConfig } from '@/lib/types'
 import { Tooltip } from '@/components/ui/Tooltip'
 
@@ -55,8 +55,11 @@ function defaultFormsFromCfg(cfg: GuildConfig) {
 
 export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = null }: Props) {
   const [saving, setSaving] = useState(false)
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [ok, setOk] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const didInitAutosave = useRef(false)
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const canEdit = Boolean(entitlements?.canEditConfig)
   const canUseAI = Boolean(entitlements?.canUseAI)
@@ -242,10 +245,23 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const paymentTabLocked = !canUsePayments && tab === 'payments'
   const safePayTabLocked = !canUseSafePay && tab === 'safepay'
 
-  async function save() {
-    setSaving(true)
-    setOk(null)
-    setErr(null)
+  const canAutoSave =
+    tab === 'ai'
+      ? canUseAI
+      : tab === 'payments'
+        ? canUsePayments
+        : tab === 'safepay'
+          ? canUseSafePay
+          : canEdit
+
+  async function save(mode: 'manual' | 'auto' = 'manual') {
+    if (mode === 'manual') {
+      setSaving(true)
+      setOk(null)
+      setErr(null)
+    } else {
+      setAutosaveStatus('saving')
+    }
     try {
       const r = await fetch(`/api/guild-config/${guildId}`, {
         method: 'PUT',
@@ -254,24 +270,47 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       })
       if (!r.ok) {
         const data = await r.json().catch(() => ({} as any))
-        if (data?.error === 'subscription_required') {
-          setErr('Assinatura necessaria: este plano permite somente leitura de estatisticas.')
-        } else if (data?.error === 'prompt_blocked_by_policy') {
-          setErr('Prompt bloqueado pela politica de seguranca.')
-        } else if (data?.error === 'prompt_too_long') {
-          setErr('Prompt muito longo (maximo 4000 caracteres).')
+        if (mode === 'manual') {
+          if (data?.error === 'subscription_required') {
+            setErr('Assinatura necessaria: este plano permite somente leitura de estatisticas.')
+          } else if (data?.error === 'prompt_blocked_by_policy') {
+            setErr('Prompt bloqueado pela politica de seguranca.')
+          } else if (data?.error === 'prompt_too_long') {
+            setErr('Prompt muito longo (maximo 4000 caracteres).')
+          } else {
+            setErr('Falha ao salvar. Verifique suas permissoes e tente novamente.')
+          }
         } else {
-          setErr('Falha ao salvar. Verifique suas permissoes e tente novamente.')
+          setAutosaveStatus('error')
         }
         return
       }
-      setOk('Salvo com sucesso.')
+      if (mode === 'manual') setOk('Salvo com sucesso.')
+      setAutosaveStatus('saved')
     } catch {
-      setErr('Falha de rede.')
+      if (mode === 'manual') setErr('Falha de rede.')
+      setAutosaveStatus('error')
     } finally {
-      setSaving(false)
+      if (mode === 'manual') setSaving(false)
     }
   }
+
+  useEffect(() => {
+    if (!canAutoSave || saving) return
+    if (!didInitAutosave.current) {
+      didInitAutosave.current = true
+      return
+    }
+
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = setTimeout(() => {
+      void save('auto')
+    }, 900)
+
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [preview, canAutoSave, saving])
 
   function toggleBank(bank: string) {
     setSafePayBanksOff((prev) => (prev.includes(bank) ? prev.filter((b) => b !== bank) : [...prev, bank]))
@@ -291,132 +330,159 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         <fieldset disabled={!canEdit || saving} className="space-y-4 disabled:opacity-60">
           <Section title="Sistema">
             <Toggle label="Sistema de ticket" value={ticketSystemEnabled} onChange={setTicketSystemEnabled} />
-            <Toggle label="Modo de abertura (Select)" value={ticketOpenMode === 'select'} onChange={(v) => setTicketOpenMode(v ? 'select' : 'buttons')} />
-            <Toggle label="Modo de criação (Tópico)" value={ticketCreateMode === 'thread'} onChange={(v) => setTicketCreateMode(v ? 'thread' : 'category')} />
-            <div className="grid md:grid-cols-2 gap-3">
-              <Field label="Emoji do botão" value={ticketButtonEmoji} onChange={setTicketButtonEmoji} />
-              <Field label="Style do botão (1-4)" value={ticketButtonStyle} onChange={setTicketButtonStyle} />
-            </div>
-          </Section>
-
-          <Section title="Aparencia">
-            <Toggle
-              label="Usar modo content (desligado = embed)"
-              value={ticketAppearanceMode === 'content'}
-              onChange={(v) => setTicketAppearanceMode(v ? 'content' : 'embed')}
-            />
-            {ticketAppearanceMode === 'embed' ? (
-              <div className="grid md:grid-cols-2 gap-3">
-                <Field label="Titulo" value={ticketEmbedTitle} onChange={setTicketEmbedTitle} />
-                <Field label="Cor" value={ticketEmbedColor} onChange={setTicketEmbedColor} />
-                <Field label="Banner URL" value={ticketEmbedBannerUrl} onChange={setTicketEmbedBannerUrl} />
-                <Field label="Miniatura URL" value={ticketEmbedThumbUrl} onChange={setTicketEmbedThumbUrl} />
-                <Field label="Descricao" value={ticketEmbedDescription} onChange={setTicketEmbedDescription} className="md:col-span-2" />
-              </div>
-            ) : (
-              <Field label="Conteudo" value={ticketContentText} onChange={setTicketContentText} />
-            )}
-          </Section>
-
-          <Section title="Funcoes">
-            <div className="grid md:grid-cols-2 gap-3">
-              <Toggle label="Renomear Ticket" value={featureRenameTicket} onChange={setFeatureRenameTicket} />
-              <Toggle label="Notificar Usuario" value={featureNotifyUser} onChange={setFeatureNotifyUser} />
-              <Toggle label="Adicionar Usuario" value={featureAddUser} onChange={setFeatureAddUser} />
-              <Toggle label="Remover Usuario" value={featureRemoveUser} onChange={setFeatureRemoveUser} />
-            </div>
-            <JsonField
-              label="Categorias do ticket (JSON)"
-              value={ticketFunctionsText}
-              onChange={setTicketFunctionsText}
-              hint='Exemplo: [{"name":"Suporte","preDescription":"Preciso de ajuda","emoji":"??"}]'
-            />
-          </Section>
-
-          <Section title="Formularios">
-            <JsonField
-              label="Formularios por categoria (JSON)"
-              value={ticketFormsText}
-              onChange={setTicketFormsText}
-              hint='Exemplo: {"Suporte":{"enabled":true,"title":"Form","questions":[{"id":"q1","label":"Qual seu problema?","style":"SHORT"}]}}'
-            />
-          </Section>
-
-          <Section title="Preview">
-            {ticketAppearanceMode === 'embed' ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-xs text-white/60 mb-2">Embed preview</div>
-                <div className="rounded-xl border border-white/20 p-4" style={{ borderLeftColor: ticketEmbedColor || '#4800ff', borderLeftWidth: 4 }}>
-                  <div className="font-semibold">{ticketEmbedTitle || 'Sem titulo'}</div>
-                  <div className="text-sm text-white/70 mt-2">{ticketEmbedDescription || 'Sem descricao'}</div>
+            <Reveal show={ticketSystemEnabled}>
+              <div className="space-y-3">
+                <Toggle label="Modo de abertura (Select)" value={ticketOpenMode === 'select'} onChange={(v) => setTicketOpenMode(v ? 'select' : 'buttons')} />
+                <Toggle label="Modo de criação (Tópico)" value={ticketCreateMode === 'thread'} onChange={(v) => setTicketCreateMode(v ? 'thread' : 'category')} />
+                <div className="grid md:grid-cols-2 gap-3">
+                  <Field label="Emoji do botão" value={ticketButtonEmoji} onChange={setTicketButtonEmoji} />
+                  <Field label="Style do botão (1-4)" value={ticketButtonStyle} onChange={setTicketButtonStyle} />
                 </div>
               </div>
-            ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">{ticketContentText || 'Sem content.'}</div>
-            )}
+            </Reveal>
           </Section>
+
+          <Reveal show={ticketSystemEnabled}>
+            <Section title="Aparencia">
+              <Toggle
+                label="Usar modo content (desligado = embed)"
+                value={ticketAppearanceMode === 'content'}
+                onChange={(v) => setTicketAppearanceMode(v ? 'content' : 'embed')}
+              />
+              <Reveal show={ticketAppearanceMode === 'embed'}>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <Field label="Titulo" value={ticketEmbedTitle} onChange={setTicketEmbedTitle} />
+                  <Field label="Cor" value={ticketEmbedColor} onChange={setTicketEmbedColor} />
+                  <Field label="Banner URL" value={ticketEmbedBannerUrl} onChange={setTicketEmbedBannerUrl} />
+                  <Field label="Miniatura URL" value={ticketEmbedThumbUrl} onChange={setTicketEmbedThumbUrl} />
+                  <Field label="Descricao" value={ticketEmbedDescription} onChange={setTicketEmbedDescription} className="md:col-span-2" />
+                </div>
+              </Reveal>
+              <Reveal show={ticketAppearanceMode === 'content'}>
+                <Field label="Conteudo" value={ticketContentText} onChange={setTicketContentText} />
+              </Reveal>
+            </Section>
+          </Reveal>
+
+          <Reveal show={ticketSystemEnabled}>
+            <Section title="Funcoes">
+              <div className="grid md:grid-cols-2 gap-3">
+                <Toggle label="Renomear Ticket" value={featureRenameTicket} onChange={setFeatureRenameTicket} />
+                <Toggle label="Notificar Usuario" value={featureNotifyUser} onChange={setFeatureNotifyUser} />
+                <Toggle label="Adicionar Usuario" value={featureAddUser} onChange={setFeatureAddUser} />
+                <Toggle label="Remover Usuario" value={featureRemoveUser} onChange={setFeatureRemoveUser} />
+              </div>
+              <JsonField
+                label="Categorias do ticket (JSON)"
+                value={ticketFunctionsText}
+                onChange={setTicketFunctionsText}
+                hint='Exemplo: [{"name":"Suporte","preDescription":"Preciso de ajuda","emoji":"??"}]'
+              />
+            </Section>
+          </Reveal>
+
+          <Reveal show={ticketSystemEnabled}>
+            <Section title="Formularios">
+              <JsonField
+                label="Formularios por categoria (JSON)"
+                value={ticketFormsText}
+                onChange={setTicketFormsText}
+                hint='Exemplo: {"Suporte":{"enabled":true,"title":"Form","questions":[{"id":"q1","label":"Qual seu problema?","style":"SHORT"}]}}'
+              />
+            </Section>
+          </Reveal>
+
+          <Reveal show={ticketSystemEnabled}>
+            <Section title="Preview">
+              {ticketAppearanceMode === 'embed' ? (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="text-xs text-white/60 mb-2">Embed preview</div>
+                  <div className="rounded-xl border border-white/20 p-4" style={{ borderLeftColor: ticketEmbedColor || '#4800ff', borderLeftWidth: 4 }}>
+                    <div className="font-semibold">{ticketEmbedTitle || 'Sem titulo'}</div>
+                    <div className="text-sm text-white/70 mt-2">{ticketEmbedDescription || 'Sem descricao'}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">{ticketContentText || 'Sem content.'}</div>
+              )}
+            </Section>
+          </Reveal>
         </fieldset>
       ) : tab === 'ai' ? (
         <fieldset disabled={!canUseAI || saving} className="space-y-4 disabled:opacity-60">
           <Section title="IA">
             <Toggle label="IA habilitada" value={aiEnabled} onChange={setAiEnabled} />
-            <SelectField
-              label="Modelo"
-              value={aiModel}
-              onChange={setAiModel}
-              options={AI_MODELS.map((m) => ({ value: m, label: m }))}
-              placeholder="Selecione um modelo"
-            />
-            <JsonField label="Prompt da IA" value={aiPrompt} onChange={setAiPrompt} hint="Prompt com validações de segurança no backend." />
+            <Reveal show={aiEnabled}>
+              <div className="space-y-3">
+                <SelectField
+                  label="Modelo"
+                  value={aiModel}
+                  onChange={setAiModel}
+                  options={AI_MODELS.map((m) => ({ value: m, label: m }))}
+                  placeholder="Selecione um modelo"
+                />
+                <JsonField label="Prompt da IA" value={aiPrompt} onChange={setAiPrompt} hint="Prompt com validações de segurança no backend." />
+              </div>
+            </Reveal>
           </Section>
-          <Section title="Seguranca de Prompt">
-            <Toggle label="Remover menções" value={aiStripMentions} onChange={setAiStripMentions} />
-            <Toggle label="Remover links" value={aiStripLinks} onChange={setAiStripLinks} />
-            <Toggle label="Bloquear hints de jailbreak" value={aiBlockJailbreakHints} onChange={setAiBlockJailbreakHints} />
-          </Section>
+          <Reveal show={aiEnabled}>
+            <Section title="Seguranca de Prompt">
+              <Toggle label="Remover menções" value={aiStripMentions} onChange={setAiStripMentions} />
+              <Toggle label="Remover links" value={aiStripLinks} onChange={setAiStripLinks} />
+              <Toggle label="Bloquear hints de jailbreak" value={aiBlockJailbreakHints} onChange={setAiBlockJailbreakHints} />
+            </Section>
+          </Reveal>
         </fieldset>
       ) : tab === 'payments' ? (
         <fieldset disabled={!canUsePayments || saving} className="space-y-4 disabled:opacity-60">
           <Section title="Automatico">
             <Toggle label="Pagamento automatico" value={paymentAutoEnabled} onChange={setPaymentAutoEnabled} />
-            <Field label="Access token MercadoPago" value={paymentAccessToken} onChange={setPaymentAccessToken} />
+            <Reveal show={paymentAutoEnabled}>
+              <Field label="Access token MercadoPago" value={paymentAccessToken} onChange={setPaymentAccessToken} />
+            </Reveal>
           </Section>
           <Section title="Semi-auto">
             <Toggle label="Semi-automatico" value={paymentSemiEnabled} onChange={setPaymentSemiEnabled} />
-            <Field label="Chave PIX" value={paymentSemiKey} onChange={setPaymentSemiKey} />
-            <SelectField
-              label="Tipo da chave"
-              value={paymentSemiType}
-              onChange={setPaymentSemiType}
-              options={PIX_TYPES.map((t) => ({ value: t, label: t }))}
-              placeholder="Selecione o tipo"
-            />
-            <SelectField
-              label="Cargo aprovador"
-              value={paymentSemiApproverRoleId}
-              onChange={setPaymentSemiApproverRoleId}
-              options={roleOptions}
-              placeholder="Selecione um cargo"
-            />
+            <Reveal show={paymentSemiEnabled}>
+              <div className="space-y-3">
+                <Field label="Chave PIX" value={paymentSemiKey} onChange={setPaymentSemiKey} />
+                <SelectField
+                  label="Tipo da chave"
+                  value={paymentSemiType}
+                  onChange={setPaymentSemiType}
+                  options={PIX_TYPES.map((t) => ({ value: t, label: t }))}
+                  placeholder="Selecione o tipo"
+                />
+                <SelectField
+                  label="Cargo aprovador"
+                  value={paymentSemiApproverRoleId}
+                  onChange={setPaymentSemiApproverRoleId}
+                  options={roleOptions}
+                  placeholder="Selecione um cargo"
+                />
+              </div>
+            </Reveal>
           </Section>
         </fieldset>
       ) : tab === 'safepay' ? (
         <fieldset disabled={!canUseSafePay || saving} className="space-y-4 disabled:opacity-60">
           <Section title="SafePay">
             <Toggle label="SafePay habilitado" value={safePayEnabled} onChange={setSafePayEnabled} />
-            <div className="grid sm:grid-cols-2 gap-2 mt-2">
-              {KNOWN_BANKS.map((bank) => (
-                <label key={bank} className="rounded-xl border border-white/10 px-3 py-2 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={safePayBanksOff.includes(bank)}
-                    onChange={() => toggleBank(bank)}
-                    className="accent-violet-400"
-                  />
-                  <span className="text-sm">{bank}</span>
-                </label>
-              ))}
-            </div>
+            <Reveal show={safePayEnabled}>
+              <div className="grid sm:grid-cols-2 gap-2 mt-2">
+                {KNOWN_BANKS.map((bank) => (
+                  <label key={bank} className="rounded-xl border border-white/10 px-3 py-2 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={safePayBanksOff.includes(bank)}
+                      onChange={() => toggleBank(bank)}
+                      className="accent-violet-400"
+                    />
+                    <span className="text-sm">{bank}</span>
+                  </label>
+                ))}
+              </div>
+            </Reveal>
           </Section>
         </fieldset>
       ) : (
@@ -440,23 +506,30 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 {transcriptEnabled ? 'Ativo' : 'Desativado'}
               </button>
             </div>
-            <div className="grid md:grid-cols-3 gap-3 mt-4">
-              <Field label="Expiração (dias)" value={transcriptTtlDays} onChange={setTranscriptTtlDays} />
-              <Field label="Max. tickets por usuário" value={maxOpenTicketsPerUser} onChange={setMaxOpenTicketsPerUser} />
-              <Field label="Cooldown (segundos)" value={cooldownSeconds} onChange={setCooldownSeconds} />
-            </div>
-            <Field label="Cargos que podem abrir (IDs separados por vírgula)" value={allowOpenRoleIds} onChange={setAllowOpenRoleIds} className="mt-3" />
+            <Reveal show={transcriptEnabled}>
+              <div className="space-y-3 mt-4">
+                <div className="grid md:grid-cols-3 gap-3">
+                  <Field label="Expiração (dias)" value={transcriptTtlDays} onChange={setTranscriptTtlDays} />
+                  <Field label="Max. tickets por usuário" value={maxOpenTicketsPerUser} onChange={setMaxOpenTicketsPerUser} />
+                  <Field label="Cooldown (segundos)" value={cooldownSeconds} onChange={setCooldownSeconds} />
+                </div>
+                <Field label="Cargos que podem abrir (IDs separados por vírgula)" value={allowOpenRoleIds} onChange={setAllowOpenRoleIds} />
+              </div>
+            </Reveal>
           </div>
         </fieldset>
       )}
 
       <div className="flex flex-wrap items-center gap-3 mt-6">
-        <button type="button" className="btn-primary px-6 py-3 rounded-2xl disabled:opacity-60" onClick={save} disabled={saving || (tab === 'ai' && !canUseAI) || ((tab === 'payments') && !canUsePayments) || ((tab === 'safepay') && !canUseSafePay) || ((tab === 'tickets' || tab === 'panel') && !canEdit)}>
+        <button type="button" className="btn-primary px-6 py-3 rounded-2xl disabled:opacity-60" onClick={() => void save('manual')} disabled={saving || (tab === 'ai' && !canUseAI) || ((tab === 'payments') && !canUsePayments) || ((tab === 'safepay') && !canUseSafePay) || ((tab === 'tickets' || tab === 'panel') && !canEdit)}>
           {saving ? 'Salvando...' : 'Salvar'}
         </button>
 
         {ok ? <span className="text-sm text-emerald-300">{ok}</span> : null}
         {err ? <span className="text-sm text-red-300">{err}</span> : null}
+        {!ok && !err && autosaveStatus === 'saving' ? <span className="text-sm text-white/60">Atualizando em tempo real...</span> : null}
+        {!ok && !err && autosaveStatus === 'saved' ? <span className="text-sm text-emerald-300">Atualizado em tempo real.</span> : null}
+        {!ok && !err && autosaveStatus === 'error' ? <span className="text-sm text-amber-300">Falha no auto-update. Use Salvar.</span> : null}
       </div>
 
       <div className="mt-6">
@@ -465,6 +538,14 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           <pre className="mt-3 p-4 rounded-2xl bg-black/50 border border-white/10 overflow-auto text-xs">{JSON.stringify(preview, null, 2)}</pre>
         </details>
       </div>
+    </div>
+  )
+}
+
+function Reveal({ show, children }: { show: boolean; children: React.ReactNode }) {
+  return (
+    <div className={['grid transition-all duration-300 ease-out', show ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'].join(' ')}>
+      <div className="overflow-hidden">{children}</div>
     </div>
   )
 }
