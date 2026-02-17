@@ -192,6 +192,10 @@ function normalizeTriggers(input: any): TriggerDraft[] {
   }))
 }
 
+function defaultTriggersJsonText() {
+  return JSON.stringify(safeJsonParse<any[]>(TRIGGERS_PLACEHOLDER, []), null, 2)
+}
+
 export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = null }: Props) {
   const [saving, setSaving] = useState(false)
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -236,7 +240,11 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
 
   const [ticketFunctionsText, setTicketFunctionsText] = useState(JSON.stringify(defaultFunctionsFromCfg(initial), null, 2))
   const [ticketFormsText, setTicketFormsText] = useState(JSON.stringify(defaultFormsFromCfg(initial), null, 2))
-  const [customTriggersText, setCustomTriggersText] = useState(JSON.stringify(Array.isArray(initial.customTriggers) ? initial.customTriggers : [], null, 2))
+  const [customTriggersText, setCustomTriggersText] = useState(
+    Array.isArray(initial.customTriggers) && initial.customTriggers.length > 0
+      ? JSON.stringify(initial.customTriggers, null, 2)
+      : defaultTriggersJsonText()
+  )
 
   const [aiEnabled, setAiEnabled] = useState(Boolean(initial.aiEnabled ?? false))
   const [aiModel, setAiModel] = useState(initial.aiModel ?? 'openai/gpt-oss-120b')
@@ -298,7 +306,11 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     setTicketContentText(cfg.ticketContentText ?? 'Olá! Clique abaixo para abrir ticket.')
     setTicketFunctionsText(JSON.stringify(defaultFunctionsFromCfg(cfg), null, 2))
     setTicketFormsText(JSON.stringify(defaultFormsFromCfg(cfg), null, 2))
-    setCustomTriggersText(JSON.stringify(Array.isArray(cfg.customTriggers) ? cfg.customTriggers : [], null, 2))
+    setCustomTriggersText(
+      Array.isArray(cfg.customTriggers) && cfg.customTriggers.length > 0
+        ? JSON.stringify(cfg.customTriggers, null, 2)
+        : defaultTriggersJsonText()
+    )
 
     setAiEnabled(Boolean(cfg.aiEnabled ?? false))
     setAiModel(cfg.aiModel ?? 'openai/gpt-oss-120b')
@@ -383,15 +395,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     [ticketFormsText]
   )
   const parsedCustomTriggers = useMemo(
-    () => safeJsonParse<GuildConfig['customTriggers']>(customTriggersText, [
-  {
-    "enabled": true,
-    "matchType": "equals",
-    "trigger": ".vip",
-    "responseType": "content",
-    "content": "Olá, {client.mention}!\nEntre no servidor abaixo para receber seu produto.\nhttps://www.roblox.com/share?code..."
-  }
-]),
+    () => safeJsonParse<GuildConfig['customTriggers']>(customTriggersText, []),
     [customTriggersText]
   )
 
@@ -468,7 +472,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         return base
       })
       .filter((t) => t.trigger.length > 0)
-    setCustomTriggersText(JSON.stringify(out, null, 2))
+    setCustomTriggersText(out.length > 0 ? JSON.stringify(out, null, 2) : defaultTriggersJsonText())
     setShowTriggersModal(false)
   }
 
@@ -1380,5 +1384,4 @@ function SelectField({ label, value, onChange, options, placeholder }: { label: 
     </div>
   )
 }
-
 
