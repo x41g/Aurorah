@@ -212,6 +212,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const [ticketCategoryId, setTicketCategoryId] = useState(initial.ticketCategoryId ?? '')
   const [logsChannelId, setLogsChannelId] = useState(initial.logsChannelId ?? '')
   const [panelChannelId, setPanelChannelId] = useState(initial.panelChannelId ?? '')
+  const [slaChannelId, setSlaChannelId] = useState(initial.slaChannelId ?? '')
+  const [feedbackChannelId, setFeedbackChannelId] = useState(initial.feedbackChannelId ?? '')
 
   const [transcriptEnabled, setTranscriptEnabled] = useState(Boolean(initial.transcriptEnabled ?? true))
   const [transcriptTtlDays, setTranscriptTtlDays] = useState(String(initial.transcriptTtlDays ?? 30))
@@ -273,6 +275,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     setTicketCategoryId(cfg.ticketCategoryId ?? '')
     setLogsChannelId(cfg.logsChannelId ?? '')
     setPanelChannelId(cfg.panelChannelId ?? '')
+    setSlaChannelId(cfg.slaChannelId ?? '')
+    setFeedbackChannelId(cfg.feedbackChannelId ?? '')
 
     setTranscriptEnabled(Boolean(cfg.transcriptEnabled ?? true))
     setTranscriptTtlDays(String(cfg.transcriptTtlDays ?? 30))
@@ -466,6 +470,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       ticketCategoryId: ticketCategoryId || undefined,
       logsChannelId: logsChannelId || undefined,
       panelChannelId: panelChannelId || undefined,
+      slaChannelId: slaChannelId || undefined,
+      feedbackChannelId: feedbackChannelId || undefined,
 
       transcriptEnabled,
       transcriptTtlDays: Number(transcriptTtlDays || 0) || undefined,
@@ -519,6 +525,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     ticketCategoryId,
     logsChannelId,
     panelChannelId,
+    slaChannelId,
+    feedbackChannelId,
     transcriptEnabled,
     transcriptTtlDays,
     allowOpenRoleIds,
@@ -960,6 +968,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
           <SelectField label="Categoria de Tickets" value={ticketCategoryId} onChange={setTicketCategoryId} options={categoryOptions} placeholder="Selecione uma categoria" />
           <SelectField label="Canal de Logs" value={logsChannelId} onChange={setLogsChannelId} options={textChannelOptions} placeholder="Selecione um canal" />
           <SelectField label="Canal do Painel" value={panelChannelId} onChange={setPanelChannelId} options={textChannelOptions} placeholder="Selecione um canal" />
+          <SelectField label="Canal SLA" value={slaChannelId} onChange={setSlaChannelId} options={textChannelOptions} placeholder="Selecione um canal" />
+          <SelectField label="Canal de Avaliacao" value={feedbackChannelId} onChange={setFeedbackChannelId} options={textChannelOptions} placeholder="Selecione um canal" />
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
             <div className="flex items-center justify-between">

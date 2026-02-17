@@ -61,6 +61,8 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
     ticketCategoryId: body.ticketCategoryId ? String(body.ticketCategoryId) : undefined,
     logsChannelId: body.logsChannelId ? String(body.logsChannelId) : undefined,
     panelChannelId: body.panelChannelId ? String(body.panelChannelId) : undefined,
+    slaChannelId: body.slaChannelId ? String(body.slaChannelId) : undefined,
+    feedbackChannelId: body.feedbackChannelId ? String(body.feedbackChannelId) : undefined,
     panelImageUrl: body.panelImageUrl ? String(body.panelImageUrl) : undefined,
 
     transcriptEnabled,

@@ -3,6 +3,8 @@ export type GuildConfig = {
   ticketCategoryId?: string
   logsChannelId?: string
   panelChannelId?: string
+  slaChannelId?: string
+  feedbackChannelId?: string
   transcriptEnabled?: boolean
   transcriptTtlDays?: number
   allowOpenRoleIds?: string[]
