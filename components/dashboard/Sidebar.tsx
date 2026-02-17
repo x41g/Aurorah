@@ -35,6 +35,12 @@ type EntitlementsLike = {
   canUseSafePay?: boolean
 } | null
 
+function getTabFromHref(href: string) {
+  const query = href.split('?')[1] || ''
+  const value = new URLSearchParams(query).get('tab')
+  return (value || 'panel').toLowerCase()
+}
+
 function cls(active: boolean, disabled = false) {
   return [
     'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 border',
@@ -53,15 +59,19 @@ export function Sidebar({
   isAdmin,
   guildId,
   entitlements,
+  activeTab,
+  onTabChange,
 }: {
   isAdmin?: boolean
   guildId?: string
   entitlements?: EntitlementsLike
+  activeTab?: string
+  onTabChange?: (tab: string) => void
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
   const sp = useSearchParams()
-  const currentTab = (sp.get('tab') || 'panel').toLowerCase()
+  const currentTab = (activeTab || sp.get('tab') || 'panel').toLowerCase()
 
   const [guildName, setGuildName] = useState<string>('')
   const [guildIconUrl, setGuildIconUrl] = useState<string>('')
@@ -180,6 +190,27 @@ export function Sidebar({
         {sectionTitle(guildId ? 'Servidor' : 'Geral')}
         {mainItems.map((it) => {
           const active = it.href.includes('?') ? isItemActive(it.href) : pathname === it.href
+          const isGuildTab = Boolean(guildId && it.href.startsWith(`/dashboard/${guildId}?tab=`))
+          const tabName = isGuildTab ? getTabFromHref(it.href) : ''
+          if (isGuildTab && onTabChange) {
+            return (
+              <div key={it.href} title={it.disabled ? it.disabledHint : ''}>
+                <button
+                  type="button"
+                  disabled={Boolean(it.disabled)}
+                  className={`${cls(active, it.disabled)} fx-hover-lift w-full text-left`}
+                  onClick={() => {
+                    onTabChange(tabName)
+                    setMobileOpen(false)
+                  }}
+                >
+                  {it.icon}
+                  <span className="font-medium tracking-[0.01em]">{it.label}</span>
+                  {it.badge ? <span className="ml-auto h-2.5 w-2.5 rounded-full bg-fuchsia-300" /> : null}
+                </button>
+              </div>
+            )
+          }
           return (
             <div key={it.href} title={it.disabled ? it.disabledHint : ''}>
               <Link

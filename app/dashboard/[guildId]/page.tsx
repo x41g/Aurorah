@@ -4,13 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { canManageGuild } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
 import type { GuildConfig, GuildStats } from "@/lib/types";
-import { Sidebar } from "@/components/dashboard/Sidebar";
-import { Topbar } from "@/components/dashboard/Topbar";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { GuildSettings } from "@/components/dashboard/GuildSettings";
 import { getBotGuildIds } from "@/lib/botPresence";
 import { isAdminDiscordId } from "@/lib/admin";
-import { StaffRow } from "@/components/dashboard/StaffRow";
+import { GuildDashboardClient } from "@/components/dashboard/GuildDashboardClient";
 
 export default async function GuildPage({
   params,
@@ -47,92 +43,22 @@ export default async function GuildPage({
     staff: (statsRow?.staff as any) || undefined,
   };
 
-  const created = Number(stats.ticketsCreatedToday ?? 0);
-  const closed = Number(stats.ticketsClosedToday ?? 0);
-  const net = created - closed;
-  const hasCarryOverClose = closed > created;
-  const closeRate = created > 0 ? Math.round((closed / created) * 100) : 0;
-
   const userId = session.user?.id ?? null;
   const isAdmin = isAdminDiscordId(userId);
   const entitlements = (access as any).entitlements || null;
 
   return (
-    <div className="dashboard-shell">
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6">
-        <Sidebar guildId={params.guildId} isAdmin={isAdmin} entitlements={entitlements} />
-        <div className="min-w-0">
-          <Topbar title={access.guild.name} userName={session.user?.name} userImage={session.user?.image} />
-
-          <div className="dashboard-stagger grid md:grid-cols-4 gap-4 mb-6">
-            <StatCard
-              label="Tickets criados hoje"
-              value={String(created)}
-              hint={stats.todayKey ? `Dia: ${stats.todayKey}` : undefined}
-            />
-            <StatCard label="Tickets fechados hoje" value={String(closed)} />
-            <StatCard
-              label="Saldo do dia"
-              value={net > 0 ? `+${net}` : String(net)}
-              hint="Criados - Fechados"
-            />
-            <StatCard
-              label="Atualizado (Horário de Brasília)"
-              value={
-                stats.updatedAt
-                  ? new Date(stats.updatedAt).toLocaleTimeString("pt-BR", {
-                      timeZone: "America/Sao_Paulo",
-                    })
-                  : "-"
-              }
-            />
-          </div>
-          {hasCarryOverClose ? (
-            <div className="mb-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/80">
-              Hoje foram fechados tickets abertos em dias anteriores. Isso e esperado.
-            </div>
-          ) : null}
-
-          {tab === "stats" ? (
-            <div className="card">
-              <h2 className="text-xl font-bold mb-2">Estatisticas de Tickets</h2>
-              <p className="text-white/60 mb-4">
-                O bot envia metricas automaticamente. Para resultados completos, mantenha o bot online.
-              </p>
-
-              <div className="grid md:grid-cols-4 gap-4 mb-6">
-                <StatCard label="Criados hoje" value={String(created)} />
-                <StatCard label="Fechados hoje" value={String(closed)} />
-                <StatCard label="Saldo do dia" value={net > 0 ? `+${net}` : String(net)} hint="Criados - Fechados" />
-                <StatCard label="Taxa de fechamento" value={`${closeRate}%`} hint="Fechados / Criados no dia" />
-              </div>
-            </div>
-          ) : tab === "staff" ? (
-            <div className="card">
-              <h2 className="text-xl font-bold mb-2">Estatisticas de Staff</h2>
-              <p className="text-white/60 mb-4">Ranking e contadores por staff (assumidos/fechados).</p>
-
-              <div className="space-y-3">
-                {stats.staff && Object.keys(stats.staff).length ? (
-                  Object.entries(stats.staff).map(([id, s]) => (
-                    <StaffRow
-                      key={id}
-                      id={id}
-                      claimed={Number((s as any)?.claimed ?? 0)}
-                      closed={Number((s as any)?.closed ?? 0)}
-                    />
-                  ))
-                ) : (
-                  <div className="text-sm text-white/60">Sem dados de staff ainda.</div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <GuildSettings guildId={params.guildId} initial={cfg} tab={tab} entitlements={entitlements} />
-          )}
-        </div>
-      </div>
-    </div>
+    <GuildDashboardClient
+      guildId={params.guildId}
+      guildName={access.guild.name}
+      isAdmin={isAdmin}
+      entitlements={entitlements}
+      cfg={cfg}
+      stats={stats}
+      userName={session.user?.name}
+      userImage={session.user?.image}
+      initialTab={tab}
+    />
   );
 }
 
