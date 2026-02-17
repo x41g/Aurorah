@@ -49,6 +49,8 @@ export default async function GuildPage({
 
   const created = Number(stats.ticketsCreatedToday ?? 0);
   const closed = Number(stats.ticketsClosedToday ?? 0);
+  const net = created - closed;
+  const hasCarryOverClose = closed > created;
   const closeRate = created > 0 ? Math.round((closed / created) * 100) : 0;
 
   const userId = session.user?.id ?? null;
@@ -62,13 +64,18 @@ export default async function GuildPage({
         <div className="min-w-0">
           <Topbar title={access.guild.name} userName={session.user?.name} userImage={session.user?.image} />
 
-          <div className="dashboard-stagger grid md:grid-cols-3 gap-4 mb-6">
+          <div className="dashboard-stagger grid md:grid-cols-4 gap-4 mb-6">
             <StatCard
               label="Tickets criados hoje"
               value={String(created)}
               hint={stats.todayKey ? `Dia: ${stats.todayKey}` : undefined}
             />
             <StatCard label="Tickets fechados hoje" value={String(closed)} />
+            <StatCard
+              label="Saldo do dia"
+              value={net > 0 ? `+${net}` : String(net)}
+              hint="Criados - Fechados"
+            />
             <StatCard
               label="Atualizado (Horário de Brasília)"
               value={
@@ -80,6 +87,11 @@ export default async function GuildPage({
               }
             />
           </div>
+          {hasCarryOverClose ? (
+            <div className="mb-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/80">
+              Hoje foram fechados tickets abertos em dias anteriores. Isso e esperado.
+            </div>
+          ) : null}
 
           {tab === "stats" ? (
             <div className="card">
@@ -88,9 +100,10 @@ export default async function GuildPage({
                 O bot envia metricas automaticamente. Para resultados completos, mantenha o bot online.
               </p>
 
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="grid md:grid-cols-4 gap-4 mb-6">
                 <StatCard label="Criados hoje" value={String(created)} />
                 <StatCard label="Fechados hoje" value={String(closed)} />
+                <StatCard label="Saldo do dia" value={net > 0 ? `+${net}` : String(net)} hint="Criados - Fechados" />
                 <StatCard label="Taxa de fechamento" value={`${closeRate}%`} hint="Fechados / Criados no dia" />
               </div>
             </div>
