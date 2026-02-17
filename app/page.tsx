@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronDown, Check, Sparkles, ArrowRight, PlayCircle } from 'lucide-react'
+import { ChevronDown, Check, Sparkles, ArrowRight, PlayCircle, MessageCircle, Instagram, Clapperboard } from 'lucide-react'
 import { config } from '../config'
 import DashboardPreview from '@/components/DashboardPreview'
 import TestimonialCarousel from '@/components/TestimonialCarousel'
@@ -186,10 +186,54 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="section pt-0 relative z-10">
+        <div className="container-max">
+          <div className="card p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+              <h3 className="text-2xl font-bold">Social e Contato</h3>
+              <p className="text-white/65 text-sm">Acompanhe nossos canais oficiais.</p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <a
+                href={config.buyLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary w-full justify-center fx-hover-lift inline-flex items-center gap-2"
+              >
+                <MessageCircle size={16} />
+                Discord
+              </a>
+              <a
+                href={config.instagramLink || config.buyLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary w-full justify-center fx-hover-lift inline-flex items-center gap-2"
+              >
+                <Instagram size={16} />
+                Instagram
+              </a>
+              <a
+                href={config.tiktokLink || config.buyLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full justify-center fx-hover-lift inline-flex items-center gap-2"
+              >
+                <Clapperboard size={16} />
+                TikTok
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <footer className="py-10 px-4 border-t border-white/10 relative z-10">
         <div className="container-max flex flex-col sm:flex-row gap-2 items-center justify-between text-sm text-white/60">
           <span>© 2026 {config.botName}. Todos os direitos reservados.</span>
-          <span>Powered by Auroxe Group</span>
+          <div className="flex items-center gap-4">
+            <a href="/terms" className="hover:text-white transition">Termos</a>
+            <a href="/privacy" className="hover:text-white transition">Privacidade</a>
+            <span>Powered by Auroxe Group</span>
+          </div>
         </div>
       </footer>
     </div>

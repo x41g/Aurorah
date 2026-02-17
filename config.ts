@@ -9,6 +9,8 @@ export const config = {
   // 🔗 Links
   discordLink: 'https://discord.com/oauth2/authorize?client_id=1470481135321485455',
   buyLink: 'https://discord.gg/6FrSDf7dSc',
+  instagramLink: '',
+  tiktokLink: '',
   
   colors: {
 primary: '#8B5CF6',
