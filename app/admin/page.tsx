@@ -67,7 +67,16 @@ return (
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             <StatCard label="Guilds com bot (registradas)" value={String(botGuilds.guildIds?.length ?? 0)} />
-            <StatCard label="Atualização" value={botGuilds.updatedAt ? new Date(botGuilds.updatedAt).toLocaleString("pt-BR") : "—"} />
+            <StatCard
+              label="Atualização (Horário de Brasília)"
+              value={
+                botGuilds.updatedAt
+                  ? new Date(botGuilds.updatedAt).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo",
+                    })
+                  : "—"
+              }
+            />
             <StatCard label="Amostra" value={`${statsList.length} guilds`} hint="Exibindo até 25 para performance" />
           </div>
 

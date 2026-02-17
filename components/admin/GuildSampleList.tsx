@@ -25,7 +25,7 @@ async function fetchGuildInfo(guildId: string): Promise<GuildInfo> {
 function fmtDate(ms?: number) {
   if (!ms) return '—'
   try {
-    return new Date(ms).toLocaleString('pt-BR')
+    return new Date(ms).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
   } catch {
     return '—'
   }
@@ -110,7 +110,7 @@ export function GuildSampleList({ stats }: { stats: GuildStats[] }) {
                   </div>
 
                   <div className="text-xs text-white/45 mt-1">
-                    Atualizado: {fmtDate(s.updatedAt)}
+                    Atualizado (Horário de Brasília): {fmtDate(s.updatedAt)}
                   </div>
                 </div>
               </div>

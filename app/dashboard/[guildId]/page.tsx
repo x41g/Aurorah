@@ -70,8 +70,14 @@ export default async function GuildPage({
             />
             <StatCard label="Tickets fechados hoje" value={String(closed)} />
             <StatCard
-              label="Atualizado"
-              value={stats.updatedAt ? new Date(stats.updatedAt).toLocaleTimeString("pt-BR") : "-"}
+              label="Atualizado (Horário de Brasília)"
+              value={
+                stats.updatedAt
+                  ? new Date(stats.updatedAt).toLocaleTimeString("pt-BR", {
+                      timeZone: "America/Sao_Paulo",
+                    })
+                  : "-"
+              }
             />
           </div>
 
