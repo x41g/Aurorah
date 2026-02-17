@@ -8,6 +8,7 @@ export type PlanEntitlements = {
   active: boolean;
   maxGuilds: number;
   maxTicketsPerMonth: number | null;
+  maxTicketPanels: number;
   dashboardEnabled: boolean;
   paymentsEnabled: boolean;
   safePayEnabled: boolean;
@@ -82,6 +83,7 @@ export async function getGuildEntitlements(guildId: string): Promise<GuildEntitl
         active: Boolean(subInfo.plan.active),
         maxGuilds: Number(subInfo.plan.maxGuilds || 1),
         maxTicketsPerMonth: subInfo.plan.maxTicketsPerMonth == null ? null : Number(subInfo.plan.maxTicketsPerMonth),
+        maxTicketPanels: Math.min(10, Math.max(1, Number(subInfo.plan.maxTicketPanels || 1))),
         dashboardEnabled: Boolean(subInfo.plan.dashboardEnabled),
         paymentsEnabled: Boolean(subInfo.plan.paymentsEnabled),
         safePayEnabled: Boolean(subInfo.plan.safePayEnabled),

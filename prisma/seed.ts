@@ -13,6 +13,7 @@ async function main() {
 
       maxGuilds: 1,
       maxTicketsPerMonth: 100,
+      maxTicketPanels: 1,
 
       dashboardEnabled: true,
       paymentsEnabled: false,
@@ -27,6 +28,7 @@ async function main() {
       priceCents: 0,
       maxGuilds: 1,
       maxTicketsPerMonth: 100,
+      maxTicketPanels: 1,
       dashboardEnabled: true,
       paymentsEnabled: false,
       safePayEnabled: false,
@@ -46,6 +48,7 @@ async function main() {
 
       maxGuilds: 5,
       maxTicketsPerMonth: null, // ilimitado
+      maxTicketPanels: 5,
 
       dashboardEnabled: true,
       paymentsEnabled: true,
@@ -60,6 +63,7 @@ async function main() {
       priceCents: 0,
       maxGuilds: 5,
       maxTicketsPerMonth: null,
+      maxTicketPanels: 5,
       dashboardEnabled: true,
       paymentsEnabled: true,
       safePayEnabled: true,

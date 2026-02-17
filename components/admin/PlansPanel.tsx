@@ -10,6 +10,7 @@ type Plan = {
   active: boolean;
   maxGuilds: number;
   maxTicketsPerMonth: number | null;
+  maxTicketPanels: number;
   dashboardEnabled: boolean;
   paymentsEnabled: boolean;
   safePayEnabled: boolean;
@@ -136,10 +137,16 @@ export function PlansPanel() {
                 placeholder="Vazio = ilimitado"
               />
               <Field
+                label="Max paineis ticket"
+                value={String(p.maxTicketPanels ?? 1)}
+                onChange={(v) => patchPlan(p.key, { maxTicketPanels: Math.min(10, Math.max(1, Number(v || 1) || 1)) })}
+                placeholder="1 a 10"
+              />
+              <Field
                 label="Descricao"
                 value={p.description || ""}
                 onChange={(v) => patchPlan(p.key, { description: v })}
-                className="md:col-span-2 xl:col-span-3"
+                className="md:col-span-2 xl:col-span-2"
               />
             </div>
 

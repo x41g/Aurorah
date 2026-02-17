@@ -51,6 +51,9 @@ export async function PUT(req: Request) {
         : Number.isFinite(Number(body?.maxTicketsPerMonth))
           ? Number(body.maxTicketsPerMonth)
           : null,
+    maxTicketPanels: Number.isFinite(Number(body?.maxTicketPanels))
+      ? Math.min(10, Math.max(1, Number(body.maxTicketPanels)))
+      : 1,
 
     dashboardEnabled: Boolean(body?.dashboardEnabled),
     paymentsEnabled: Boolean(body?.paymentsEnabled),

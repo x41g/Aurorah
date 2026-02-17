@@ -66,6 +66,7 @@ model Plan {
 
   maxGuilds          Int  @default(1)
   maxTicketsPerMonth Int?
+  maxTicketPanels    Int  @default(1)
 
   dashboardEnabled Boolean @default(true)
   paymentsEnabled  Boolean @default(false)

@@ -14,7 +14,10 @@ import {
   CreditCard,
   Menu,
   X,
+  Bell,
+  Activity,
 } from 'lucide-react'
+import { CHANGELOG_SEEN_STORAGE_KEY, LATEST_CHANGELOG_ID } from '@/lib/changelog'
 
 type Item = {
   href: string
@@ -22,6 +25,7 @@ type Item = {
   icon: React.ReactNode
   disabled?: boolean
   disabledHint?: string
+  badge?: boolean
 }
 
 type EntitlementsLike = {
@@ -61,6 +65,7 @@ export function Sidebar({
 
   const [guildName, setGuildName] = useState<string>('')
   const [guildIconUrl, setGuildIconUrl] = useState<string>('')
+  const [hasUnreadChangelog, setHasUnreadChangelog] = useState(false)
 
   const defaultLogo = (process.env.NEXT_PUBLIC_PANEL_LOGO_URL || '').trim()
 
@@ -91,6 +96,12 @@ export function Sidebar({
     }
   }, [guildId])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const seen = window.localStorage.getItem(CHANGELOG_SEEN_STORAGE_KEY) || ''
+    setHasUnreadChangelog(seen !== LATEST_CHANGELOG_ID)
+  }, [])
+
   function isItemActive(href: string) {
     const [path, query] = href.split('?')
     if (pathname !== path) return false
@@ -109,7 +120,11 @@ export function Sidebar({
 
   const mainItems: Item[] = useMemo(() => {
     if (!guildId) {
-      return [{ href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> }]
+      return [
+        { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+        { href: '/status', label: 'Status', icon: <Activity size={18} /> },
+        { href: '/changelog', label: 'Novidades', icon: <Bell size={18} />, badge: hasUnreadChangelog },
+      ]
     }
 
     return [
@@ -122,8 +137,10 @@ export function Sidebar({
       { href: `/dashboard/${guildId}?tab=stats`, label: 'Estatisticas', icon: <BarChart3 size={18} /> },
       { href: `/dashboard/${guildId}?tab=staff`, label: 'Staff', icon: <BarChart3 size={18} /> },
       { href: '/docs', label: 'Docs', icon: <CreditCard size={18} /> },
+      { href: '/status', label: 'Status', icon: <Activity size={18} /> },
+      { href: '/changelog', label: 'Novidades', icon: <Bell size={18} />, badge: hasUnreadChangelog },
     ]
-  }, [guildId, canEditConfig, canUseAI, canUsePayments, canUseSafePay])
+  }, [guildId, canEditConfig, canUseAI, canUsePayments, canUseSafePay, hasUnreadChangelog])
 
   const adminItems: Item[] = useMemo(() => {
     if (!isAdmin) return []
@@ -165,9 +182,20 @@ export function Sidebar({
           const active = it.href.includes('?') ? isItemActive(it.href) : pathname === it.href
           return (
             <div key={it.href} title={it.disabled ? it.disabledHint : ''}>
-              <Link href={it.disabled ? '#' : it.href} className={`${cls(active, it.disabled)} fx-hover-lift`} onClick={() => setMobileOpen(false)}>
+              <Link
+                href={it.disabled ? '#' : it.href}
+                className={`${cls(active, it.disabled)} fx-hover-lift`}
+                onClick={() => {
+                  if (it.href === '/changelog' && typeof window !== 'undefined') {
+                    window.localStorage.setItem(CHANGELOG_SEEN_STORAGE_KEY, LATEST_CHANGELOG_ID)
+                    setHasUnreadChangelog(false)
+                  }
+                  setMobileOpen(false)
+                }}
+              >
                 {it.icon}
                 <span className="font-medium">{it.label}</span>
+                {it.badge ? <span className="ml-auto h-2.5 w-2.5 rounded-full bg-fuchsia-300" /> : null}
               </Link>
             </div>
           )
