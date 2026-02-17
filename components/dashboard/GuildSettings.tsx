@@ -60,20 +60,9 @@ const TRIGGERS_PLACEHOLDER = `[
   {
     "enabled": true,
     "matchType": "equals",
-    "trigger": "+vip",
+    "trigger": ".vip",
     "responseType": "content",
-    "content": "Ola {client.user}, seu VIP foi ativado no ticket {ticket.channel}!"
-  },
-  {
-    "enabled": true,
-    "matchType": "startsWith",
-    "trigger": "+plano",
-    "responseType": "embed",
-    "embed": {
-      "title": "Plano VIP",
-      "description": "{author.user}, confira os detalhes com a equipe.",
-      "color": "#C084FC"
-    }
+    "content": "Olá, {client.mention}!\nEntre no servidor abaixo para receber seu produto.\nhttps://www.roblox.com/share?code..."
   }
 ]`
 
