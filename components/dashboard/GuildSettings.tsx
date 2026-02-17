@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GuildConfig } from '@/lib/types'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Check, X } from 'lucide-react'
+import { config as siteConfig } from '@/config'
 
 type EntitlementsLike = {
   canEditConfig?: boolean
@@ -56,7 +57,7 @@ const TICKET_FORMS_PLACEHOLDER = `{
     ]
   }
 }`
-const TRIGGERS_PLACEHOLDER = `[
+const DEFAULT_TRIGGERS_PLACEHOLDER = `[
   {
     "enabled": true,
     "matchType": "equals",
@@ -65,6 +66,10 @@ const TRIGGERS_PLACEHOLDER = `[
     "content": "Olá, {client.mention}!\nEntre no servidor abaixo para receber seu produto.\nhttps://www.roblox.com/share?code..."
   }
 ]`
+const TRIGGERS_PLACEHOLDER =
+  typeof siteConfig.triggersPlaceholder === 'string' && siteConfig.triggersPlaceholder.trim().length > 0
+    ? siteConfig.triggersPlaceholder
+    : DEFAULT_TRIGGERS_PLACEHOLDER
 
 function asArray(v: string) {
   return v
@@ -194,6 +199,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const suppressNextAutosaveRef = useRef(false)
   const clientIdRef = useRef(`dash-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  const isEditingTriggersRef = useRef(false)
   const [remoteSyncMsg, setRemoteSyncMsg] = useState<string | null>(null)
 
   const canEdit = Boolean(entitlements?.canEditConfig)
@@ -234,6 +240,10 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       ? JSON.stringify(initial.customTriggers, null, 2)
       : defaultTriggersJsonText()
   )
+  const setCustomTriggersTextLocal = (next: string) => {
+    isEditingTriggersRef.current = true
+    setCustomTriggersText(next)
+  }
 
   const [aiEnabled, setAiEnabled] = useState(Boolean(initial.aiEnabled ?? false))
   const [aiModel, setAiModel] = useState(initial.aiModel ?? 'openai/gpt-oss-120b')
@@ -295,11 +305,13 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     setTicketContentText(cfg.ticketContentText ?? 'Olá! Clique abaixo para abrir ticket.')
     setTicketFunctionsText(JSON.stringify(defaultFunctionsFromCfg(cfg), null, 2))
     setTicketFormsText(JSON.stringify(defaultFormsFromCfg(cfg), null, 2))
-    setCustomTriggersText(
-      Array.isArray(cfg.customTriggers) && cfg.customTriggers.length > 0
-        ? JSON.stringify(cfg.customTriggers, null, 2)
-        : defaultTriggersJsonText()
-    )
+    if (!isEditingTriggersRef.current) {
+      setCustomTriggersText(
+        Array.isArray(cfg.customTriggers) && cfg.customTriggers.length > 0
+          ? JSON.stringify(cfg.customTriggers, null, 2)
+          : defaultTriggersJsonText()
+      )
+    }
 
     setAiEnabled(Boolean(cfg.aiEnabled ?? false))
     setAiModel(cfg.aiModel ?? 'openai/gpt-oss-120b')
@@ -620,6 +632,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       }
       if (mode === 'manual') setOk('Salvo com sucesso.')
       setAutosaveStatus('saved')
+      isEditingTriggersRef.current = false
     } catch {
       if (mode === 'manual') setErr('Falha de rede.')
       setAutosaveStatus('error')
@@ -829,9 +842,12 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
             <JsonField
               label="Triggers (JSON)"
               value={customTriggersText}
-              onChange={setCustomTriggersText}
+              onChange={setCustomTriggersTextLocal}
               hint='Campos práticos: enabled, matchType, trigger, responseType, content/embed.'
               placeholder={TRIGGERS_PLACEHOLDER}
+              onFocus={() => {
+                isEditingTriggersRef.current = true
+              }}
             />
             <div className="flex justify-end">
               <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={openTriggersConfigurator}>
@@ -1341,7 +1357,23 @@ function TextAreaField({ label, value, onChange, hint, placeholder, className = 
   )
 }
 
-function JsonField({ label, value, onChange, hint, placeholder }: { label: string; value: string; onChange: (v: string) => void; hint?: string; placeholder?: string }) {
+function JsonField({
+  label,
+  value,
+  onChange,
+  hint,
+  placeholder,
+  onFocus,
+  onBlur,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  hint?: string
+  placeholder?: string
+  onFocus?: () => void
+  onBlur?: () => void
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
       <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/65">
@@ -1353,6 +1385,8 @@ function JsonField({ label, value, onChange, hint, placeholder }: { label: strin
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
+        onBlur={onBlur}
       />
     </div>
   )
@@ -1373,4 +1407,3 @@ function SelectField({ label, value, onChange, options, placeholder }: { label: 
     </div>
   )
 }
-

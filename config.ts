@@ -5,6 +5,15 @@ export const config = {
   botName: '・Aurora',
   botDescription: 'O melhor bot de tickets do Discord',
   tagline: 'Automatize as vendas do seu Discord',
+  triggersPlaceholder: `[
+  {
+    "enabled": true,
+    "matchType": "equals",
+    "trigger": ".vip",
+    "responseType": "content",
+    "content": "Olá, {client.mention}!\\nEntre no servidor abaixo para receber seu produto.\\nhttps://www.roblox.com/share?code..."
+  }
+]`,
   
   // 🔗 Links
   discordLink: 'https://discord.com/oauth2/authorize?client_id=1470481135321485455',
