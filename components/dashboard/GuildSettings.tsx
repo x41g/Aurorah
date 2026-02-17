@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GuildConfig } from '@/lib/types'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { Check, X } from 'lucide-react'
 
 type EntitlementsLike = {
   canEditConfig?: boolean
@@ -105,6 +106,10 @@ function defaultFormsFromCfg(cfg: GuildConfig) {
 function previewMacros(input: string) {
   return String(input || '')
     .replaceAll('{client.user}', '@AuroraBot')
+    .replaceAll('{client.mention}', '@AuroraBot')
+    .replaceAll('{client.id}', '123456789012345678')
+    .replaceAll('{ticket.owner.user}', '@AuroraBot')
+    .replaceAll('{ticket.owner.id}', '123456789012345678')
     .replaceAll('{author.user}', '@Cliente')
     .replaceAll('{ticket.channel}', '#ticket-2041')
     .replaceAll('{ticket.id}', 'ticket-2041')
@@ -712,7 +717,12 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 </div>
               </Reveal>
               <Reveal show={ticketAppearanceMode === 'content'}>
-                <Field label="Conteudo" value={ticketContentText} onChange={setTicketContentText} />
+                <TextAreaField
+                  label="Conteudo"
+                  value={ticketContentText}
+                  onChange={setTicketContentText}
+                  placeholder={"Ex.: Atendimento VIP\nDescreva seu pedido com detalhes para agilizar o suporte."}
+                />
               </Reveal>
             </Section>
           </Reveal>
@@ -786,7 +796,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">{ticketContentText || 'Sem content.'}</div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80 whitespace-pre-line">{ticketContentText || 'Sem content.'}</div>
               )}
             </Section>
           </Reveal>
@@ -835,10 +845,10 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                     {String(t?.responseType || 'content') === 'embed' ? (
                       <div className="rounded-lg border border-white/15 p-3">
                         <div className="font-semibold">{previewMacros(String(t?.embed?.title || 'Sem titulo'))}</div>
-                        <div className="text-sm text-white/75 mt-1">{previewMacros(String(t?.embed?.description || 'Sem descricao'))}</div>
+                        <div className="text-sm text-white/75 mt-1 whitespace-pre-line">{previewMacros(String(t?.embed?.description || 'Sem descricao'))}</div>
                       </div>
                     ) : (
-                      <div className="text-sm text-white/85">{previewMacros(String(t?.content || 'Sem conteudo'))}</div>
+                      <div className="text-sm text-white/85 whitespace-pre-line">{previewMacros(String(t?.content || 'Sem conteudo'))}</div>
                     )}
                   </div>
                 ))
@@ -1187,10 +1197,10 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                   <div className="grid sm:grid-cols-2 gap-2">
                     <Field label="Titulo da embed" placeholder="Ex.: Plano VIP" value={t.embedTitle} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedTitle: v } : x)))} />
                     <Field label="Cor da embed" placeholder="Ex.: #C084FC" value={t.embedColor} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedColor: v } : x)))} />
-                    <Field label="Descricao da embed" placeholder="Ex.: {author.user}, confira os detalhes com a equipe." value={t.embedDescription} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedDescription: v } : x)))} className="sm:col-span-2" />
+                    <TextAreaField label="Descricao da embed" placeholder={"Ex.: {author.user}, confira os detalhes com a equipe.\nVoce pode quebrar linha aqui."} value={t.embedDescription} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, embedDescription: v } : x)))} className="sm:col-span-2" />
                   </div>
                 ) : (
-                  <Field label="Mensagem de resposta" placeholder="Ex.: Olá {client.user}, seu VIP foi ativado!" value={t.content} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, content: v } : x)))} />
+                  <TextAreaField label="Mensagem de resposta" placeholder={"Ex.: Ola {client.user}, seu VIP foi ativado!\nUse quebra de linha para separar titulo e texto sem embed."} value={t.content} onChange={(v) => setTriggerDraft((p) => p.map((x, i) => (i === idx ? { ...x, content: v } : x)))} />
                 )}
                 <div className="flex justify-end">
                   <button type="button" className="btn-secondary px-3 py-1.5 text-xs rounded-xl" onClick={() => setTriggerDraft((p) => p.filter((_, i) => i !== idx))}>
@@ -1282,7 +1292,10 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
           value ? 'bg-emerald-500/20 border-emerald-300/50 text-emerald-100' : 'bg-red-500/15 border-red-300/35 text-red-100',
         ].join(' ')}
       >
-        {value ? 'V' : 'X'}
+        <span className="inline-flex items-center justify-center gap-1">
+          {value ? <Check size={13} /> : <X size={13} />}
+          <span>{value ? 'V' : 'X'}</span>
+        </span>
       </button>
     </div>
   )
@@ -1296,6 +1309,23 @@ function Field({ label, value, onChange, hint, placeholder, className = '' }: { 
         {hint ? <Tooltip text={hint} /> : null}
       </label>
       <input className="mt-2 w-full rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 fx-focus-ring" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  )
+}
+
+function TextAreaField({ label, value, onChange, hint, placeholder, className = '' }: { label: string; value: string; onChange: (v: string) => void; hint?: string; placeholder?: string; className?: string }) {
+  return (
+    <div className={`rounded-2xl border border-white/10 bg-black/20 p-4 ${className}`}>
+      <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/65">
+        {label}
+        {hint ? <Tooltip text={hint} /> : null}
+      </label>
+      <textarea
+        className="mt-2 w-full min-h-[108px] rounded-xl bg-black/45 border border-white/10 px-4 py-3 outline-none focus:border-fuchsia-300/40 fx-focus-ring"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   )
 }

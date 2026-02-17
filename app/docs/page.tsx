@@ -24,12 +24,16 @@ export default function DocsPage() {
           <h2 className="text-xl font-semibold mb-2">Macros disponiveis</h2>
           <div className="grid sm:grid-cols-2 gap-3 text-sm text-white/80">
             <div><code>{"{client.user}"}</code> mencao do dono do ticket</div>
+            <div><code>{"{client.id}"}</code> id do dono do ticket</div>
+            <div><code>{"{client.mention}"}</code> mencao do dono do ticket</div>
             <div><code>{"{client.tag}"}</code> tag do dono do ticket</div>
             <div><code>{"{staff.user}"}</code> mencao do staff assumido</div>
             <div><code>{"{staff.tag}"}</code> tag do staff assumido</div>
             <div><code>{"{guild.name}"}</code> nome do servidor</div>
             <div><code>{"{ticket.id}"}</code> id do canal do ticket</div>
             <div><code>{"{ticket.channel}"}</code> mencao do canal</div>
+            <div><code>{"{ticket.owner.id}"}</code> id do dono do ticket</div>
+            <div><code>{"{ticket.owner.user}"}</code> mencao do dono do ticket</div>
             <div><code>{"{author.user}"}</code> mencao de quem enviou a msg</div>
           </div>
         </section>
@@ -44,4 +48,3 @@ export default function DocsPage() {
     </main>
   )
 }
-
