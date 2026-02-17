@@ -130,12 +130,20 @@ accent: '#12071f',
       text: 'Adorei o sistema daqui! Realmente confiável, espero que seja muito mais reconhecido!  100/10 💕',
       avatarUrl: 'clients/iymarshuai.png',
     },
-        {
+    {
       name: 'Yelhsa',
       role: '🎀 Dona da 𝐌𝐞𝐥𝐨𝐝𝐲𝐬 𝐒𝐭𝐨𝐫𝐞',
       text: '10/10 Aurora é simplesmente incrível, sistema muito prático e completo, recomendo usarem!',
       avatarUrl: 'clients/Yelhsa.png',
     },
+    {
+      name: 'miikaofc',
+      role: 'Dona da 𝐂andy`s 𝐒hopp',
+      text: 'Eu adorei muito o sistema e tudo que ele tem pra oferecer, a paciência e o atendimento! 100/10',
+      avatarUrl: 'clients/miikaofc.png',
+    },
+
+
   ],
   testimonialCarousel: {
   intervalMs: 2000,

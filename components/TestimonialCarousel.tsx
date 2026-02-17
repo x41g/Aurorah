@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { config } from "@/config";
 
 function clampIndex(i: number, len: number) {
@@ -15,84 +16,39 @@ type Testimonial = {
   avatarUrl: string;
 };
 
-type Slot = 0 | 1 | 2; // 0=esq, 1=meio, 2=dir
+type Slot = 0 | 1 | 2;
 
 export default function TestimonialCarousel() {
   const items = (config.testimonials ?? []) as Testimonial[];
-  const intervalMs = config.testimonialCarousel?.intervalMs ?? 2000;
+  const intervalMs = Math.max(1800, Number(config.testimonialCarousel?.intervalMs ?? 3200));
 
-  // o item "do meio" (em destaque)
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
 
-  // 3 cards com ids fixos, cada um aponta para um item e um slot (posição)
-  const [cards, setCards] = useState(() => {
+  const slots = useMemo(() => {
     const len = items.length || 1;
     return [
-      { id: "A", itemIndex: clampIndex(active - 1, len), slot: 0 as Slot }, // esquerdo
-      { id: "B", itemIndex: clampIndex(active, len), slot: 1 as Slot },     // meio
-      { id: "C", itemIndex: clampIndex(active + 1, len), slot: 2 as Slot }, // direito
+      { slot: 0 as Slot, itemIndex: clampIndex(active - 1, len) },
+      { slot: 1 as Slot, itemIndex: clampIndex(active, len) },
+      { slot: 2 as Slot, itemIndex: clampIndex(active + 1, len) },
     ];
-  });
+  }, [active, items.length]);
 
-  // quando items mudam (hot reload), garante estado consistente
   useEffect(() => {
-    if (items.length <= 0) return;
-    setCards([
-      { id: "A", itemIndex: clampIndex(active - 1, items.length), slot: 0 as Slot },
-      { id: "B", itemIndex: clampIndex(active, items.length), slot: 1 as Slot },
-      { id: "C", itemIndex: clampIndex(active + 1, items.length), slot: 2 as Slot },
-    ]);
-  }, [items.length]); // intencionalmente só pelo length
-
-  // autoplay: roda o loop
-  useEffect(() => {
-    if (items.length <= 1) return;
-
+    if (items.length <= 1 || paused) return;
     const id = window.setInterval(() => {
-      // 1) o destaque anda pra frente (active + 1)
       setActive((prev) => clampIndex(prev + 1, items.length));
-
-      // 2) rotaciona as posições:
-      // direita -> meio, meio -> esquerda, esquerda -> direita
-      setCards((prev) => {
-        // mapeia slots antigos -> novos slots
-        const next = prev.map((c) => {
-          const newSlot: Slot = c.slot === 2 ? 1 : c.slot === 1 ? 0 : 2;
-          return { ...c, slot: newSlot };
-        });
-
-        // 3) o card que acabou de "pular" pra direita (slot 2) precisa trocar o conteúdo
-        // para virar o novo "próximo" (active + 1)
-        const nextActive = clampIndex(active + 1, items.length);
-        const newRightItem = clampIndex(nextActive + 1, items.length);
-
-        // Qual card está em slot 2 agora?
-        const idxRight = next.findIndex((c) => c.slot === 2);
-        if (idxRight !== -1) {
-          next[idxRight] = { ...next[idxRight], itemIndex: newRightItem };
-        }
-
-        // Também ajusta o card do meio (slot 1) pra garantir que é o active atual
-        const idxMid = next.findIndex((c) => c.slot === 1);
-        if (idxMid !== -1) {
-          next[idxMid] = { ...next[idxMid], itemIndex: nextActive };
-        }
-
-        // E o esquerdo (slot 0) vira active-1
-        const idxLeft = next.findIndex((c) => c.slot === 0);
-        if (idxLeft !== -1) {
-          next[idxLeft] = {
-            ...next[idxLeft],
-            itemIndex: clampIndex(nextActive - 1, items.length),
-          };
-        }
-
-        return next;
-      });
     }, intervalMs);
-
     return () => window.clearInterval(id);
-  }, [items.length, intervalMs, active]);
+  }, [items.length, intervalMs, paused]);
+
+  function next() {
+    setActive((prev) => clampIndex(prev + 1, items.length));
+  }
+
+  function prev() {
+    setActive((prev) => clampIndex(prev - 1, items.length));
+  }
 
   if (items.length === 0) return null;
 
@@ -104,9 +60,7 @@ export default function TestimonialCarousel() {
     );
   }
 
-  // posições fixas (não sai da tela)
   const X = [-350, 0, 350] as const;
-
   const t = { ease: [0.22, 1, 0.36, 1] as const, duration: 0.55 };
 
   const slotStyle = (slot: Slot) => {
@@ -120,18 +74,24 @@ export default function TestimonialCarousel() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
-      {/* DESKTOP: 3 cards viajam entre slots */}
+    <div
+      className="mx-auto w-full max-w-6xl"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
+    >
       <div className="relative hidden h-[260px] md:block overflow-hidden">
-        {cards.map((c) => {
+        {slots.map((c) => {
           const item = items[c.itemIndex];
           const isMid = c.slot === 1;
 
           return (
             <motion.div
-              key={c.id} // ids fixos: A/B/C, não pisca
+              key={`${c.slot}-${c.itemIndex}`}
               className="absolute left-1/2 top-0 w-[42%]"
               style={{ translateX: "-50%" }}
+              initial={false}
               animate={slotStyle(c.slot)}
               transition={t}
             >
@@ -141,19 +101,38 @@ export default function TestimonialCarousel() {
         })}
       </div>
 
-      {/* MOBILE: 1 card */}
       <div className="md:hidden">
         <motion.div
           key={active}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 14, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ ease: [0.22, 1, 0.36, 1], duration: 0.45 }}
         >
           <Card item={items[active]} active />
         </motion.div>
       </div>
 
-      {/* bolinhas */}
+      {items.length > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={prev}
+            className="h-9 w-9 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 inline-flex items-center justify-center"
+            aria-label="Depoimento anterior"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={next}
+            className="h-9 w-9 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 inline-flex items-center justify-center"
+            aria-label="Proximo depoimento"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
       {items.length > 1 && (
         <div className="mt-6 flex justify-center gap-2">
           {items.map((_, i) => (
@@ -161,8 +140,8 @@ export default function TestimonialCarousel() {
               key={i}
               onClick={() => setActive(i)}
               className={[
-                "h-2 w-2 rounded-full transition-opacity bg-white",
-                i === active ? "opacity-100" : "opacity-40",
+                "h-2.5 rounded-full transition-all duration-300 bg-white",
+                i === active ? "w-5 opacity-100" : "w-2.5 opacity-40 hover:opacity-70",
               ].join(" ")}
               aria-label={`Ir para depoimento ${i + 1}`}
             />
