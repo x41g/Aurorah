@@ -5,6 +5,8 @@ import type { GuildConfig } from '@/lib/types'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Check, X } from 'lucide-react'
 import { config as siteConfig } from '@/config'
+import { SiNubank, SiPagseguro, SiPicpay } from 'react-icons/si'
+import { FaBuildingColumns, FaMoneyBillWave } from 'react-icons/fa6'
 
 type EntitlementsLike = {
   canEditConfig?: boolean
@@ -21,12 +23,12 @@ type Props = {
 }
 
 const KNOWN_BANKS = ['inter', 'picpay', 'nubank', '99pay', 'pagseguro']
-const SAFE_PAY_BANK_META: Record<string, { label: string; logoUrl: string }> = {
-  inter: { label: 'Inter', logoUrl: 'https://logo.clearbit.com/inter.co' },
-  picpay: { label: 'PicPay', logoUrl: 'https://logo.clearbit.com/picpay.com' },
-  nubank: { label: 'Nubank', logoUrl: 'https://logo.clearbit.com/nubank.com.br' },
-  '99pay': { label: '99Pay', logoUrl: 'https://logo.clearbit.com/99app.com' },
-  pagseguro: { label: 'PagSeguro', logoUrl: 'https://logo.clearbit.com/pagbank.com.br' },
+const SAFE_PAY_BANK_META: Record<string, { label: string }> = {
+  inter: { label: 'Inter' },
+  picpay: { label: 'PicPay' },
+  nubank: { label: 'Nubank' },
+  '99pay': { label: '99Pay' },
+  pagseguro: { label: 'PagSeguro' },
 }
 const AI_MODELS = [
   "openai/gpt-oss-120b",
@@ -188,6 +190,33 @@ function normalizeTriggers(input: any): TriggerDraft[] {
 
 function defaultTriggersJsonText() {
   return JSON.stringify(safeJsonParse<any[]>(TRIGGERS_PLACEHOLDER, []), null, 2)
+}
+
+function SafePayBankIcon({ bank, label }: { bank: string; label: string }) {
+  const wrap = (child: React.ReactNode) => (
+    <span className="inline-flex h-7 w-7 sm:h-8 sm:w-8 rounded-lg border border-fuchsia-300/50 bg-fuchsia-400/10 items-center justify-center shadow-[0_0_0_1px_rgba(216,180,254,0.15)]">
+      {child}
+    </span>
+  )
+
+  switch (bank) {
+    case 'inter':
+      return wrap(<FaBuildingColumns className="h-4 w-4 sm:h-5 sm:w-5 text-fuchsia-100" />)
+    case 'picpay':
+      return wrap(<SiPicpay className="h-4 w-4 sm:h-5 sm:w-5 text-fuchsia-100" />)
+    case 'nubank':
+      return wrap(<SiNubank className="h-4 w-4 sm:h-5 sm:w-5 text-fuchsia-100" />)
+    case '99pay':
+      return wrap(<FaMoneyBillWave className="h-4 w-4 sm:h-5 sm:w-5 text-fuchsia-100" />)
+    case 'pagseguro':
+      return wrap(<SiPagseguro className="h-4 w-4 sm:h-5 sm:w-5 text-fuchsia-100" />)
+  }
+
+  return wrap(
+    <span className="text-[10px] sm:text-xs font-bold text-fuchsia-100">
+      {String(label || bank).slice(0, 2).toUpperCase()}
+    </span>
+  )
 }
 
 export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = null }: Props) {
@@ -957,12 +986,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                     className="min-h-14 rounded-xl border border-white/10 px-3 py-2 sm:px-4 sm:py-3 flex items-center justify-between gap-3 bg-white/5 hover:bg-white/[0.08] transition"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <img
-                        src={SAFE_PAY_BANK_META[bank]?.logoUrl || 'https://logo.clearbit.com/discord.com'}
-                        alt={`Logo ${SAFE_PAY_BANK_META[bank]?.label || bank}`}
-                        className="h-7 w-7 sm:h-8 sm:w-8 rounded-md object-contain bg-white"
-                        referrerPolicy="no-referrer"
-                      />
+                      <SafePayBankIcon bank={bank} label={SAFE_PAY_BANK_META[bank]?.label || bank} />
                       <span className="text-sm sm:text-base font-semibold text-white/90 truncate">{SAFE_PAY_BANK_META[bank]?.label || bank}</span>
                     </div>
                     <span
