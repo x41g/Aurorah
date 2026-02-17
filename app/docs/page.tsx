@@ -23,7 +23,7 @@ export default function DocsPage() {
         <section className="card">
           <h2 className="text-xl font-semibold mb-2">Macros disponiveis</h2>
           <div className="grid sm:grid-cols-2 gap-3 text-sm text-white/80">
-            <div><code>{"{client.user}"}</code> mencao do dono do ticket</div>
+            <div><code>{"{client.user}"}</code>nome do dono do ticket</div>
             <div><code>{"{client.id}"}</code> id do dono do ticket</div>
             <div><code>{"{client.mention}"}</code> mencao do dono do ticket</div>
             <div><code>{"{client.tag}"}</code> tag do dono do ticket</div>

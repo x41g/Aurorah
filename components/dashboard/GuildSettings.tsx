@@ -383,7 +383,15 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     [ticketFormsText]
   )
   const parsedCustomTriggers = useMemo(
-    () => safeJsonParse<GuildConfig['customTriggers']>(customTriggersText, []),
+    () => safeJsonParse<GuildConfig['customTriggers']>(customTriggersText, [
+  {
+    "enabled": true,
+    "matchType": "equals",
+    "trigger": ".vip",
+    "responseType": "content",
+    "content": "Olá, {client.mention}!\nEntre no servidor abaixo para receber seu produto.\nhttps://www.roblox.com/share?code..."
+  }
+]),
     [customTriggersText]
   )
 

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronDown, Check, Sparkles, ArrowRight, PlayCircle, MessageCircle, Instagram, Clapperboard } from 'lucide-react'
+import { ChevronDown, Check, Sparkles, ArrowRight, PlayCircle, MessageCircle, Instagram } from 'lucide-react'
+import { FaTiktok } from "react-icons/fa"
 import { config } from '../config'
 import DashboardPreview from '@/components/DashboardPreview'
 import TestimonialCarousel from '@/components/TestimonialCarousel'
@@ -218,7 +219,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="btn-primary w-full justify-center fx-hover-lift inline-flex items-center gap-2"
               >
-                <Clapperboard size={16} />
+                <FaTiktok size={16} />
                 TikTok
               </a>
             </div>
