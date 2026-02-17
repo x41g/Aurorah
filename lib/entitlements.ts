@@ -32,13 +32,32 @@ export type GuildEntitlements = {
   canUseSafePay: boolean;
   canUseAnalytics: boolean;
   reason: string | null;
+  usedTicketsThisMonth: number;
+  ticketsLimitThisMonth: number | null;
+  ticketsRemainingThisMonth: number | null;
+  ownerGuildsCount: number;
+  ownerGuildsLimit: number | null;
 };
 
+function monthKeyUTC(d = new Date()) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
 function isSubActive(status: unknown, expiresAt: Date | null) {
+  const now = Date.now();
   const s = String(status || "").toLowerCase();
-  if (s !== "active") return false;
-  if (!expiresAt) return true;
-  return expiresAt.getTime() > Date.now();
+  if (s === "active") {
+    if (!expiresAt) return true;
+    return expiresAt.getTime() > now;
+  }
+  if (s === "past_due") {
+    if (!expiresAt) return false;
+    const graceDays = Math.max(0, Number(process.env.SUBSCRIPTION_PAST_DUE_GRACE_DAYS || 0) || 0);
+    return expiresAt.getTime() + graceDays * 24 * 60 * 60 * 1000 > now;
+  }
+  return false;
 }
 
 export async function getWhitelistState() {
@@ -59,6 +78,15 @@ export async function getActiveSubscriptionByUserId(userId: string) {
     include: { plan: true },
   });
   if (!sub) return null;
+
+  if (sub.expiresAt && sub.expiresAt.getTime() <= Date.now() && String(sub.status || "").toLowerCase() !== "expired") {
+    await prisma.subscription.update({
+      where: { id: sub.id },
+      data: { status: "expired" },
+    }).catch(() => null);
+    sub.status = "expired";
+  }
+
   const active = isSubActive(sub.status, sub.expiresAt);
   return {
     active,
@@ -93,20 +121,42 @@ export async function getGuildEntitlements(guildId: string): Promise<GuildEntitl
       }
     : null;
 
+  const ownerGuildRows = ownerId
+    ? await prisma.guildOwner.findMany({
+        where: { ownerId: String(ownerId) },
+        select: { guildId: true },
+        orderBy: { guildId: "asc" },
+      })
+    : [];
+  const ownerGuildIds = ownerGuildRows.map((r) => String(r.guildId));
+  const ownerGuildsCount = ownerGuildIds.length;
+  const ownerGuildsLimit = plan ? Math.max(1, Number(plan.maxGuilds || 1)) : null;
+  const withinGuildLimit = ownerGuildsLimit == null ? true : ownerGuildIds.slice(0, ownerGuildsLimit).includes(gid);
+
+  const usage = ownerId
+    ? await prisma.usageMonthly.findUnique({
+        where: { userId_monthKey: { userId: String(ownerId), monthKey: monthKeyUTC() } },
+      })
+    : null;
+  const usedTicketsThisMonth = Number(usage?.tickets || 0);
+  const ticketsLimitThisMonth = plan?.maxTicketsPerMonth == null ? null : Number(plan.maxTicketsPerMonth);
+  const ticketsRemainingThisMonth = ticketsLimitThisMonth == null ? null : Math.max(0, ticketsLimitThisMonth - usedTicketsThisMonth);
+
   const subscriptionActive = Boolean(subInfo?.active);
   const canUseDashboard = whitelisted;
 
-  // Regra: sem assinatura ativa => somente leitura (stats). Com assinatura ativa, dashboardEnabled libera edição.
-  const canEditConfig = whitelisted && subscriptionActive && Boolean(plan?.dashboardEnabled);
-  const canUseAI = whitelisted && subscriptionActive && Boolean(plan?.aiEnabled);
-  const canUsePayments = whitelisted && subscriptionActive && Boolean(plan?.paymentsEnabled);
-  const canUseSafePay = whitelisted && subscriptionActive && Boolean(plan?.safePayEnabled);
-  const canUseAnalytics = whitelisted && subscriptionActive && Boolean(plan?.analyticsEnabled);
+  // Sem assinatura ativa: somente leitura de dashboard.
+  const canEditConfig = whitelisted && subscriptionActive && withinGuildLimit && Boolean(plan?.dashboardEnabled);
+  const canUseAI = whitelisted && subscriptionActive && withinGuildLimit && Boolean(plan?.aiEnabled);
+  const canUsePayments = whitelisted && subscriptionActive && withinGuildLimit && Boolean(plan?.paymentsEnabled);
+  const canUseSafePay = whitelisted && subscriptionActive && withinGuildLimit && Boolean(plan?.safePayEnabled);
+  const canUseAnalytics = whitelisted && subscriptionActive && withinGuildLimit && Boolean(plan?.analyticsEnabled);
 
   let reason: string | null = null;
   if (!whitelisted) reason = "guild_not_whitelisted";
   else if (!ownerId) reason = "owner_unknown";
   else if (!subscriptionActive) reason = "no_active_subscription";
+  else if (!withinGuildLimit) reason = "max_guilds_reached";
   else if (subscriptionActive && !plan?.dashboardEnabled) reason = "plan_no_dashboard";
 
   return {
@@ -124,5 +174,11 @@ export async function getGuildEntitlements(guildId: string): Promise<GuildEntitl
     canUseSafePay,
     canUseAnalytics,
     reason,
+    usedTicketsThisMonth,
+    ticketsLimitThisMonth,
+    ticketsRemainingThisMonth,
+    ownerGuildsCount,
+    ownerGuildsLimit,
   };
 }
+

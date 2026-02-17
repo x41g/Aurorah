@@ -39,14 +39,14 @@ function cls(active: boolean, disabled = false) {
   return [
     'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 border',
     active
-      ? 'bg-fuchsia-400/15 border-fuchsia-300/45 shadow-lg shadow-fuchsia-400/10'
-      : 'border-transparent hover:bg-white/5',
+      ? 'bg-fuchsia-400/16 border-fuchsia-300/50 shadow-lg shadow-fuchsia-400/15'
+      : 'border-transparent hover:bg-white/6',
     disabled ? 'opacity-45 pointer-events-none' : '',
   ].join(' ')
 }
 
 function sectionTitle(text: string) {
-  return <div className="mt-4 mb-2 text-[11px] uppercase tracking-wider text-white/45 px-2">{text}</div>
+  return <div className="mt-4 mb-2 text-[10px] uppercase tracking-[0.18em] text-white/45 px-2 font-medium">{text}</div>
 }
 
 export function Sidebar({
@@ -167,7 +167,7 @@ export function Sidebar({
         )}
 
         <div className="min-w-0 flex-1">
-          <div className="font-bold leading-tight truncate">Painel</div>
+          <div className="font-semibold leading-tight truncate">Painel</div>
           <div className="text-xs text-white/60 leading-tight truncate">{subtitle}</div>
         </div>
 
@@ -194,7 +194,7 @@ export function Sidebar({
                 }}
               >
                 {it.icon}
-                <span className="font-medium">{it.label}</span>
+                <span className="font-medium tracking-[0.01em]">{it.label}</span>
                 {it.badge ? <span className="ml-auto h-2.5 w-2.5 rounded-full bg-fuchsia-300" /> : null}
               </Link>
             </div>
@@ -207,7 +207,7 @@ export function Sidebar({
           return (
             <Link key={it.href} href={it.href} className={`${cls(active)} fx-hover-lift`} onClick={() => setMobileOpen(false)}>
               {it.icon}
-              <span className="font-medium">{it.label}</span>
+              <span className="font-medium tracking-[0.01em]">{it.label}</span>
             </Link>
           )
         })}

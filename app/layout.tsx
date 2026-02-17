@@ -2,7 +2,13 @@ import type { Metadata } from 'next'
 import { Providers } from './providers'
 import './globals.css'
 import { Fredoka } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 const fredoka = Fredoka({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-dashboard",
+});
 
 export const metadata: Metadata = {
   title: 'Aurora - Gerenciamento de Tickets Discord',
@@ -49,7 +55,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={`${fredoka.className} transition-colors duration-300`}>
+      <body className={`${fredoka.className} ${plusJakarta.variable} transition-colors duration-300`}>
         <Providers>{children}</Providers> 
       </body>
     </html>

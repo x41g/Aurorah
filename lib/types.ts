@@ -86,6 +86,47 @@ export type GuildConfig = {
     }
     deleteUserMessage?: boolean
   }>
+
+  // Ticket panel profiles (multi-panel workspace)
+  ticketPanelProfiles?: Array<{
+    id: string
+    label: string
+    config?: {
+      ticketSystemEnabled?: boolean
+      ticketOpenMode?: "buttons" | "select"
+      ticketCreateMode?: "category" | "thread"
+      ticketButtonEmoji?: string
+      ticketButtonStyle?: number
+      ticketAppearanceMode?: "embed" | "content"
+      ticketEmbedTitle?: string
+      ticketEmbedDescription?: string
+      ticketEmbedColor?: string
+      ticketEmbedBannerUrl?: string
+      ticketEmbedThumbUrl?: string
+      ticketContentText?: string
+      ticketFunctions?: Array<{
+        name: string
+        preDescription?: string
+        description?: string
+        emoji?: string
+        enabled?: boolean
+      }>
+      ticketForms?: Record<
+        string,
+        {
+          enabled?: boolean
+          title?: string
+          questions?: Array<{
+            id: string
+            label: string
+            required?: boolean
+            style?: "SHORT" | "PARA"
+          }>
+        }
+      >
+    }
+  }>
+  ticketActiveProfileId?: string
 }
 
 export type GuildStats = {

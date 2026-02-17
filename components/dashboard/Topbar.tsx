@@ -19,8 +19,8 @@ export function Topbar({ title, userName, userImage }: Props) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 pb-5 border-b border-white/10 fx-fade-in">
       <div className="min-w-0">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight gradient-text truncate">{title}</h1>
-        <p className="text-white/70 text-sm">Configuracoes e estatisticas do seu servidor.</p>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight gradient-text truncate">{title}</h1>
+        <p className="text-white/70 text-sm font-medium">Configurações e estatísticas do seu servidor.</p>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
@@ -47,7 +47,7 @@ export function Topbar({ title, userName, userImage }: Props) {
           )}
 
           <div className="text-sm leading-tight">
-            <div className="font-semibold">{userName || 'Conta'}</div>
+            <div className="font-medium">{userName || 'Conta'}</div>
             <div className="text-white/50 text-xs">Discord</div>
           </div>
         </div>

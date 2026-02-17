@@ -9,10 +9,25 @@ import { SiNubank, SiPagseguro, SiPicpay } from 'react-icons/si'
 import { FaBuildingColumns, FaMoneyBillWave } from 'react-icons/fa6'
 
 type EntitlementsLike = {
+  subscriptionActive?: boolean
+  status?: string | null
+  reason?: string | null
+  usedTicketsThisMonth?: number
+  ticketsLimitThisMonth?: number | null
+  ticketsRemainingThisMonth?: number | null
+  ownerGuildsCount?: number
+  ownerGuildsLimit?: number | null
   canEditConfig?: boolean
   canUseAI?: boolean
   canUsePayments?: boolean
   canUseSafePay?: boolean
+  plan?: {
+    key?: string
+    name?: string
+    maxGuilds?: number
+    maxTicketsPerMonth?: number | null
+    maxTicketPanels?: number
+  } | null
 } | null
 
 type Props = {
@@ -140,6 +155,89 @@ type TriggerDraft = {
   embedColor: string
 }
 
+type TicketPanelProfileConfigDraft = {
+  ticketSystemEnabled: boolean
+  ticketOpenMode: 'buttons' | 'select'
+  ticketCreateMode: 'category' | 'thread'
+  ticketButtonEmoji: string
+  ticketButtonStyle: number
+  ticketAppearanceMode: 'embed' | 'content'
+  ticketEmbedTitle: string
+  ticketEmbedDescription: string
+  ticketEmbedColor: string
+  ticketEmbedBannerUrl: string
+  ticketEmbedThumbUrl: string
+  ticketContentText: string
+  ticketFunctions: TicketFunctionDraft[]
+  ticketForms: Record<string, TicketFormDraft>
+}
+
+type TicketPanelProfileDraft = {
+  id: string
+  label: string
+  config: TicketPanelProfileConfigDraft
+}
+
+function sanitizePanelProfileId(input: string, fallback = 'painel-1') {
+  const normalized = String(input || fallback)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32)
+  return normalized || fallback
+}
+
+function sanitizePanelProfileLabel(input: string, fallback = 'Painel') {
+  const label = String(input || fallback).trim().slice(0, 40)
+  return label || fallback
+}
+
+function buildProfileConfigFromGuildConfig(cfg: GuildConfig): TicketPanelProfileConfigDraft {
+  return {
+    ticketSystemEnabled: Boolean(cfg.ticketSystemEnabled ?? true),
+    ticketOpenMode: cfg.ticketOpenMode === 'select' ? 'select' : 'buttons',
+    ticketCreateMode: cfg.ticketCreateMode === 'thread' ? 'thread' : 'category',
+    ticketButtonEmoji: cfg.ticketButtonEmoji ?? '??',
+    ticketButtonStyle: Number(cfg.ticketButtonStyle ?? 1) || 1,
+    ticketAppearanceMode: cfg.ticketAppearanceMode === 'content' ? 'content' : 'embed',
+    ticketEmbedTitle: cfg.ticketEmbedTitle ?? 'Sistema de Tickets',
+    ticketEmbedDescription: cfg.ticketEmbedDescription ?? 'Clique abaixo para abrir seu atendimento.',
+    ticketEmbedColor: cfg.ticketEmbedColor ?? '#4800ff',
+    ticketEmbedBannerUrl: cfg.ticketEmbedBannerUrl ?? '',
+    ticketEmbedThumbUrl: cfg.ticketEmbedThumbUrl ?? '',
+    ticketContentText: cfg.ticketContentText ?? 'Olá! Clique abaixo para abrir ticket.',
+    ticketFunctions: normalizeFunctions(defaultFunctionsFromCfg(cfg)),
+    ticketForms: normalizeForms(defaultFormsFromCfg(cfg)),
+  }
+}
+
+function normalizePanelProfilesFromCfg(cfg: GuildConfig): { profiles: TicketPanelProfileDraft[]; activeId: string } {
+  const raw = Array.isArray(cfg.ticketPanelProfiles) ? cfg.ticketPanelProfiles : []
+  const fallbackConfig = buildProfileConfigFromGuildConfig(cfg)
+  let profiles = raw
+    .map((p, idx) => ({
+      id: sanitizePanelProfileId(String(p?.id || `painel-${idx + 1}`), `painel-${idx + 1}`),
+      label: sanitizePanelProfileLabel(String(p?.label || `Painel ${idx + 1}`), `Painel ${idx + 1}`),
+      config: {
+        ...fallbackConfig,
+        ...(p?.config || {}),
+        ticketFunctions: normalizeFunctions((p?.config as any)?.ticketFunctions ?? fallbackConfig.ticketFunctions),
+        ticketForms: normalizeForms((p?.config as any)?.ticketForms ?? fallbackConfig.ticketForms),
+      },
+    }))
+    .filter((p) => p.id)
+
+  if (!profiles.length) {
+    profiles = [{ id: 'painel-1', label: 'Painel 1', config: fallbackConfig }]
+  }
+
+  profiles = profiles.slice(0, 10)
+  const activeRaw = sanitizePanelProfileId(String(cfg.ticketActiveProfileId || profiles[0]?.id || 'painel-1'))
+  const activeId = profiles.some((p) => p.id === activeRaw) ? activeRaw : profiles[0].id
+  return { profiles, activeId }
+}
+
 function normalizeFunctions(input: any): TicketFunctionDraft[] {
   if (!Array.isArray(input)) return []
   return input.map((f) => ({
@@ -162,6 +260,25 @@ function normalizeForms(input: any): Record<string, TicketFormDraft> {
             id: String(q?.id || `q${i + 1}`),
             label: String(q?.label || ''),
             style: String(q?.style || 'SHORT').toUpperCase() === 'PARAGRAPH' ? 'PARAGRAPH' : 'SHORT',
+          }))
+        : [],
+    }
+  }
+  return out
+}
+
+function toGuildForms(input: Record<string, TicketFormDraft>): GuildConfig['ticketForms'] {
+  const out: Record<string, any> = {}
+  for (const [category, form] of Object.entries(input || {})) {
+    out[String(category)] = {
+      enabled: Boolean(form?.enabled ?? true),
+      title: String(form?.title || ''),
+      questions: Array.isArray(form?.questions)
+        ? form.questions.map((q, i) => ({
+            id: String(q?.id || `q${i + 1}`),
+            label: String(q?.label || ''),
+            required: true,
+            style: q?.style === 'PARAGRAPH' ? 'PARA' : 'SHORT',
           }))
         : [],
     }
@@ -235,6 +352,17 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const canUseAI = Boolean(entitlements?.canUseAI)
   const canUsePayments = Boolean(entitlements?.canUsePayments)
   const canUseSafePay = Boolean(entitlements?.canUseSafePay)
+  const maxTicketPanelsByPlan = Math.min(10, Math.max(1, Number(entitlements?.plan?.maxTicketPanels ?? 1)))
+  const subReasonLabel = useMemo(() => {
+    const reason = String(entitlements?.reason || '')
+    if (!reason) return 'Tudo liberado.'
+    if (reason === 'guild_not_whitelisted') return 'Servidor fora da whitelist.'
+    if (reason === 'owner_unknown') return 'Dono do servidor ainda não identificado.'
+    if (reason === 'no_active_subscription') return 'Sem assinatura ativa.'
+    if (reason === 'max_guilds_reached') return 'Limite de servidores do plano atingido.'
+    if (reason === 'plan_no_dashboard') return 'Plano atual sem dashboard editável.'
+    return reason
+  }, [entitlements?.reason])
 
   const [staffRoleId, setStaffRoleId] = useState(initial.staffRoleId ?? '')
   const [ticketCategoryId, setTicketCategoryId] = useState(initial.ticketCategoryId ?? '')
@@ -305,6 +433,110 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const [formsDraft, setFormsDraft] = useState<Record<string, TicketFormDraft>>({})
   const [selectedFormCategory, setSelectedFormCategory] = useState('')
   const [triggerDraft, setTriggerDraft] = useState<TriggerDraft[]>([])
+  const panelInit = useMemo(() => normalizePanelProfilesFromCfg(initial), [initial])
+  const [ticketPanelProfiles, setTicketPanelProfiles] = useState<TicketPanelProfileDraft[]>(panelInit.profiles)
+  const [ticketActiveProfileId, setTicketActiveProfileId] = useState(panelInit.activeId)
+  const [ticketActiveProfileLabel, setTicketActiveProfileLabel] = useState(
+    panelInit.profiles.find((p) => p.id === panelInit.activeId)?.label || 'Painel 1'
+  )
+
+  function captureCurrentTicketProfileConfig(): TicketPanelProfileConfigDraft {
+    return {
+      ticketSystemEnabled,
+      ticketOpenMode,
+      ticketCreateMode,
+      ticketButtonEmoji,
+      ticketButtonStyle: Number(ticketButtonStyle || 1) || 1,
+      ticketAppearanceMode,
+      ticketEmbedTitle,
+      ticketEmbedDescription,
+      ticketEmbedColor,
+      ticketEmbedBannerUrl,
+      ticketEmbedThumbUrl,
+      ticketContentText,
+      ticketFunctions: normalizeFunctions(parsedTicketFunctions),
+      ticketForms: normalizeForms(parsedTicketForms),
+    }
+  }
+
+  function applyTicketProfileConfig(cfg: TicketPanelProfileConfigDraft) {
+    setTicketSystemEnabled(Boolean(cfg.ticketSystemEnabled ?? true))
+    setTicketOpenMode(cfg.ticketOpenMode === 'select' ? 'select' : 'buttons')
+    setTicketCreateMode(cfg.ticketCreateMode === 'thread' ? 'thread' : 'category')
+    setTicketButtonEmoji(cfg.ticketButtonEmoji || '??')
+    setTicketButtonStyle(String(cfg.ticketButtonStyle ?? 1))
+    setTicketAppearanceMode(cfg.ticketAppearanceMode === 'content' ? 'content' : 'embed')
+    setTicketEmbedTitle(cfg.ticketEmbedTitle || 'Sistema de Tickets')
+    setTicketEmbedDescription(cfg.ticketEmbedDescription || 'Clique abaixo para abrir seu atendimento.')
+    setTicketEmbedColor(cfg.ticketEmbedColor || '#4800ff')
+    setTicketEmbedBannerUrl(cfg.ticketEmbedBannerUrl || '')
+    setTicketEmbedThumbUrl(cfg.ticketEmbedThumbUrl || '')
+    setTicketContentText(cfg.ticketContentText || 'Olá! Clique abaixo para abrir ticket.')
+    setTicketFunctionsText(JSON.stringify(normalizeFunctions(cfg.ticketFunctions), null, 2))
+    setTicketFormsText(JSON.stringify(normalizeForms(cfg.ticketForms), null, 2))
+  }
+
+  function switchActiveTicketProfile(nextId: string) {
+    const targetId = sanitizePanelProfileId(nextId, ticketActiveProfileId)
+    setTicketPanelProfiles((prev) => {
+      const withCurrentSaved = prev.map((p) =>
+        p.id === ticketActiveProfileId ? { ...p, label: ticketActiveProfileLabel, config: captureCurrentTicketProfileConfig() } : p
+      )
+      const nextProfile = withCurrentSaved.find((p) => p.id === targetId)
+      if (nextProfile) {
+        setTicketActiveProfileId(nextProfile.id)
+        setTicketActiveProfileLabel(nextProfile.label)
+        applyTicketProfileConfig(nextProfile.config)
+      }
+      return withCurrentSaved
+    })
+  }
+
+  function createTicketProfile() {
+    setTicketPanelProfiles((prev) => {
+      if (prev.length >= maxTicketPanelsByPlan) return prev
+      const withCurrentSaved = prev.map((p) =>
+        p.id === ticketActiveProfileId ? { ...p, label: ticketActiveProfileLabel, config: captureCurrentTicketProfileConfig() } : p
+      )
+      let seq = withCurrentSaved.length + 1
+      let id = sanitizePanelProfileId(`painel-${seq}`, `painel-${seq}`)
+      while (withCurrentSaved.some((p) => p.id === id)) {
+        seq += 1
+        id = sanitizePanelProfileId(`painel-${seq}`, `painel-${seq}`)
+      }
+      const created: TicketPanelProfileDraft = {
+        id,
+        label: `Painel ${seq}`,
+        config: captureCurrentTicketProfileConfig(),
+      }
+      setTicketActiveProfileId(created.id)
+      setTicketActiveProfileLabel(created.label)
+      return [...withCurrentSaved, created]
+    })
+  }
+
+  function renameActiveTicketProfile(nextLabel: string) {
+    const label = sanitizePanelProfileLabel(nextLabel, 'Painel')
+    setTicketActiveProfileLabel(label)
+    setTicketPanelProfiles((prev) => prev.map((p) => (p.id === ticketActiveProfileId ? { ...p, label } : p)))
+  }
+
+  function removeActiveTicketProfile() {
+    setTicketPanelProfiles((prev) => {
+      if (prev.length <= 1) return prev
+      const withCurrentSaved = prev.map((p) =>
+        p.id === ticketActiveProfileId ? { ...p, label: ticketActiveProfileLabel, config: captureCurrentTicketProfileConfig() } : p
+      )
+      const next = withCurrentSaved.filter((p) => p.id !== ticketActiveProfileId)
+      const nextActive = next[0]
+      if (nextActive) {
+        setTicketActiveProfileId(nextActive.id)
+        setTicketActiveProfileLabel(nextActive.label)
+        applyTicketProfileConfig(nextActive.config)
+      }
+      return next
+    })
+  }
 
   function applyConfigToForm(cfg: GuildConfig) {
     setStaffRoleId(cfg.staffRoleId ?? '')
@@ -320,20 +552,12 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     setMaxOpenTicketsPerUser(String(cfg.maxOpenTicketsPerUser ?? 1))
     setCooldownSeconds(String(cfg.cooldownSeconds ?? 0))
 
-    setTicketSystemEnabled(Boolean(cfg.ticketSystemEnabled ?? true))
-    setTicketOpenMode(cfg.ticketOpenMode === 'select' ? 'select' : 'buttons')
-    setTicketCreateMode(cfg.ticketCreateMode === 'thread' ? 'thread' : 'category')
-    setTicketButtonEmoji(cfg.ticketButtonEmoji ?? '??')
-    setTicketButtonStyle(String(cfg.ticketButtonStyle ?? 1))
-    setTicketAppearanceMode(cfg.ticketAppearanceMode === 'content' ? 'content' : 'embed')
-    setTicketEmbedTitle(cfg.ticketEmbedTitle ?? 'Sistema de Tickets')
-    setTicketEmbedDescription(cfg.ticketEmbedDescription ?? 'Clique abaixo para abrir seu atendimento.')
-    setTicketEmbedColor(cfg.ticketEmbedColor ?? '#4800ff')
-    setTicketEmbedBannerUrl(cfg.ticketEmbedBannerUrl ?? '')
-    setTicketEmbedThumbUrl(cfg.ticketEmbedThumbUrl ?? '')
-    setTicketContentText(cfg.ticketContentText ?? 'Olá! Clique abaixo para abrir ticket.')
-    setTicketFunctionsText(JSON.stringify(defaultFunctionsFromCfg(cfg), null, 2))
-    setTicketFormsText(JSON.stringify(defaultFormsFromCfg(cfg), null, 2))
+    const panelState = normalizePanelProfilesFromCfg(cfg)
+    setTicketPanelProfiles(panelState.profiles)
+    setTicketActiveProfileId(panelState.activeId)
+    const activePanel = panelState.profiles.find((p) => p.id === panelState.activeId) || panelState.profiles[0]
+    setTicketActiveProfileLabel(activePanel?.label || 'Painel 1')
+    applyTicketProfileConfig(activePanel?.config || buildProfileConfigFromGuildConfig(cfg))
     if (!isEditingTriggersRef.current) {
       setCustomTriggersText(
         Array.isArray(cfg.customTriggers) && cfg.customTriggers.length > 0
@@ -507,6 +731,18 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   }
 
   const preview = useMemo(() => {
+    const activeConfigSnapshot = captureCurrentTicketProfileConfig()
+    const panelProfilesForSave = ticketPanelProfiles.map((p) => {
+      const cfg = p.id === ticketActiveProfileId ? activeConfigSnapshot : p.config
+      return {
+        id: sanitizePanelProfileId(p.id, 'painel-1'),
+        label: sanitizePanelProfileLabel(p.id === ticketActiveProfileId ? ticketActiveProfileLabel : p.label, 'Painel'),
+        config: {
+          ...cfg,
+          ticketForms: toGuildForms(cfg.ticketForms),
+        },
+      }
+    })
     const cfg: GuildConfig = {
       staffRoleId: staffRoleId || undefined,
       ticketCategoryId: ticketCategoryId || undefined,
@@ -535,6 +771,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       ticketContentText: ticketContentText || undefined,
       ticketFunctions: Array.isArray(parsedTicketFunctions) ? parsedTicketFunctions : [],
       ticketForms: parsedTicketForms && typeof parsedTicketForms === 'object' ? parsedTicketForms : {},
+      ticketPanelProfiles: panelProfilesForSave,
+      ticketActiveProfileId: ticketActiveProfileId || undefined,
       customTriggers: Array.isArray(parsedCustomTriggers) ? parsedCustomTriggers : [],
 
       aiEnabled,
@@ -588,6 +826,9 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
     ticketContentText,
     parsedTicketFunctions,
     parsedTicketForms,
+    ticketPanelProfiles,
+    ticketActiveProfileId,
+    ticketActiveProfileLabel,
     parsedCustomTriggers,
     aiEnabled,
     aiModel,
@@ -703,6 +944,36 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         </span>
         <span className="text-xs text-white/60">Atualizacao em tempo real entre sessoes habilitada</span>
       </div>
+      <Section title="Assinatura">
+        <div className="grid md:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+            <div className="text-xs text-white/60 uppercase tracking-wide">Plano</div>
+            <div className="mt-1 font-semibold text-white">{entitlements?.plan?.name || 'Sem plano'}</div>
+            <div className="text-xs text-white/60 mt-1">Status: {entitlements?.status || 'none'}</div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+            <div className="text-xs text-white/60 uppercase tracking-wide">Tickets no mês</div>
+            <div className="mt-1 font-semibold text-white">
+              {Number(entitlements?.usedTicketsThisMonth || 0)}
+              {entitlements?.ticketsLimitThisMonth == null ? ' / ilimitado' : ` / ${Number(entitlements?.ticketsLimitThisMonth || 0)}`}
+            </div>
+            <div className="text-xs text-white/60 mt-1">
+              Restante: {entitlements?.ticketsRemainingThisMonth == null ? 'ilimitado' : Number(entitlements?.ticketsRemainingThisMonth || 0)}
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+            <div className="text-xs text-white/60 uppercase tracking-wide">Servidores do dono</div>
+            <div className="mt-1 font-semibold text-white">
+              {Number(entitlements?.ownerGuildsCount || 0)}
+              {entitlements?.ownerGuildsLimit == null ? ' / ilimitado' : ` / ${Number(entitlements?.ownerGuildsLimit || 0)}`}
+            </div>
+            <div className="text-xs text-white/60 mt-1">Painéis por servidor: {maxTicketPanelsByPlan}</div>
+          </div>
+        </div>
+        <div className="mt-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/80">
+          Motivo atual: {subReasonLabel}
+        </div>
+      </Section>
       <h2 className="text-xl sm:text-2xl font-bold mb-1 gradient-text">Configuracao V5</h2>
       <p className="text-white/70 mb-6">Acoes bloqueadas pelo plano aparecem desativadas automaticamente.</p>
 
@@ -714,6 +985,38 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
 
       {tab === 'tickets' ? (
         <fieldset disabled={!canEdit || saving} className="space-y-4 disabled:opacity-60 fx-stagger">
+          <Section title="Perfis de Painel">
+            <div className="grid md:grid-cols-3 gap-3">
+              <SelectField
+                label="Painel em edição"
+                value={ticketActiveProfileId}
+                onChange={switchActiveTicketProfile}
+                options={ticketPanelProfiles.map((p) => ({ value: p.id, label: p.label }))}
+                placeholder="Selecione um painel"
+              />
+              <Field
+                label="Nome do painel"
+                value={ticketActiveProfileLabel}
+                onChange={setTicketActiveProfileLabel}
+                placeholder="Ex.: Painel VIP"
+              />
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4 flex items-end">
+                <div className="grid grid-cols-3 gap-2 w-full">
+                  <button type="button" className="btn-secondary px-3 py-2 text-xs rounded-xl" onClick={createTicketProfile} disabled={ticketPanelProfiles.length >= maxTicketPanelsByPlan}>
+                    Novo
+                  </button>
+                  <button type="button" className="btn-secondary px-3 py-2 text-xs rounded-xl" onClick={() => renameActiveTicketProfile(ticketActiveProfileLabel)}>
+                    Renomear
+                  </button>
+                  <button type="button" className="btn-secondary px-3 py-2 text-xs rounded-xl" onClick={removeActiveTicketProfile} disabled={ticketPanelProfiles.length <= 1}>
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-white/60">Cada perfil salva uma configuração completa e independente de ticket. Limite atual: {ticketPanelProfiles.length}/{maxTicketPanelsByPlan}.</p>
+          </Section>
+
           <Section title="Sistema">
             <Toggle label="Sistema de ticket" value={ticketSystemEnabled} onChange={setTicketSystemEnabled} />
             <Reveal show={ticketSystemEnabled}>

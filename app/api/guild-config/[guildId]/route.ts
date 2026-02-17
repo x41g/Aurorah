@@ -149,6 +149,60 @@ export async function PUT(req: Request, { params }: { params: { guildId: string 
           .filter((t: any) => t.trigger.length > 0)
           .slice(0, 40)
       : undefined,
+
+    ticketPanelProfiles: Array.isArray(body.ticketPanelProfiles)
+      ? body.ticketPanelProfiles
+          .map((p: any, idx: number) => {
+            const id = String(p?.id || `painel-${idx + 1}`)
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9_-]+/g, "-")
+              .replace(/^-+|-+$/g, "")
+              .slice(0, 32);
+            const label = String(p?.label || `Painel ${idx + 1}`).trim().slice(0, 40);
+            const c = p?.config && typeof p.config === "object" ? p.config : {};
+            const ticketOpenMode = c.ticketOpenMode === "select" ? "select" : "buttons";
+            const ticketCreateMode = c.ticketCreateMode === "thread" ? "thread" : "category";
+            const ticketAppearanceMode = c.ticketAppearanceMode === "content" ? "content" : "embed";
+            return {
+              id,
+              label,
+              config: {
+                ticketSystemEnabled: c.ticketSystemEnabled === undefined ? undefined : Boolean(c.ticketSystemEnabled),
+                ticketOpenMode: ticketOpenMode as "select" | "buttons",
+                ticketCreateMode: ticketCreateMode as "category" | "thread",
+                ticketButtonEmoji: c.ticketButtonEmoji ? String(c.ticketButtonEmoji) : undefined,
+                ticketButtonStyle: Number.isFinite(Number(c.ticketButtonStyle)) ? Number(c.ticketButtonStyle) : undefined,
+                ticketAppearanceMode: ticketAppearanceMode as "embed" | "content",
+                ticketEmbedTitle: c.ticketEmbedTitle ? String(c.ticketEmbedTitle) : undefined,
+                ticketEmbedDescription: c.ticketEmbedDescription ? String(c.ticketEmbedDescription) : undefined,
+                ticketEmbedColor: c.ticketEmbedColor ? String(c.ticketEmbedColor) : undefined,
+                ticketEmbedBannerUrl: c.ticketEmbedBannerUrl ? String(c.ticketEmbedBannerUrl) : undefined,
+                ticketEmbedThumbUrl: c.ticketEmbedThumbUrl ? String(c.ticketEmbedThumbUrl) : undefined,
+                ticketContentText: c.ticketContentText ? String(c.ticketContentText) : undefined,
+                ticketFunctions: Array.isArray(c.ticketFunctions)
+                  ? c.ticketFunctions
+                      .map((f: any) => ({
+                        name: String(f?.name || "").trim(),
+                        preDescription: f?.preDescription ? String(f.preDescription) : "",
+                        description: f?.description ? String(f.description) : "",
+                        emoji: f?.emoji ? String(f.emoji) : "",
+                        enabled: f?.enabled !== false,
+                      }))
+                      .filter((f: any) => Boolean(f.name))
+                      .slice(0, 25)
+                  : [],
+                ticketForms:
+                  c.ticketForms && typeof c.ticketForms === "object"
+                    ? (c.ticketForms as GuildConfig["ticketForms"])
+                    : {},
+              },
+            };
+          })
+          .filter((p: any) => p.id)
+          .slice(0, 10)
+      : undefined,
+    ticketActiveProfileId: body.ticketActiveProfileId ? String(body.ticketActiveProfileId).trim().slice(0, 32) : undefined,
   };
 
   // Enforce plan capabilities on the backend as well.
