@@ -1191,8 +1191,28 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="text-xs text-white/60 mb-2">Embed preview</div>
                   <div className="rounded-xl border border-white/20 p-4" style={{ borderLeftColor: ticketEmbedColor || '#4800ff', borderLeftWidth: 4 }}>
-                    <div className="font-semibold">{ticketEmbedTitle || 'Sem titulo'}</div>
-                    <div className="text-sm text-white/70 mt-2">{ticketEmbedDescription || 'Sem descricao'}</div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="font-semibold">{ticketEmbedTitle || 'Sem titulo'}</div>
+                      {ticketEmbedThumbUrl ? (
+                        <img
+                          src={ticketEmbedThumbUrl}
+                          alt="Miniatura"
+                          className="h-14 w-14 rounded-md border border-white/20 object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="text-sm text-white/70 mt-2 whitespace-pre-line">{ticketEmbedDescription || 'Sem descricao'}</div>
+                    {ticketEmbedBannerUrl ? (
+                      <img
+                        src={ticketEmbedBannerUrl}
+                        alt="Banner"
+                        className="mt-3 w-full rounded-lg border border-white/20 object-cover max-h-56"
+                      />
+                    ) : null}
+                    <div className="mt-3 space-y-1 text-xs text-white/55">
+                      <div>Miniatura: {ticketEmbedThumbUrl || 'Nao definida'}</div>
+                      <div>Banner: {ticketEmbedBannerUrl || 'Nao definido'}</div>
+                    </div>
                   </div>
                 </div>
               ) : (
