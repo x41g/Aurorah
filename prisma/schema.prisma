@@ -76,6 +76,7 @@ model Plan {
   prioritySupport  Boolean @default(false)
 
   subscriptions Subscription[]
+  licenseKeys   LicenseKey[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -103,6 +104,53 @@ model Subscription {
   @@index([status])
   @@index([expiresAt])
   @@index([startedAt])
+}
+
+model LicenseKey {
+  id             String   @id @default(cuid())
+  codeHash       String   @unique
+  codePrefix     String
+  codeLast4      String
+  planKey        String
+  durationDays   Int      @default(30)
+  maxActivations Int      @default(1)
+  usedCount      Int      @default(0)
+  status         String   @default("active") // active | disabled | exhausted | expired
+  expiresAt      DateTime?
+  note           String?
+  createdBy      String?
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  plan        Plan                @relation(fields: [planKey], references: [key])
+  activations LicenseActivation[]
+
+  @@index([planKey])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model LicenseActivation {
+  id          String   @id @default(cuid())
+  keyId        String
+  userId       String
+  guildId      String?
+  activatedAt  DateTime @default(now())
+  startsAt     DateTime
+  expiresAt    DateTime
+  status       String   @default("active") // active | revoked
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  key LicenseKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@unique([keyId, userId, guildId])
+  @@index([userId])
+  @@index([guildId])
+  @@index([expiresAt])
+  @@index([status])
 }
 
 model GuildOwner {

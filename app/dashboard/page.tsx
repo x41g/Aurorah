@@ -7,6 +7,7 @@ import { GuildCard } from "@/components/dashboard/GuildCard";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { isAdminDiscordId } from "@/lib/admin";
+import { LicenseRedeemPanel } from "@/components/dashboard/LicenseRedeemPanel";
 
 export default async function DashboardHome() {
   const session = (await getServerSession(authOptions as any)) as any;
@@ -31,6 +32,7 @@ export default async function DashboardHome() {
         <Sidebar isAdmin={isAdmin} />
         <div className="min-w-0">
           <Topbar title="Seus servidores" userName={session.user?.name} userImage={session.user?.image} />
+          <LicenseRedeemPanel guilds={eligible.map((g) => ({ id: String(g.id), name: String(g.name || g.id) }))} />
           <div className="dashboard-stagger grid gap-4">
             {eligible.map((g) => (
               <GuildCard key={g.id} guild={g} botInGuild={true} />
