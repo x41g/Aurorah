@@ -7,7 +7,7 @@ async function main() {
     where: { key: "STARTER" },
     create: {
       key: "STARTER",
-      name: "Starter",
+      name: "Essencial",
       description: "Plano inicial",
       priceCents: 0,
 
@@ -23,7 +23,7 @@ async function main() {
       prioritySupport: false,
     },
     update: {
-      name: "Starter",
+      name: "Essencial",
       description: "Plano inicial",
       priceCents: 0,
       maxGuilds: 1,
@@ -42,7 +42,7 @@ async function main() {
     where: { key: "PRO" },
     create: {
       key: "PRO",
-      name: "Pro",
+      name: "Prime",
       description: "Plano completo",
       priceCents: 0,
 
@@ -58,12 +58,46 @@ async function main() {
       prioritySupport: true,
     },
     update: {
-      name: "Pro",
+      name: "Prime",
       description: "Plano completo",
       priceCents: 0,
       maxGuilds: 5,
       maxTicketsPerMonth: null,
       maxTicketPanels: 5,
+      dashboardEnabled: true,
+      paymentsEnabled: true,
+      safePayEnabled: true,
+      aiEnabled: true,
+      analyticsEnabled: true,
+      prioritySupport: true,
+    },
+  });
+
+  await prisma.plan.upsert({
+    where: { key: "ENTERPRISE" },
+    create: {
+      key: "ENTERPRISE",
+      name: "Elite",
+      description: "Plano elite",
+      priceCents: 0,
+
+      maxGuilds: 999,
+      maxTicketsPerMonth: null,
+      maxTicketPanels: 10,
+
+      dashboardEnabled: true,
+      paymentsEnabled: true,
+      safePayEnabled: true,
+      aiEnabled: true,
+      analyticsEnabled: true,
+      prioritySupport: true,
+    },
+    update: {
+      name: "Elite",
+      description: "Plano elite",
+      maxGuilds: 999,
+      maxTicketsPerMonth: null,
+      maxTicketPanels: 10,
       dashboardEnabled: true,
       paymentsEnabled: true,
       safePayEnabled: true,

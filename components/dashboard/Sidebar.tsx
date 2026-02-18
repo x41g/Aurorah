@@ -17,6 +17,7 @@ import {
   Bell,
   Activity,
 } from 'lucide-react'
+import { signOut } from 'next-auth/react'
 import { CHANGELOG_SEEN_STORAGE_KEY, LATEST_CHANGELOG_ID } from '@/lib/changelog'
 
 type Item = {
@@ -59,12 +60,14 @@ export function Sidebar({
   isAdmin,
   guildId,
   entitlements,
+  hasActiveSubscription = true,
   activeTab,
   onTabChange,
 }: {
   isAdmin?: boolean
   guildId?: string
   entitlements?: EntitlementsLike
+  hasActiveSubscription?: boolean
   activeTab?: string
   onTabChange?: (tab: string) => void
 }) {
@@ -129,6 +132,13 @@ export function Sidebar({
   const canUseSafePay = Boolean(entitlements?.canUseSafePay)
 
   const mainItems: Item[] = useMemo(() => {
+    if (!hasActiveSubscription) {
+      return [
+        { href: '/dashboard/ativar', label: 'Ativar key', icon: <CreditCard size={18} /> },
+        { href: '/changelog', label: 'Novidades', icon: <Bell size={18} />, badge: hasUnreadChangelog },
+      ]
+    }
+
     if (!guildId) {
       return [
         { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -150,7 +160,7 @@ export function Sidebar({
       { href: '/status', label: 'Status', icon: <Activity size={18} /> },
       { href: '/changelog', label: 'Novidades', icon: <Bell size={18} />, badge: hasUnreadChangelog },
     ]
-  }, [guildId, canEditConfig, canUseAI, canUsePayments, canUseSafePay, hasUnreadChangelog])
+  }, [guildId, canEditConfig, canUseAI, canUsePayments, canUseSafePay, hasUnreadChangelog, hasActiveSubscription])
 
   const adminItems: Item[] = useMemo(() => {
     if (!isAdmin) return []
@@ -243,6 +253,18 @@ export function Sidebar({
           )
         })}
       </nav>
+      {sectionTitle('Conta')}
+      <button
+        type="button"
+        className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 border border-transparent hover:bg-white/6 hover:border-white/10 fx-hover-lift w-full text-left"
+        onClick={() => {
+          setMobileOpen(false)
+          void signOut({ callbackUrl: '/login' })
+        }}
+      >
+        <X size={18} />
+        <span className="font-medium tracking-[0.01em]">Sair</span>
+      </button>
     </>
   )
 

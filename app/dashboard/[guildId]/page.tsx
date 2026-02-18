@@ -7,6 +7,7 @@ import type { GuildConfig, GuildStats } from "@/lib/types";
 import { getBotGuildIds } from "@/lib/botPresence";
 import { isAdminDiscordId } from "@/lib/admin";
 import { GuildDashboardClient } from "@/components/dashboard/GuildDashboardClient";
+import { hasActiveSubscription } from "@/lib/subscriptionAccess";
 
 export default async function GuildPage({
   params,
@@ -17,6 +18,8 @@ export default async function GuildPage({
 }) {
   const session = (await getServerSession(authOptions as any)) as any;
   if (!session?.accessToken) redirect("/login");
+  const activeSub = await hasActiveSubscription(session?.user?.id ?? null);
+  if (!activeSub) redirect("/dashboard/ativar");
 
   const access = await canManageGuild(params.guildId);
   if (!access.ok) redirect("/dashboard");

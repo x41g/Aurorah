@@ -5,6 +5,7 @@ import type { GuildConfig } from '@/lib/types'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Check, X } from 'lucide-react'
 import { config as siteConfig } from '@/config'
+import { planDisplayName } from '@/lib/planNames'
 import { SiNubank, SiPagseguro, SiPicpay } from 'react-icons/si'
 import { FaBuildingColumns, FaMoneyBillWave } from 'react-icons/fa6'
 
@@ -41,6 +42,18 @@ function fmtDateTime(v?: string | null) {
   const d = new Date(v)
   if (Number.isNaN(d.getTime())) return '-'
   return d.toLocaleString('pt-BR')
+}
+
+function fmtSubscriptionStatus(v?: string | null) {
+  const s = String(v || '').toLowerCase()
+  if (!s) return 'nenhum'
+  if (s === 'scheduled') return 'Agendada'
+  if (s === 'trialing') return 'Em teste'
+  if (s === 'active') return 'Ativa'
+  if (s === 'past_due') return 'Em atraso'
+  if (s === 'canceled') return 'Cancelada'
+  if (s === 'expired') return 'Expirada'
+  return s
 }
 
 type Props = {
@@ -154,6 +167,8 @@ type TicketFormQuestionDraft = {
 type TicketFormDraft = {
   enabled: boolean
   title: string
+  robloxVerificationEnabled: boolean
+  robloxUsernameQuestionId: string
   questions: TicketFormQuestionDraft[]
 }
 
@@ -268,6 +283,8 @@ function normalizeForms(input: any): Record<string, TicketFormDraft> {
     out[String(category)] = {
       enabled: Boolean(r.enabled ?? true),
       title: String(r.title || ''),
+      robloxVerificationEnabled: Boolean(r.robloxVerificationEnabled ?? false),
+      robloxUsernameQuestionId: String(r.robloxUsernameQuestionId || '').trim(),
       questions: Array.isArray(r.questions)
         ? r.questions.map((q: any, i: number) => ({
             id: String(q?.id || `q${i + 1}`),
@@ -286,6 +303,8 @@ function toGuildForms(input: Record<string, TicketFormDraft>): GuildConfig['tick
     out[String(category)] = {
       enabled: Boolean(form?.enabled ?? true),
       title: String(form?.title || ''),
+      robloxVerificationEnabled: Boolean(form?.robloxVerificationEnabled ?? false),
+      robloxUsernameQuestionId: String(form?.robloxUsernameQuestionId || '').trim(),
       questions: Array.isArray(form?.questions)
         ? form.questions.map((q, i) => ({
             id: String(q?.id || `q${i + 1}`),
@@ -706,6 +725,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       out[category] = {
         enabled: Boolean(form.enabled),
         title: String(form.title || '').trim() || `Formulario - ${category}`,
+        robloxVerificationEnabled: Boolean(form.robloxVerificationEnabled),
+        robloxUsernameQuestionId: String(form.robloxUsernameQuestionId || '').trim(),
         questions,
       }
     }
@@ -961,8 +982,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         <div className="grid md:grid-cols-3 gap-3">
           <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
             <div className="text-xs text-white/60 uppercase tracking-wide">Plano</div>
-            <div className="mt-1 font-semibold text-white">{entitlements?.plan?.name || 'Sem plano'}</div>
-            <div className="text-xs text-white/60 mt-1">Status: {entitlements?.status || 'none'}</div>
+            <div className="mt-1 font-semibold text-white">{entitlements?.plan ? planDisplayName(entitlements.plan) : 'Sem plano'}</div>
+            <div className="text-xs text-white/60 mt-1">Status: {fmtSubscriptionStatus(entitlements?.status)}</div>
             <div className="text-xs text-white/60 mt-1">Inicio: {fmtDateTime(entitlements?.subscriptionStartedAt)}</div>
             <div className="text-xs text-white/60 mt-1">Renovacao: {fmtDateTime(entitlements?.subscriptionRenewAt)}</div>
             <div className="text-xs text-white/60 mt-1">Expiracao: {fmtDateTime(entitlements?.subscriptionExpiresAt)}</div>
@@ -1441,6 +1462,8 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                       [selectedFormCategory]: {
                         enabled: v,
                         title: prev[selectedFormCategory]?.title || `Formulario - ${selectedFormCategory}`,
+                        robloxVerificationEnabled: Boolean(prev[selectedFormCategory]?.robloxVerificationEnabled ?? false),
+                        robloxUsernameQuestionId: String(prev[selectedFormCategory]?.robloxUsernameQuestionId || ''),
                         questions: prev[selectedFormCategory]?.questions || [],
                       },
                     }))
@@ -1456,11 +1479,65 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                       [selectedFormCategory]: {
                         enabled: prev[selectedFormCategory]?.enabled ?? true,
                         title: v,
+                        robloxVerificationEnabled: Boolean(prev[selectedFormCategory]?.robloxVerificationEnabled ?? false),
+                        robloxUsernameQuestionId: String(prev[selectedFormCategory]?.robloxUsernameQuestionId || ''),
                         questions: prev[selectedFormCategory]?.questions || [],
                       },
                     }))
                   }
                 />
+                <Toggle
+                  label="Verificar conta Roblox neste ticket"
+                  value={Boolean(formsDraft[selectedFormCategory]?.robloxVerificationEnabled ?? false)}
+                  onChange={(v) =>
+                    setFormsDraft((prev) => {
+                      const current = prev[selectedFormCategory] || {
+                        enabled: true,
+                        title: `Formulario - ${selectedFormCategory}`,
+                        robloxVerificationEnabled: false,
+                        robloxUsernameQuestionId: '',
+                        questions: [],
+                      }
+                      return {
+                        ...prev,
+                        [selectedFormCategory]: {
+                          ...current,
+                          robloxVerificationEnabled: v,
+                          robloxUsernameQuestionId: v ? String(current.robloxUsernameQuestionId || '') : '',
+                        },
+                      }
+                    })
+                  }
+                />
+                <Reveal show={Boolean(formsDraft[selectedFormCategory]?.robloxVerificationEnabled ?? false)}>
+                  <SelectField
+                    label="Pergunta que contém o nickname Roblox"
+                    value={String(formsDraft[selectedFormCategory]?.robloxUsernameQuestionId || '')}
+                    onChange={(v) =>
+                      setFormsDraft((prev) => {
+                        const current = prev[selectedFormCategory] || {
+                          enabled: true,
+                          title: `Formulario - ${selectedFormCategory}`,
+                          robloxVerificationEnabled: true,
+                          robloxUsernameQuestionId: '',
+                          questions: [],
+                        }
+                        return {
+                          ...prev,
+                          [selectedFormCategory]: {
+                            ...current,
+                            robloxUsernameQuestionId: String(v || ''),
+                          },
+                        }
+                      })
+                    }
+                    options={(formsDraft[selectedFormCategory]?.questions || []).map((q, i) => ({
+                      value: String(q.id || `q${i + 1}`),
+                      label: `${String(q.label || `Pergunta ${i + 1}`).slice(0, 48)} (${String(q.id || `q${i + 1}`)})`,
+                    }))}
+                    placeholder="Selecione a pergunta do nick"
+                  />
+                </Reveal>
                 <div className="space-y-2">
                   {(formsDraft[selectedFormCategory]?.questions || []).map((q, qIdx) => (
                     <div key={qIdx} className="rounded-lg border border-white/10 bg-black/20 p-2">
@@ -1471,7 +1548,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                           value={q.label}
                           onChange={(v) =>
                             setFormsDraft((prev) => {
-                              const current = prev[selectedFormCategory] || { enabled: true, title: '', questions: [] }
+                              const current = prev[selectedFormCategory] || { enabled: true, title: '', robloxVerificationEnabled: false, robloxUsernameQuestionId: '', questions: [] }
                               const next = [...(current.questions || [])]
                               next[qIdx] = { ...next[qIdx], label: v }
                               return { ...prev, [selectedFormCategory]: { ...current, questions: next } }
@@ -1483,7 +1560,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                           value={q.style}
                           onChange={(v) =>
                             setFormsDraft((prev) => {
-                              const current = prev[selectedFormCategory] || { enabled: true, title: '', questions: [] }
+                              const current = prev[selectedFormCategory] || { enabled: true, title: '', robloxVerificationEnabled: false, robloxUsernameQuestionId: '', questions: [] }
                               const next = [...(current.questions || [])]
                               next[qIdx] = { ...next[qIdx], style: v === 'PARAGRAPH' ? 'PARAGRAPH' : 'SHORT' }
                               return { ...prev, [selectedFormCategory]: { ...current, questions: next } }
@@ -1501,10 +1578,17 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                             className="btn-secondary px-3 py-1.5 text-xs rounded-xl"
                             onClick={() =>
                               setFormsDraft((prev) => {
-                                const current = prev[selectedFormCategory] || { enabled: true, title: '', questions: [] }
+                                const current = prev[selectedFormCategory] || { enabled: true, title: '', robloxVerificationEnabled: false, robloxUsernameQuestionId: '', questions: [] }
                                 return {
                                   ...prev,
-                                  [selectedFormCategory]: { ...current, questions: current.questions.filter((_, i) => i !== qIdx) },
+                                  [selectedFormCategory]: {
+                                    ...current,
+                                    robloxUsernameQuestionId:
+                                      String(current.robloxUsernameQuestionId || '') === String(current.questions?.[qIdx]?.id || '')
+                                        ? ''
+                                        : String(current.robloxUsernameQuestionId || ''),
+                                    questions: current.questions.filter((_, i) => i !== qIdx),
+                                  },
                                 }
                               })
                             }
@@ -1520,7 +1604,13 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                     className="btn-secondary px-3 py-1.5 text-xs rounded-xl"
                     onClick={() =>
                       setFormsDraft((prev) => {
-                        const current = prev[selectedFormCategory] || { enabled: true, title: `Formulario - ${selectedFormCategory}`, questions: [] }
+                        const current = prev[selectedFormCategory] || {
+                          enabled: true,
+                          title: `Formulario - ${selectedFormCategory}`,
+                          robloxVerificationEnabled: false,
+                          robloxUsernameQuestionId: '',
+                          questions: [],
+                        }
                         return {
                           ...prev,
                           [selectedFormCategory]: {

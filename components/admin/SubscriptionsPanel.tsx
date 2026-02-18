@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { planDisplayName } from "@/lib/planNames";
 
 type Plan = {
   key: string;
@@ -73,6 +74,17 @@ type ConfirmState = {
 };
 
 const STATUS_OPTIONS = ["scheduled", "trialing", "active", "past_due", "canceled", "expired"] as const;
+
+function subscriptionStatusLabel(status?: string | null) {
+  const s = String(status || "").toLowerCase();
+  if (s === "scheduled") return "Agendada";
+  if (s === "trialing") return "Em teste";
+  if (s === "active") return "Ativa";
+  if (s === "past_due") return "Em atraso";
+  if (s === "canceled") return "Cancelada";
+  if (s === "expired") return "Expirada";
+  return s || "-";
+}
 
 function isoToLocalInput(iso?: string | null) {
   if (!iso) return "";
@@ -367,14 +379,14 @@ export function SubscriptionsPanel() {
           >
             {activePlans.map((p) => (
               <option key={p.key} value={p.key}>
-                {p.name} ({p.key})
+                {planDisplayName(p)} ({p.key})
               </option>
             ))}
           </select>
           <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="h-11 rounded-2xl bg-black/40 border border-white/10 px-3 outline-none">
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {subscriptionStatusLabel(s)}
               </option>
             ))}
           </select>
@@ -468,7 +480,7 @@ export function SubscriptionsPanel() {
                       </button>
                     </div>
                     <div className="text-xs text-white/60 mt-1">
-                      Plano atual: <b>{s.plan?.name || s.planKey}</b> | Status salvo: <b>{s.status}</b> | Status efetivo: <b>{shownStatus}</b> | Ativa: <b>{s.isActive ? "sim" : "nao"}</b>
+                      Plano atual: <b>{planDisplayName({ key: s.planKey, name: s.plan?.name })}</b> | Status salvo: <b>{subscriptionStatusLabel(s.status)}</b> | Status efetivo: <b>{subscriptionStatusLabel(shownStatus)}</b> | Ativa: <b>{s.isActive ? "sim" : "nao"}</b>
                     </div>
                     <div className="text-xs text-white/60 mt-1">
                       Inicio: <b>{formatDateTime(s.startedAt)}</b> | Renova: <b>{formatDateTime(s.renewAt)}</b> | Expira: <b>{formatDateTime(s.expiresAt)}</b>
@@ -499,7 +511,7 @@ export function SubscriptionsPanel() {
                 >
                   {activePlans.map((p) => (
                     <option key={p.key} value={p.key}>
-                      {p.name} ({p.key})
+                      {planDisplayName(p)} ({p.key})
                     </option>
                   ))}
                 </select>
@@ -512,7 +524,7 @@ export function SubscriptionsPanel() {
                 >
                   {STATUS_OPTIONS.map((statusOpt) => (
                     <option key={statusOpt} value={statusOpt}>
-                      {statusOpt}
+                      {subscriptionStatusLabel(statusOpt)}
                     </option>
                   ))}
                 </select>

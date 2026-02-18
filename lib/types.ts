@@ -37,6 +37,8 @@ export type GuildConfig = {
     {
       enabled?: boolean
       title?: string
+      robloxVerificationEnabled?: boolean
+      robloxUsernameQuestionId?: string
       questions?: Array<{
         id: string
         label: string
@@ -116,6 +118,8 @@ export type GuildConfig = {
         {
           enabled?: boolean
           title?: string
+          robloxVerificationEnabled?: boolean
+          robloxUsernameQuestionId?: string
           questions?: Array<{
             id: string
             label: string

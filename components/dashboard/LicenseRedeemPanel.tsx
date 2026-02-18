@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type GuildOption = {
   id: string;
   name: string;
 };
 
-export function LicenseRedeemPanel({ guilds }: { guilds: GuildOption[] }) {
+export function LicenseRedeemPanel({
+  guilds,
+  redirectOnSuccess = false,
+}: {
+  guilds: GuildOption[];
+  redirectOnSuccess?: boolean;
+}) {
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [guildId, setGuildId] = useState(guilds[0]?.id || "");
   const [loading, setLoading] = useState(false);
@@ -30,13 +38,24 @@ export function LicenseRedeemPanel({ guilds }: { guilds: GuildOption[] }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Falha ao ativar key");
       const expiresAt = String(data?.result?.subscription?.expiresAt || "");
-      setOk(expiresAt ? `Key ativada com sucesso. Assinatura válida até ${new Date(expiresAt).toLocaleString("pt-BR")}.` : "Key ativada com sucesso.");
+      setOk(
+        expiresAt
+          ? `Key ativada com sucesso. Assinatura valida ate ${new Date(expiresAt).toLocaleString("pt-BR")}.`
+          : "Key ativada com sucesso."
+      );
       setCode("");
+      router.refresh();
+      if (redirectOnSuccess) {
+        setTimeout(() => {
+          router.push("/dashboard");
+          router.refresh();
+        }, 350);
+      }
     } catch (e: any) {
       const msg = String(e?.message || e);
-      if (msg === "license_not_found") setError("Key inválida.");
+      if (msg === "license_not_found") setError("Key invalida.");
       else if (msg === "license_disabled") setError("Key desativada.");
-      else if (msg === "license_exhausted") setError("Key sem ativações disponíveis.");
+      else if (msg === "license_exhausted") setError("Key sem ativacoes disponiveis.");
       else if (msg === "license_expired") setError("Key expirada.");
       else setError(msg);
     } finally {
@@ -60,7 +79,7 @@ export function LicenseRedeemPanel({ guilds }: { guilds: GuildOption[] }) {
           onChange={(e) => setGuildId(e.target.value)}
           className="h-11 rounded-2xl bg-black/40 border border-white/10 px-3 outline-none"
         >
-          <option value="">Sem vínculo de servidor</option>
+          <option value="">Sem vinculo de servidor</option>
           {guilds.map((g) => (
             <option key={g.id} value={g.id}>
               {g.name}

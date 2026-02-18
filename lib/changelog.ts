@@ -7,9 +7,29 @@ export type ChangelogEntry = {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
-      {
-    id: 'v5.0.1',
-    version: '5.0.1',
+  {
+    id: 'v5.2.0',
+    version: '5.2.0',
+    date: '2026-02-18',
+    title: 'Assinaturas, Keys e Automacoes Discord',
+    items: [
+      'Sistema de assinatura expandido com ciclo completo: scheduled, trialing, active, past_due, canceled e expired.',
+      'Assinaturas agora suportam datas de inicio, renovacao, expiracao, cancelamento e encerramento, com status efetivo calculado automaticamente.',
+      'Painel admin de assinaturas refeito para editar o ciclo completo com mais controle operacional.',
+      'Novo sistema de License Keys: geracao, ativacao, controle de uso, expiracao e revogacao.',
+      'Nova tela no dashboard para ativar assinatura via key com vinculacao opcional de servidor.',
+      'Novo painel admin para gerenciar keys, incluindo busca, status, validade e copia rapida.',
+      'Novo endpoint interno para listar assinaturas ativas e suporte a automacoes no bot.',
+      'Bot: adicionado scheduler de poke de assinatura (avisos automáticos quando faltar 7 e 3 dias para expirar).',
+      'Bot: adicionado sincronizador de cargo por assinatura ativa no servidor de suporte (adiciona/remove automaticamente).',
+      'Bot: deploy de comandos atualizado para suportar escopo global/guild/both e facilitar badge de slash commands.',
+      'Bot: novo script de setup AutoMod no servidor de suporte (criacao/atualizacao de regras com modo idempotente).',
+      'Correcao de estabilidade no handler de interactions para evitar crash em interacoes sem guild (DM/parcial).',
+    ],
+  },
+  {
+    id: 'v5.1.0',
+    version: '5.1.0',
     date: '2026-02-18',
     title: 'Aurora V5',
     items: [

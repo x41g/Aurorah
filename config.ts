@@ -68,7 +68,7 @@ accent: '#12071f',
   ],
   plans: [
     {
-      name: 'Starter',
+      name: 'Essencial',
       price: 'R$ 9,90',
       period: '/mês',
       description: 'Para pequenos servidores',
@@ -80,7 +80,7 @@ accent: '#12071f',
       popular: false,
     },
     {
-      name: 'Pro',
+      name: 'Prime',
       price: 'R$ 19,90',
       period: '/mês',
       description: 'Para servidores em crescimento',
@@ -97,7 +97,7 @@ accent: '#12071f',
       popular: true,
     },
     {
-      name: 'Enterprise',
+      name: 'Elite',
       price: 'Customizado',
       period: '',
       description: 'Para grandes operações',
@@ -113,32 +113,14 @@ accent: '#12071f',
   
   testimonials: [
     {
-      name: 'Kama',
-      role: 'Dono de Loja',
-      text: 'Aumentei minhas vendas em 170% com o bot. Sistema muito profissional!',
-      avatarUrl: 'clients/kama.png',
-    },
-        {
-      name: 'Yuki',
-      role: 'Administrador(a) de Loja',
-      text: 'Aumentamos a margem de lucro e eficiência do suporte da nossa loja com a ferramenta!',
-      avatarUrl: 'clients/yuki.png',
-    },
-    {
-      name: 'iymarshuai_',
-      role: 'Dona da Plumpy Store',
-      text: 'Adorei o sistema daqui! Realmente confiável, espero que seja muito mais reconhecido!  100/10 💕',
-      avatarUrl: 'clients/iymarshuai.png',
-    },
-    {
-      name: 'Yelhsa',
-      role: '🎀 Dona da 𝐌𝐞𝐥𝐨𝐝𝐲𝐬 𝐒𝐭𝐨𝐫𝐞',
+      name: '𝐌𝐞𝐥𝐨𝐝𝐲𝐬 𝐒𝐭𝐨𝐫𝐞',
+      role: '',
       text: '10/10 Aurora é simplesmente incrível, sistema muito prático e completo, recomendo usarem!',
       avatarUrl: 'clients/Yelhsa.png',
     },
     {
-      name: 'miikaofc',
-      role: 'Dona da 𝐂andy`s 𝐒hopp',
+      name: 'Candy`s 𝐒hopp',
+      role: '',
       text: 'Eu adorei muito o sistema e tudo que ele tem pra oferecer, a paciência e o atendimento! 100/10',
       avatarUrl: 'clients/miikaofc.png',
     },
@@ -160,7 +142,7 @@ accent: '#12071f',
     },
     {
       q: 'Posso usar em múltiplos servidores?',
-      a: 'Sim! Dependendo do plano. Starter = 1 servidor, Pro = 5 servidores, Enterprise = ilimitado.',
+      a: 'Sim! Dependendo do plano. Essencial = 1 servidor, Prime = 5 servidores, Elite = ilimitado.',
     },
     {
       q: 'Como funciona o sistema de pagamento?',
@@ -183,3 +165,4 @@ accent: '#12071f',
       loopImageUrl: "https://r2.e-z.host/3b4c067b-8d6b-4b6c-ba63-092e2cbda5d5/d035xj7t.png",
   },
 }
+

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Copy } from "lucide-react";
+import { planDisplayName } from "@/lib/planNames";
 
 type Plan = { key: string; name: string; active: boolean };
 type LicenseKeyRow = {
@@ -18,6 +20,15 @@ type LicenseKeyRow = {
   _count?: { activations?: number };
   plan?: Plan;
 };
+
+function licenseStatusLabel(status?: string | null) {
+  const s = String(status || "").toLowerCase();
+  if (s === "active") return "Ativa";
+  if (s === "disabled") return "Desativada";
+  if (s === "exhausted") return "Esgotada";
+  if (s === "expired") return "Expirada";
+  return s || "-";
+}
 
 function toLocalInput(iso?: string | null) {
   if (!iso) return "";
@@ -140,6 +151,17 @@ export function LicenseKeysPanel() {
     }
   }
 
+  async function copyText(value: string) {
+    try {
+      await navigator.clipboard.writeText(String(value || ""));
+      setOk("Copiado para a area de transferencia.");
+      setTimeout(() => setOk(""), 1200);
+    } catch {
+      setError("Falha ao copiar.");
+      setTimeout(() => setError(""), 1200);
+    }
+  }
+
   return (
     <div className="card mt-6">
       <div className="flex items-start justify-between gap-4">
@@ -156,10 +178,10 @@ export function LicenseKeysPanel() {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por sufixo/plano/nota" className="h-11 rounded-xl bg-black/40 border border-white/10 px-3 outline-none md:col-span-2" />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-11 rounded-xl bg-black/40 border border-white/10 px-3 outline-none">
           <option value="">todos status</option>
-          <option value="active">active</option>
-          <option value="disabled">disabled</option>
-          <option value="exhausted">exhausted</option>
-          <option value="expired">expired</option>
+          <option value="active">{licenseStatusLabel("active")}</option>
+          <option value="disabled">{licenseStatusLabel("disabled")}</option>
+          <option value="exhausted">{licenseStatusLabel("exhausted")}</option>
+          <option value="expired">{licenseStatusLabel("expired")}</option>
         </select>
         <div className="md:col-span-2">
           <button className="h-11 px-4 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition w-full" onClick={() => load()} disabled={loading || saving}>
@@ -176,7 +198,7 @@ export function LicenseKeysPanel() {
             <select value={planKey || activePlans[0]?.key || ""} onChange={(e) => setPlanKey(e.target.value)} className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none">
               {activePlans.map((p) => (
                 <option key={p.key} value={p.key}>
-                  {p.name} ({p.key})
+                  {planDisplayName(p)} ({p.key})
                 </option>
               ))}
             </select>
@@ -204,14 +226,26 @@ export function LicenseKeysPanel() {
             </button>
           </div>
         </div>
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota interna (opcional)" className="mt-2 h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
+        <div className="mt-2">
+          <div className="mb-1 text-xs text-white/60">Nota interna (opcional)</div>
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex: campanha janeiro / parceiro X" className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
+        </div>
         {createdCodes.length > 0 ? (
           <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
             <div className="font-semibold text-emerald-200 mb-2">Keys geradas (copie agora):</div>
             <div className="space-y-1">
               {createdCodes.map((c) => (
-                <div key={c} className="font-mono text-emerald-100">
-                  {c}
+                <div key={c} className="font-mono text-emerald-100 flex items-center justify-between gap-2">
+                  <span className="truncate">{c}</span>
+                  <button
+                    type="button"
+                    onClick={() => copyText(c)}
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-emerald-200/30 bg-emerald-200/10 hover:bg-emerald-200/20 transition"
+                    aria-label={`Copiar key ${c}`}
+                    title="Copiar"
+                  >
+                    <Copy size={14} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -249,16 +283,16 @@ function LicenseRow({
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
       <div className="text-sm text-white/80">
-        Key: <b>{row.codePrefix}...{row.codeLast4}</b> | Plano: <b>{row.plan?.name || row.planKey}</b> | Uso: <b>{row.usedCount}/{row.maxActivations}</b> | Ativações: <b>{Number(row._count?.activations || 0)}</b>
+        Key: <b>{row.codePrefix}...{row.codeLast4}</b> | Plano: <b>{planDisplayName({ key: row.planKey, name: row.plan?.name })}</b> | Status: <b>{licenseStatusLabel(row.status)}</b> | Uso: <b>{row.usedCount}/{row.maxActivations}</b> | Ativações: <b>{Number(row._count?.activations || 0)}</b>
       </div>
       <div className="text-xs text-white/60 mt-1">Criada em {new Date(row.createdAt).toLocaleString("pt-BR")}</div>
 
       <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none">
-          <option value="active">active</option>
-          <option value="disabled">disabled</option>
-          <option value="exhausted">exhausted</option>
-          <option value="expired">expired</option>
+          <option value="active">{licenseStatusLabel("active")}</option>
+          <option value="disabled">{licenseStatusLabel("disabled")}</option>
+          <option value="exhausted">{licenseStatusLabel("exhausted")}</option>
+          <option value="expired">{licenseStatusLabel("expired")}</option>
         </select>
         <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota interna" className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
@@ -274,3 +308,6 @@ function LicenseRow({
     </div>
   );
 }
+
+
+
