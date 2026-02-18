@@ -45,6 +45,24 @@ export async function POST(req: Request) {
       userId: String(session.user.id),
       guildId: selectedGuildId,
     });
+
+    if (selectedGuildId) {
+      const current = await prisma.whitelist.findUnique({ where: { id: "singleton" } });
+      const currentIds = Array.isArray(current?.guildIds) ? (current!.guildIds as any[]).map(String).filter(Boolean) : [];
+      const nextIds = currentIds.includes(selectedGuildId) ? currentIds : [...currentIds, selectedGuildId];
+      await prisma.whitelist.upsert({
+        where: { id: "singleton" },
+        create: {
+          id: "singleton",
+          enabled: Boolean(current?.enabled ?? false),
+          guildIds: nextIds as any,
+        },
+        update: {
+          guildIds: nextIds as any,
+        },
+      });
+    }
+
     return NextResponse.json({ ok: true, result });
   } catch (e: any) {
     const msg = String(e?.message || e || "activation_error");
@@ -58,4 +76,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: known.has(msg) ? msg : "activation_error" }, { status: known.has(msg) ? 400 : 500 });
   }
 }
-
