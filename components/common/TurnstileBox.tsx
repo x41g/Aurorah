@@ -27,10 +27,35 @@ type Props = {
 };
 
 export function TurnstileBox({ onTokenChange, className }: Props) {
-  const siteKey = String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim();
+  const staticSiteKey = String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const [siteKey, setSiteKey] = useState(staticSiteKey);
   const [scriptReady, setScriptReady] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    if (staticSiteKey) {
+      setSiteKey(staticSiteKey);
+      return;
+    }
+
+    fetch("/api/public-security", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        setSiteKey(String(data?.turnstileSiteKey || "").trim());
+      })
+      .catch(() => {
+        if (!active) return;
+        setError("Nao foi possivel carregar o captcha.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [staticSiteKey]);
 
   useEffect(() => {
     if (!siteKey || !scriptReady) return;
@@ -38,14 +63,21 @@ export function TurnstileBox({ onTokenChange, className }: Props) {
     if (!window.turnstile?.render) return;
 
     if (widgetIdRef.current) return;
-
-    widgetIdRef.current = window.turnstile.render(containerRef.current, {
-      sitekey: siteKey,
-      theme: "dark",
-      callback: (token) => onTokenChange(String(token || "")),
-      "expired-callback": () => onTokenChange(""),
-      "error-callback": () => onTokenChange(""),
-    });
+    try {
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: siteKey,
+        theme: "dark",
+        callback: (token) => onTokenChange(String(token || "")),
+        "expired-callback": () => onTokenChange(""),
+        "error-callback": () => {
+          onTokenChange("");
+          setError("Captcha expirou ou falhou. Atualize a pagina.");
+        },
+      });
+      setError("");
+    } catch {
+      setError("Falha ao renderizar captcha. Confira a chave do Turnstile.");
+    }
 
     return () => {
       if (widgetIdRef.current && window.turnstile?.remove) {
@@ -59,7 +91,15 @@ export function TurnstileBox({ onTokenChange, className }: Props) {
     };
   }, [siteKey, scriptReady, onTokenChange]);
 
-  if (!siteKey) return null;
+  if (!siteKey && !error) {
+    return (
+      <div className={className}>
+        <div className="rounded-xl border border-amber-300/25 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
+          Captcha desativado: configure `NEXT_PUBLIC_TURNSTILE_SITE_KEY` ou `TURNSTILE_SITE_KEY`.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
@@ -69,6 +109,9 @@ export function TurnstileBox({ onTokenChange, className }: Props) {
         onLoad={() => setScriptReady(true)}
       />
       <div ref={containerRef} />
+      {error ? (
+        <div className="mt-2 rounded-xl border border-red-300/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</div>
+      ) : null}
     </div>
   );
 }

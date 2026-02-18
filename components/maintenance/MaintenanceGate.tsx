@@ -13,7 +13,6 @@ function shouldBypass(pathname: string) {
   if (!pathname) return false;
   if (pathname.startsWith("/api")) return true;
   if (pathname.startsWith("/admin")) return true;
-  if (pathname.startsWith("/dashboard")) return true;
   if (pathname.startsWith("/login")) return true;
   if (pathname.startsWith("/403")) return true;
   if (pathname.startsWith("/_next")) return true;
@@ -70,6 +69,10 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
         </h1>
         <p className="mt-4 max-w-2xl text-sm text-white/75 sm:text-base">{state?.message}</p>
 
+        <div className="mt-6 w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-2">
+          <img src="/aurorabanner.png" alt="Aurora manutencao" className="h-auto w-full rounded-xl object-cover" />
+        </div>
+
         <div className="mt-10 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-xs text-white/60">Status</div>
@@ -88,4 +91,3 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
     </main>
   );
 }
-
