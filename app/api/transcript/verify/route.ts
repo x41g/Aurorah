@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, getClientIp } from "@/lib/requestSecurity";
+import { isTurnstileEnabled, verifyTurnstileToken } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 
@@ -77,11 +79,38 @@ function sanitizeSlug(input: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { slug, password }: { slug?: string; password?: string } = await req.json();
+    const ip = getClientIp(req);
+    const ipRate = consumeRateLimit(`transcript-verify-ip:${ip}`, 120, 60_000);
+    if (!ipRate.allowed) {
+      return Response.json(
+        { error: "too_many_requests" },
+        { status: 429, headers: { "Retry-After": String(ipRate.retryAfterSec) } }
+      );
+    }
+
+    const { slug, password, captchaToken }: { slug?: string; password?: string; captchaToken?: string } = await req.json();
 
     const pw = String(password || "").trim();
     const s = sanitizeSlug(String(slug || ""));
     if (!s || !pw) return Response.json({ error: "bad_request" }, { status: 400 });
+
+    if (isTurnstileEnabled()) {
+      if (!String(captchaToken || "").trim()) {
+        return Response.json({ error: "captcha_required" }, { status: 400 });
+      }
+      const captcha = await verifyTurnstileToken({ token: String(captchaToken || ""), remoteIp: ip });
+      if (!captcha.ok) {
+        return Response.json({ error: "captcha_failed" }, { status: 403 });
+      }
+    }
+
+    const pairRate = consumeRateLimit(`transcript-verify:${ip}:${s.toLowerCase()}`, 20, 60_000);
+    if (!pairRate.allowed) {
+      return Response.json(
+        { error: "too_many_attempts" },
+        { status: 429, headers: { "Retry-After": String(pairRate.retryAfterSec) } }
+      );
+    }
 
     let row = await prisma.transcript.findUnique({ where: { slug: s } });
     if (!row && s.toLowerCase() !== s) {

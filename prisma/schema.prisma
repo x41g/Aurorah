@@ -241,3 +241,16 @@ model TicketAIMemory {
 
   @@index([guildId])
 }
+
+model AdminResetAudit {
+  id        String   @id @default(cuid())
+  adminId   String
+  targets   Json
+  result    Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+}

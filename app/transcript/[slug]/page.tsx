@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Copy, Lock, ShieldCheck, Unlock } from "lucide-react";
+import { TurnstileBox } from "@/components/common/TurnstileBox";
 
 type VerifyOk = { ok: true; html: string };
 type VerifyErr =
@@ -10,6 +11,10 @@ type VerifyErr =
   | { error: "not_found" }
   | { error: "empty_transcript" }
   | { error: "bad_request" }
+  | { error: "captcha_required" }
+  | { error: "captcha_failed" }
+  | { error: "too_many_requests" }
+  | { error: "too_many_attempts" }
   | { error: "server_error"; detail?: string }
   | { error: string; detail?: string };
 
@@ -43,6 +48,8 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
   const [message, setMessage] = useState("");
   const [html, setHtml] = useState("");
   const [shake, setShake] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileEnabled = Boolean(String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim());
 
   useEffect(() => {
     try {
@@ -80,6 +87,18 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       pulseError("Dados invalidos. Reabra o link e tente novamente.");
       return;
     }
+    if (code === "captcha_required") {
+      pulseError("Complete o captcha para continuar.");
+      return;
+    }
+    if (code === "captcha_failed") {
+      pulseError("Captcha invalido ou expirado. Tente novamente.");
+      return;
+    }
+    if (httpStatus === 429 || code === "too_many_requests" || code === "too_many_attempts") {
+      pulseError("Muitas tentativas seguidas. Aguarde alguns segundos e tente de novo.");
+      return;
+    }
 
     if (code === "server_error" && detail.toLowerCase().includes("transcript_hash_secret")) {
       pulseError("Falha de configuracao no servidor de transcript. Avise a administracao.");
@@ -94,6 +113,10 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       pulseError("Digite a senha para desbloquear.");
       return;
     }
+    if (turnstileEnabled && !captchaToken) {
+      pulseError("Complete o captcha antes de desbloquear.");
+      return;
+    }
 
     setStatus("unlocking");
     setMessage("");
@@ -102,7 +125,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       const res = await fetch("/api/transcript/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, password }),
+        body: JSON.stringify({ slug, password, captchaToken }),
       });
 
       let data: VerifyOk | VerifyErr;
@@ -228,13 +251,18 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
                   />
 
                   {message ? <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">{message}</div> : null}
+                  {turnstileEnabled ? (
+                    <div className="mt-3">
+                      <TurnstileBox onTokenChange={setCaptchaToken} />
+                    </div>
+                  ) : null}
 
                   <button
                     onClick={unlock}
-                    disabled={status === "unlocking"}
+                    disabled={status === "unlocking" || (turnstileEnabled && !captchaToken)}
                     className={cx(
                       "mt-4 w-full rounded-xl px-4 py-3 text-sm font-medium transition",
-                      status === "unlocking"
+                      status === "unlocking" || (turnstileEnabled && !captchaToken)
                         ? "cursor-not-allowed bg-white/10 text-white/50"
                         : "bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white hover:from-fuchsia-400 hover:to-violet-400"
                     )}

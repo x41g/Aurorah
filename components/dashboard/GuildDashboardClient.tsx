@@ -58,6 +58,7 @@ export function GuildDashboardClient({
   const created = Number(stats.ticketsCreatedToday ?? 0)
   const closed = Number(stats.ticketsClosedToday ?? 0)
   const net = created - closed
+  const openedTodayStillOpen = Math.max(net, 0)
   const hasCarryOverClose = closed > created
   const closeRate = created > 0 ? Math.round((closed / created) * 100) : 0
 
@@ -71,7 +72,7 @@ export function GuildDashboardClient({
           <div className="dashboard-stagger grid md:grid-cols-4 gap-4 mb-6">
             <StatCard label="Tickets criados hoje" value={String(created)} hint={stats.todayKey ? `Dia: ${stats.todayKey}` : undefined} />
             <StatCard label="Tickets fechados hoje" value={String(closed)} />
-            <StatCard label="Saldo do dia" value={net > 0 ? `+${net}` : String(net)} hint="Criados - Fechados" />
+            <StatCard label="Abertos de hoje" value={String(openedTodayStillOpen)} hint="Criados hoje e ainda nao fechados" />
             <StatCard
               label="Atualizado (Horario de Brasilia)"
               value={
@@ -105,7 +106,7 @@ export function GuildDashboardClient({
                   <div className="grid md:grid-cols-4 gap-4 mb-6">
                     <StatCard label="Criados hoje" value={String(created)} />
                     <StatCard label="Fechados hoje" value={String(closed)} />
-                    <StatCard label="Saldo do dia" value={net > 0 ? `+${net}` : String(net)} hint="Criados - Fechados" />
+                    <StatCard label="Abertos de hoje" value={String(openedTodayStillOpen)} hint="Criados hoje e ainda nao fechados" />
                     <StatCard label="Taxa de fechamento" value={`${closeRate}%`} hint="Fechados / Criados no dia" />
                   </div>
                 </div>
