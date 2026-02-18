@@ -44,6 +44,7 @@ export type GuildConfig = {
         label: string
         required?: boolean
         style?: "SHORT" | "PARA"
+        placeholder?: string
       }>
     }
   >
@@ -125,6 +126,7 @@ export type GuildConfig = {
             label: string
             required?: boolean
             style?: "SHORT" | "PARA"
+            placeholder?: string
           }>
         }
       >

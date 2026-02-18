@@ -161,6 +161,7 @@ type TicketFunctionDraft = {
 type TicketFormQuestionDraft = {
   id: string
   label: string
+  placeholder: string
   style: 'SHORT' | 'PARAGRAPH'
 }
 
@@ -289,7 +290,8 @@ function normalizeForms(input: any): Record<string, TicketFormDraft> {
         ? r.questions.map((q: any, i: number) => ({
             id: String(q?.id || `q${i + 1}`),
             label: String(q?.label || ''),
-            style: String(q?.style || 'SHORT').toUpperCase() === 'PARAGRAPH' ? 'PARAGRAPH' : 'SHORT',
+            placeholder: String(q?.placeholder || ''),
+            style: ['PARAGRAPH', 'PARA'].includes(String(q?.style || 'SHORT').toUpperCase()) ? 'PARAGRAPH' : 'SHORT',
           }))
         : [],
     }
@@ -309,6 +311,7 @@ function toGuildForms(input: Record<string, TicketFormDraft>): GuildConfig['tick
         ? form.questions.map((q, i) => ({
             id: String(q?.id || `q${i + 1}`),
             label: String(q?.label || ''),
+            placeholder: String(q?.placeholder || ''),
             required: true,
             style: q?.style === 'PARAGRAPH' ? 'PARA' : 'SHORT',
           }))
@@ -719,6 +722,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
         .map((q, i) => ({
           id: `q${i + 1}`,
           label: String(q.label || '').trim(),
+          placeholder: String(q.placeholder || '').trim(),
           style: q.style === 'PARAGRAPH' ? 'PARAGRAPH' : 'SHORT',
         }))
         .filter((q) => q.label.length > 0)
@@ -1176,7 +1180,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                       label="Formularios por categoria (JSON)"
                       value={ticketFormsText}
                       onChange={setTicketFormsText}
-                      hint='Exemplo: {"Suporte":{"enabled":true,"title":"Form","questions":[{"id":"q1","label":"Qual seu problema?","style":"SHORT"}]}}'
+                      hint='Exemplo: {"Suporte":{"enabled":true,"title":"Form","questions":[{"id":"q1","label":"Qual seu problema?","placeholder":"Ex.: detalhe aqui","style":"SHORT"}]}}'
                       placeholder={TICKET_FORMS_PLACEHOLDER}
                     />
                   </div>
@@ -1561,7 +1565,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                 <div className="space-y-2">
                   {(formsDraft[selectedFormCategory]?.questions || []).map((q, qIdx) => (
                     <div key={qIdx} className="rounded-lg border border-white/10 bg-black/20 p-2">
-                      <div className="grid sm:grid-cols-3 gap-2">
+                      <div className="grid sm:grid-cols-4 gap-2">
                         <Field
                           label={`Pergunta ${qIdx + 1}`}
                           placeholder={qIdx === 0 ? 'Ex.: Qual é o número do pedido?' : 'Ex.: Descreva seu problema'}
@@ -1571,6 +1575,19 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                               const current = prev[selectedFormCategory] || { enabled: true, title: '', robloxVerificationEnabled: false, robloxUsernameQuestionId: '', questions: [] }
                               const next = [...(current.questions || [])]
                               next[qIdx] = { ...next[qIdx], label: v }
+                              return { ...prev, [selectedFormCategory]: { ...current, questions: next } }
+                            })
+                          }
+                        />
+                        <Field
+                          label="Placeholder (opcional)"
+                          placeholder="Ex.: Digite aqui..."
+                          value={q.placeholder || ''}
+                          onChange={(v) =>
+                            setFormsDraft((prev) => {
+                              const current = prev[selectedFormCategory] || { enabled: true, title: '', robloxVerificationEnabled: false, robloxUsernameQuestionId: '', questions: [] }
+                              const next = [...(current.questions || [])]
+                              next[qIdx] = { ...next[qIdx], placeholder: v }
                               return { ...prev, [selectedFormCategory]: { ...current, questions: next } }
                             })
                           }
@@ -1635,7 +1652,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                           ...prev,
                           [selectedFormCategory]: {
                             ...current,
-                            questions: [...current.questions, { id: `q${current.questions.length + 1}`, label: '', style: 'SHORT' }],
+                            questions: [...current.questions, { id: `q${current.questions.length + 1}`, label: '', placeholder: '', style: 'SHORT' }],
                           },
                         }
                       })
