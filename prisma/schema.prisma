@@ -85,9 +85,15 @@ model Subscription {
   id        String   @id @default(cuid())
   userId    String   @unique
   planKey   String
-  status    String   @default("active") // active | canceled | past_due etc
+  status    String   @default("active") // scheduled | trialing | active | past_due | canceled | expired
+  startedAt DateTime?
   renewAt   DateTime?
   expiresAt DateTime?
+  canceledAt DateTime?
+  cancelAtPeriodEnd Boolean @default(false)
+  endedAt DateTime?
+  statusReason String?
+  lastStatusChangeAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -95,6 +101,8 @@ model Subscription {
 
   @@index([planKey])
   @@index([status])
+  @@index([expiresAt])
+  @@index([startedAt])
 }
 
 model GuildOwner {

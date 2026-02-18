@@ -157,7 +157,7 @@ function Card({ item, active }: { item: Testimonial; active?: boolean }) {
     <div
       className={[
         "h-full w-full rounded-2xl border border-white/10",
-        "bg-gradient-to-br from-purple-900/40 to-pink-900/30",
+        active ? "bg-gradient-to-br from-purple-900/40 to-pink-900/30" : "bg-white/[0.03]",
         "p-6 backdrop-blur",
         active ? "shadow-[0_0_60px_rgba(168,85,247,0.18)]" : "",
       ].join(" ")}

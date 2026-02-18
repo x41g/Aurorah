@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { evaluateSubscriptionState, normalizeSubscriptionStatus } from "@/lib/subscriptions";
 
-export type SubscriptionStatus = "active" | "past_due" | "canceled" | "expired";
+export type SubscriptionStatus = "scheduled" | "trialing" | "active" | "past_due" | "canceled" | "expired";
 
 export type PlanEntitlements = {
   key: string;
@@ -24,6 +25,12 @@ export type GuildEntitlements = {
   ownerId: string | null;
   subscriptionActive: boolean;
   status: SubscriptionStatus | null;
+  subscriptionStartedAt: string | null;
+  subscriptionRenewAt: string | null;
+  subscriptionExpiresAt: string | null;
+  subscriptionCanceledAt: string | null;
+  subscriptionEndedAt: string | null;
+  subscriptionStatusReason: string | null;
   plan: PlanEntitlements | null;
   canUseDashboard: boolean;
   canEditConfig: boolean;
@@ -45,21 +52,6 @@ function monthKeyUTC(d = new Date()) {
   return `${y}-${m}`;
 }
 
-function isSubActive(status: unknown, expiresAt: Date | null) {
-  const now = Date.now();
-  const s = String(status || "").toLowerCase();
-  if (s === "active") {
-    if (!expiresAt) return true;
-    return expiresAt.getTime() > now;
-  }
-  if (s === "past_due") {
-    if (!expiresAt) return false;
-    const graceDays = Math.max(0, Number(process.env.SUBSCRIPTION_PAST_DUE_GRACE_DAYS || 0) || 0);
-    return expiresAt.getTime() + graceDays * 24 * 60 * 60 * 1000 > now;
-  }
-  return false;
-}
-
 export async function getWhitelistState() {
   const wl = await prisma.whitelist.findUnique({ where: { id: "singleton" } });
   const enabled = Boolean(wl?.enabled);
@@ -79,18 +71,36 @@ export async function getActiveSubscriptionByUserId(userId: string) {
   });
   if (!sub) return null;
 
-  if (sub.expiresAt && sub.expiresAt.getTime() <= Date.now() && String(sub.status || "").toLowerCase() !== "expired") {
-    await prisma.subscription.update({
-      where: { id: sub.id },
-      data: { status: "expired" },
-    }).catch(() => null);
-    sub.status = "expired";
+  const evaluated = evaluateSubscriptionState({
+    id: sub.id,
+    status: sub.status,
+    startedAt: sub.startedAt,
+    renewAt: sub.renewAt,
+    expiresAt: sub.expiresAt,
+    canceledAt: sub.canceledAt,
+    endedAt: sub.endedAt,
+    lastStatusChangeAt: sub.lastStatusChangeAt,
+  });
+
+  if (evaluated.shouldPersist) {
+    await prisma.subscription
+      .update({
+        where: { id: sub.id },
+        data: {
+          status: evaluated.patch.status ?? undefined,
+          endedAt: evaluated.patch.endedAt,
+          lastStatusChangeAt: evaluated.patch.lastStatusChangeAt,
+        },
+      })
+      .catch(() => null);
+    sub.status = evaluated.status;
+    if (evaluated.patch.endedAt) sub.endedAt = evaluated.patch.endedAt;
+    if (evaluated.patch.lastStatusChangeAt) sub.lastStatusChangeAt = evaluated.patch.lastStatusChangeAt;
   }
 
-  const active = isSubActive(sub.status, sub.expiresAt);
   return {
-    active,
-    status: (String(sub.status || "active").toLowerCase() as SubscriptionStatus) || "active",
+    active: evaluated.active,
+    status: normalizeSubscriptionStatus(sub.status, "active") as SubscriptionStatus,
     sub,
     plan: sub.plan,
   };
@@ -166,6 +176,12 @@ export async function getGuildEntitlements(guildId: string): Promise<GuildEntitl
     ownerId,
     subscriptionActive,
     status: subInfo?.status ?? null,
+    subscriptionStartedAt: subInfo?.sub.startedAt?.toISOString() ?? null,
+    subscriptionRenewAt: subInfo?.sub.renewAt?.toISOString() ?? null,
+    subscriptionExpiresAt: subInfo?.sub.expiresAt?.toISOString() ?? null,
+    subscriptionCanceledAt: subInfo?.sub.canceledAt?.toISOString() ?? null,
+    subscriptionEndedAt: subInfo?.sub.endedAt?.toISOString() ?? null,
+    subscriptionStatusReason: subInfo?.sub.statusReason ? String(subInfo.sub.statusReason) : null,
     plan,
     canUseDashboard,
     canEditConfig,
@@ -181,4 +197,3 @@ export async function getGuildEntitlements(guildId: string): Promise<GuildEntitl
     ownerGuildsLimit,
   };
 }
-

@@ -3,14 +3,14 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { isAdminDiscordId } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import { evaluateSubscriptionState, normalizeSubscriptionStatus, parseOptionalDateInput } from "@/lib/subscriptions";
 
 export const runtime = "nodejs";
 
-type SubStatus = "active" | "canceled" | "expired" | "past_due";
+type SubStatus = "scheduled" | "trialing" | "active" | "past_due" | "canceled" | "expired";
 
 function normalizeStatus(input: unknown): SubStatus {
-  const raw = String(input || "active").toLowerCase();
-  return (["active", "canceled", "expired", "past_due"] as const).includes(raw as any) ? (raw as SubStatus) : "active";
+  return normalizeSubscriptionStatus(input, "active");
 }
 
 async function normalizePlanKey(input: unknown): Promise<string | null> {
@@ -41,7 +41,25 @@ export async function GET(req: Request) {
     take: 200,
   });
 
-  return NextResponse.json({ subscriptions: subs });
+  const subscriptions = subs.map((sub) => {
+    const evaluated = evaluateSubscriptionState({
+      id: sub.id,
+      status: sub.status,
+      startedAt: sub.startedAt,
+      renewAt: sub.renewAt,
+      expiresAt: sub.expiresAt,
+      canceledAt: sub.canceledAt,
+      endedAt: sub.endedAt,
+      lastStatusChangeAt: sub.lastStatusChangeAt,
+    });
+    return {
+      ...sub,
+      computedStatus: evaluated.status,
+      isActive: evaluated.active,
+    };
+  });
+
+  return NextResponse.json({ subscriptions });
 }
 
 export async function PUT(req: Request) {
@@ -55,24 +73,36 @@ export async function PUT(req: Request) {
   if (!targetUserId || !planKey) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
   const status = normalizeStatus(body?.status);
-  const rawRenewAt = body?.renewAt;
-  const rawExpiresAt = body?.expiresAt;
-  const renewAtValue =
-    rawRenewAt === ""
-      ? null
-      : rawRenewAt
-        ? new Date(rawRenewAt)
-        : status === "active"
-          ? null
-          : undefined;
-  const expiresAtValue =
-    rawExpiresAt === ""
-      ? null
-      : rawExpiresAt
-        ? new Date(rawExpiresAt)
-        : status === "active"
-          ? null
-          : undefined;
+  const startedAtParsed = parseOptionalDateInput(body?.startedAt);
+  const renewAtParsed = parseOptionalDateInput(body?.renewAt);
+  const expiresAtParsed = parseOptionalDateInput(body?.expiresAt);
+  const canceledAtParsed = parseOptionalDateInput(body?.canceledAt);
+  const endedAtParsed = parseOptionalDateInput(body?.endedAt);
+  if (!startedAtParsed.ok || !renewAtParsed.ok || !expiresAtParsed.ok || !canceledAtParsed.ok || !endedAtParsed.ok) {
+    return NextResponse.json({ error: "bad_request_invalid_date" }, { status: 400 });
+  }
+
+  let startedAtValue = startedAtParsed.value;
+  let renewAtValue = renewAtParsed.value;
+  let expiresAtValue = expiresAtParsed.value;
+  let canceledAtValue = canceledAtParsed.value;
+  let endedAtValue = endedAtParsed.value;
+  let cancelAtPeriodEndValue = typeof body?.cancelAtPeriodEnd === "boolean" ? body.cancelAtPeriodEnd : undefined;
+  const statusReasonValue = body?.statusReason === undefined ? undefined : body?.statusReason === null || body?.statusReason === "" ? null : String(body.statusReason);
+
+  const statusRaw = body?.status;
+  if (statusRaw !== undefined) {
+    if ((status === "active" || status === "trialing" || status === "past_due" || status === "scheduled") && body?.canceledAt === undefined) {
+      canceledAtValue = null;
+      if (cancelAtPeriodEndValue === undefined) cancelAtPeriodEndValue = false;
+    }
+    if (status === "canceled" && body?.canceledAt === undefined) canceledAtValue = new Date();
+    if (status === "expired" && body?.endedAt === undefined) endedAtValue = new Date();
+  }
+
+  if ((status === "active" || status === "trialing" || status === "past_due" || status === "scheduled") && startedAtValue === undefined) {
+    startedAtValue = new Date();
+  }
 
   const sub = await prisma.subscription.upsert({
     where: { userId: targetUserId },
@@ -80,19 +110,61 @@ export async function PUT(req: Request) {
       userId: targetUserId,
       planKey,
       status,
+      startedAt: startedAtValue === undefined ? null : startedAtValue,
       renewAt: renewAtValue === undefined ? null : renewAtValue,
       expiresAt: expiresAtValue === undefined ? null : expiresAtValue,
+      canceledAt: canceledAtValue === undefined ? null : canceledAtValue,
+      cancelAtPeriodEnd: cancelAtPeriodEndValue ?? false,
+      endedAt: endedAtValue === undefined ? null : endedAtValue,
+      statusReason: statusReasonValue === undefined ? null : statusReasonValue,
+      lastStatusChangeAt: new Date(),
     },
     update: {
       planKey,
       status,
+      startedAt: startedAtValue,
       renewAt: renewAtValue,
       expiresAt: expiresAtValue,
+      canceledAt: canceledAtValue,
+      cancelAtPeriodEnd: cancelAtPeriodEndValue,
+      endedAt: endedAtValue,
+      statusReason: statusReasonValue,
+      lastStatusChangeAt: new Date(),
     },
     include: { plan: true },
   });
 
-  return NextResponse.json({ ok: true, subscription: sub });
+  const evaluated = evaluateSubscriptionState({
+    id: sub.id,
+    status: sub.status,
+    startedAt: sub.startedAt,
+    renewAt: sub.renewAt,
+    expiresAt: sub.expiresAt,
+    canceledAt: sub.canceledAt,
+    endedAt: sub.endedAt,
+    lastStatusChangeAt: sub.lastStatusChangeAt,
+  });
+  if (evaluated.shouldPersist) {
+    await prisma.subscription
+      .update({
+        where: { id: sub.id },
+        data: {
+          status: evaluated.patch.status ?? undefined,
+          endedAt: evaluated.patch.endedAt,
+          lastStatusChangeAt: evaluated.patch.lastStatusChangeAt,
+        },
+      })
+      .catch(() => null);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    subscription: {
+      ...sub,
+      computedStatus: evaluated.status,
+      isActive: evaluated.active,
+    },
+  });
 }
 
 export async function DELETE(req: Request) {

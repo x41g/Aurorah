@@ -21,10 +21,42 @@ type Subscription = {
   userId: string;
   planKey: string;
   status: string;
+  startedAt: string | null;
   renewAt: string | null;
   expiresAt: string | null;
+  canceledAt: string | null;
+  cancelAtPeriodEnd: boolean;
+  endedAt: string | null;
+  statusReason: string | null;
+  computedStatus?: string;
+  isActive?: boolean;
   plan: Plan;
   updatedAt: string;
+};
+
+type SubscriptionDraft = {
+  planKey: string;
+  status: string;
+  startedAt: string;
+  renewAt: string;
+  expiresAt: string;
+  canceledAt: string;
+  endedAt: string;
+  cancelAtPeriodEnd: boolean;
+  statusReason: string;
+};
+
+type SaveSubPayload = {
+  userId: string;
+  planKey: string;
+  status: string;
+  startedAt?: string;
+  renewAt?: string;
+  expiresAt?: string;
+  canceledAt?: string;
+  endedAt?: string;
+  cancelAtPeriodEnd?: boolean;
+  statusReason?: string;
 };
 
 type DiscordUser = {
@@ -40,6 +72,65 @@ type ConfirmState = {
   action: null | (() => void | Promise<void>);
 };
 
+const STATUS_OPTIONS = ["scheduled", "trialing", "active", "past_due", "canceled", "expired"] as const;
+
+function isoToLocalInput(iso?: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
+function localInputToIso(localValue: string) {
+  const raw = String(localValue || "").trim();
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString();
+}
+
+function formatDateTime(iso?: string | null) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleString("pt-BR");
+}
+
+function toDraft(s: Subscription): SubscriptionDraft {
+  return {
+    planKey: s.planKey,
+    status: s.status,
+    startedAt: isoToLocalInput(s.startedAt),
+    renewAt: isoToLocalInput(s.renewAt),
+    expiresAt: isoToLocalInput(s.expiresAt),
+    canceledAt: isoToLocalInput(s.canceledAt),
+    endedAt: isoToLocalInput(s.endedAt),
+    cancelAtPeriodEnd: Boolean(s.cancelAtPeriodEnd),
+    statusReason: String(s.statusReason || ""),
+  };
+}
+
+function draftToPayload(userId: string, d: SubscriptionDraft): SaveSubPayload {
+  return {
+    userId,
+    planKey: d.planKey,
+    status: d.status,
+    startedAt: localInputToIso(d.startedAt),
+    renewAt: localInputToIso(d.renewAt),
+    expiresAt: localInputToIso(d.expiresAt),
+    canceledAt: localInputToIso(d.canceledAt),
+    endedAt: localInputToIso(d.endedAt),
+    cancelAtPeriodEnd: d.cancelAtPeriodEnd,
+    statusReason: d.statusReason.trim(),
+  };
+}
+
 export function SubscriptionsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,12 +139,20 @@ export function SubscriptionsPanel() {
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subs, setSubs] = useState<Subscription[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, SubscriptionDraft>>({});
   const [userMap, setUserMap] = useState<Record<string, DiscordUser>>({});
   const [q, setQ] = useState("");
 
   const [newUserId, setNewUserId] = useState("");
   const [newPlanKey, setNewPlanKey] = useState<string>("");
   const [newStatus, setNewStatus] = useState<string>("active");
+  const [newStartedAt, setNewStartedAt] = useState("");
+  const [newRenewAt, setNewRenewAt] = useState("");
+  const [newExpiresAt, setNewExpiresAt] = useState("");
+  const [newCanceledAt, setNewCanceledAt] = useState("");
+  const [newEndedAt, setNewEndedAt] = useState("");
+  const [newStatusReason, setNewStatusReason] = useState("");
+  const [newCancelAtPeriodEnd, setNewCancelAtPeriodEnd] = useState(false);
 
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     open: false,
@@ -83,7 +182,11 @@ export function SubscriptionsPanel() {
       setPlans(plansData);
       setSubs(subsData);
 
-        const userIds: string[] = [...new Set(subsData.map((s: Subscription) => String(s.userId)).filter(Boolean))];
+      const nextDrafts: Record<string, SubscriptionDraft> = {};
+      for (const s of subsData) nextDrafts[s.id] = toDraft(s);
+      setDrafts(nextDrafts);
+
+      const userIds: string[] = [...new Set(subsData.map((s: Subscription) => String(s.userId)).filter(Boolean))];
       if (userIds.length === 0) {
         setUserMap({});
       } else {
@@ -124,7 +227,27 @@ export function SubscriptionsPanel() {
     await action();
   }
 
-  async function saveSub(userId: string, planKey: string, status: string) {
+  function patchDraft(id: string, patch: Partial<SubscriptionDraft>) {
+    setDrafts((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] || {
+          planKey: "",
+          status: "active",
+          startedAt: "",
+          renewAt: "",
+          expiresAt: "",
+          canceledAt: "",
+          endedAt: "",
+          cancelAtPeriodEnd: false,
+          statusReason: "",
+        }),
+        ...patch,
+      },
+    }));
+  }
+
+  async function saveSub(payload: SaveSubPayload) {
     setSaving(true);
     setError("");
     setOk("");
@@ -132,7 +255,7 @@ export function SubscriptionsPanel() {
       const res = await fetch("/api/admin/subscriptions", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, planKey, status }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Falha ao salvar");
@@ -183,7 +306,7 @@ export function SubscriptionsPanel() {
         <div>
           <h2 className="text-xl font-bold">Assinaturas</h2>
           <p className="text-white/60 text-sm">
-            Gerencie assinatura por <b>User ID</b> (dono do servidor). Recursos e limites seguem o plano ativo.
+            Ciclo completo: inicio, renovacao, fim, cancelamento, encerramento e motivo.
           </p>
         </div>
         <button
@@ -228,10 +351,9 @@ export function SubscriptionsPanel() {
 
       <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
         <div className="font-semibold">Adicionar ou atualizar assinatura</div>
-        <p className="text-xs text-white/60 mt-1">
-          Informe o <b>User ID</b> do dono. Se ja existir assinatura, ela sera atualizada.
-        </p>
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_220px_180px_180px] gap-2">
+        <p className="text-xs text-white/60 mt-1">Informe User ID do dono. Se existir, atualiza.</p>
+
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
           <input
             value={newUserId}
             onChange={(e) => setNewUserId(e.target.value)}
@@ -249,16 +371,34 @@ export function SubscriptionsPanel() {
               </option>
             ))}
           </select>
-          <select
-            value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value)}
-            className="h-11 rounded-2xl bg-black/40 border border-white/10 px-3 outline-none"
-          >
-            <option value="active">active</option>
-            <option value="past_due">past_due</option>
-            <option value="canceled">canceled</option>
-            <option value="expired">expired</option>
+          <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="h-11 rounded-2xl bg-black/40 border border-white/10 px-3 outline-none">
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
+        </div>
+
+        <div className="mt-2 grid grid-cols-1 md:grid-cols-5 gap-2">
+          <DateField label="Inicio" value={newStartedAt} onChange={setNewStartedAt} />
+          <DateField label="Renova em" value={newRenewAt} onChange={setNewRenewAt} />
+          <DateField label="Expira em" value={newExpiresAt} onChange={setNewExpiresAt} />
+          <DateField label="Cancelada em" value={newCanceledAt} onChange={setNewCanceledAt} />
+          <DateField label="Encerrada em" value={newEndedAt} onChange={setNewEndedAt} />
+        </div>
+
+        <div className="mt-2 grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2 items-center">
+          <input
+            value={newStatusReason}
+            onChange={(e) => setNewStatusReason(e.target.value)}
+            placeholder="Motivo/status interno (opcional)"
+            className="h-11 rounded-2xl bg-black/40 border border-white/10 px-4 outline-none focus:border-white/25"
+          />
+          <label className="inline-flex items-center gap-2 text-sm text-white/80">
+            <input type="checkbox" checked={newCancelAtPeriodEnd} onChange={(e) => setNewCancelAtPeriodEnd(e.target.checked)} />
+            Cancelar no fim do periodo
+          </label>
           <button
             className="h-11 px-4 rounded-2xl bg-white text-black font-semibold hover:bg-white/90 transition disabled:opacity-60"
             onClick={() => {
@@ -266,8 +406,27 @@ export function SubscriptionsPanel() {
               const pk = (newPlanKey || activePlans[0]?.key || "").trim();
               if (!uid || !pk) return;
               askConfirm("Confirmar atualizacao", `Aplicar plano ${pk} para o usuario ${uid}?`, async () => {
-                await saveSub(uid, pk, newStatus);
+                await saveSub({
+                  userId: uid,
+                  planKey: pk,
+                  status: newStatus,
+                  startedAt: localInputToIso(newStartedAt),
+                  renewAt: localInputToIso(newRenewAt),
+                  expiresAt: localInputToIso(newExpiresAt),
+                  canceledAt: localInputToIso(newCanceledAt),
+                  endedAt: localInputToIso(newEndedAt),
+                  cancelAtPeriodEnd: newCancelAtPeriodEnd,
+                  statusReason: newStatusReason.trim(),
+                });
                 setNewUserId("");
+                setNewStatus("active");
+                setNewStartedAt("");
+                setNewRenewAt("");
+                setNewExpiresAt("");
+                setNewCanceledAt("");
+                setNewEndedAt("");
+                setNewCancelAtPeriodEnd(false);
+                setNewStatusReason("");
               });
             }}
             disabled={saving || loading || activePlans.length === 0}
@@ -284,6 +443,8 @@ export function SubscriptionsPanel() {
       <div className="mt-5 space-y-3">
         {subs.map((s) => {
           const u = userMap[String(s.userId)];
+          const d = drafts[s.id] || toDraft(s);
+          const shownStatus = s.computedStatus || s.status;
           return (
             <div key={s.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -307,53 +468,19 @@ export function SubscriptionsPanel() {
                       </button>
                     </div>
                     <div className="text-xs text-white/60 mt-1">
-                      Plano atual: <b>{s.plan?.name || s.planKey}</b> • Status: <b>{s.status}</b>
+                      Plano atual: <b>{s.plan?.name || s.planKey}</b> | Status salvo: <b>{s.status}</b> | Status efetivo: <b>{shownStatus}</b> | Ativa: <b>{s.isActive ? "sim" : "nao"}</b>
+                    </div>
+                    <div className="text-xs text-white/60 mt-1">
+                      Inicio: <b>{formatDateTime(s.startedAt)}</b> | Renova: <b>{formatDateTime(s.renewAt)}</b> | Expira: <b>{formatDateTime(s.expiresAt)}</b>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <select
-                    value={s.planKey}
-                    className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
-                    onChange={(e) => {
-                      const nextPlan = e.target.value;
-                      askConfirm("Confirmar mudanca de plano", `Trocar plano de ${s.userId} para ${nextPlan}?`, () =>
-                        saveSub(s.userId, nextPlan, s.status)
-                      );
-                    }}
-                    disabled={saving}
-                  >
-                    {activePlans.map((p) => (
-                      <option key={p.key} value={p.key}>
-                        {p.name} ({p.key})
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={s.status}
-                    className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
-                    onChange={(e) => {
-                      const nextStatus = e.target.value;
-                      askConfirm("Confirmar mudanca de status", `Alterar status de ${s.userId} para ${nextStatus}?`, () =>
-                        saveSub(s.userId, s.planKey, nextStatus)
-                      );
-                    }}
-                    disabled={saving}
-                  >
-                    <option value="active">active</option>
-                    <option value="past_due">past_due</option>
-                    <option value="canceled">canceled</option>
-                    <option value="expired">expired</option>
-                  </select>
-
                   <button
                     type="button"
                     onClick={() =>
-                      askConfirm("Remover assinatura", `Deseja remover a assinatura do usuario ${s.userId}?`, () =>
-                        deleteSub(s.userId)
-                      )
+                      askConfirm("Remover assinatura", `Deseja remover a assinatura do usuario ${s.userId}?`, () => deleteSub(s.userId))
                     }
                     className="h-10 px-3 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold"
                     disabled={saving}
@@ -361,6 +488,69 @@ export function SubscriptionsPanel() {
                     Remover
                   </button>
                 </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                <select
+                  value={d.planKey}
+                  className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
+                  onChange={(e) => patchDraft(s.id, { planKey: e.target.value })}
+                  disabled={saving}
+                >
+                  {activePlans.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.name} ({p.key})
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={d.status}
+                  className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
+                  onChange={(e) => patchDraft(s.id, { status: e.target.value })}
+                  disabled={saving}
+                >
+                  {STATUS_OPTIONS.map((statusOpt) => (
+                    <option key={statusOpt} value={statusOpt}>
+                      {statusOpt}
+                    </option>
+                  ))}
+                </select>
+
+                <DateField label="Inicio" value={d.startedAt} onChange={(v) => patchDraft(s.id, { startedAt: v })} />
+                <DateField label="Renova" value={d.renewAt} onChange={(v) => patchDraft(s.id, { renewAt: v })} />
+                <DateField label="Expira" value={d.expiresAt} onChange={(v) => patchDraft(s.id, { expiresAt: v })} />
+                <DateField label="Cancelada" value={d.canceledAt} onChange={(v) => patchDraft(s.id, { canceledAt: v })} />
+                <DateField label="Encerrada" value={d.endedAt} onChange={(v) => patchDraft(s.id, { endedAt: v })} />
+
+                <input
+                  value={d.statusReason}
+                  onChange={(e) => patchDraft(s.id, { statusReason: e.target.value })}
+                  placeholder="Motivo/status interno"
+                  className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none lg:col-span-2"
+                />
+
+                <label className="h-10 inline-flex items-center gap-2 text-sm text-white/80 px-3 rounded-xl border border-white/10 bg-black/40">
+                  <input
+                    type="checkbox"
+                    checked={d.cancelAtPeriodEnd}
+                    onChange={(e) => patchDraft(s.id, { cancelAtPeriodEnd: e.target.checked })}
+                  />
+                  Cancelar no fim do periodo
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    askConfirm("Salvar assinatura", `Salvar ciclo da assinatura de ${s.userId}?`, () =>
+                      saveSub(draftToPayload(s.userId, d))
+                    )
+                  }
+                  className="h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 transition text-sm font-semibold"
+                  disabled={saving}
+                >
+                  Salvar ciclo
+                </button>
               </div>
             </div>
           );
@@ -394,5 +584,19 @@ export function SubscriptionsPanel() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function DateField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] text-white/60">{label}</span>
+      <input
+        type="datetime-local"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
+      />
+    </label>
   );
 }

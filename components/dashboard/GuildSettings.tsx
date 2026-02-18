@@ -11,6 +11,12 @@ import { FaBuildingColumns, FaMoneyBillWave } from 'react-icons/fa6'
 type EntitlementsLike = {
   subscriptionActive?: boolean
   status?: string | null
+  subscriptionStartedAt?: string | null
+  subscriptionRenewAt?: string | null
+  subscriptionExpiresAt?: string | null
+  subscriptionCanceledAt?: string | null
+  subscriptionEndedAt?: string | null
+  subscriptionStatusReason?: string | null
   reason?: string | null
   usedTicketsThisMonth?: number
   ticketsLimitThisMonth?: number | null
@@ -29,6 +35,13 @@ type EntitlementsLike = {
     maxTicketPanels?: number
   } | null
 } | null
+
+function fmtDateTime(v?: string | null) {
+  if (!v) return '-'
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return '-'
+  return d.toLocaleString('pt-BR')
+}
 
 type Props = {
   guildId: string
@@ -950,6 +963,12 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
             <div className="text-xs text-white/60 uppercase tracking-wide">Plano</div>
             <div className="mt-1 font-semibold text-white">{entitlements?.plan?.name || 'Sem plano'}</div>
             <div className="text-xs text-white/60 mt-1">Status: {entitlements?.status || 'none'}</div>
+            <div className="text-xs text-white/60 mt-1">Inicio: {fmtDateTime(entitlements?.subscriptionStartedAt)}</div>
+            <div className="text-xs text-white/60 mt-1">Renovacao: {fmtDateTime(entitlements?.subscriptionRenewAt)}</div>
+            <div className="text-xs text-white/60 mt-1">Expiracao: {fmtDateTime(entitlements?.subscriptionExpiresAt)}</div>
+            <div className="text-xs text-white/60 mt-1">Cancelada em: {fmtDateTime(entitlements?.subscriptionCanceledAt)}</div>
+            <div className="text-xs text-white/60 mt-1">Encerrada em: {fmtDateTime(entitlements?.subscriptionEndedAt)}</div>
+            <div className="text-xs text-white/60 mt-1">Motivo: {entitlements?.subscriptionStatusReason || '-'}</div>
           </div>
           <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
             <div className="text-xs text-white/60 uppercase tracking-wide">Tickets no mês</div>
