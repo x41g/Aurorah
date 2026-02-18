@@ -68,15 +68,25 @@ function buildHashCandidates(passwordCandidate: string, secret: string): string[
   return Array.from(out);
 }
 
+function sanitizeSlug(input: string): string {
+  return decodeURIComponent(String(input || ""))
+    .trim()
+    .replace(/\.html$/i, "")
+    .replace(/^\/+|\/+$/g, "");
+}
+
 export async function POST(req: Request) {
   try {
     const { slug, password }: { slug?: string; password?: string } = await req.json();
 
     const pw = String(password || "").trim();
-    const s = String(slug || "").trim();
+    const s = sanitizeSlug(String(slug || ""));
     if (!s || !pw) return Response.json({ error: "bad_request" }, { status: 400 });
 
-    const row = await prisma.transcript.findUnique({ where: { slug: s } });
+    let row = await prisma.transcript.findUnique({ where: { slug: s } });
+    if (!row && s.toLowerCase() !== s) {
+      row = await prisma.transcript.findUnique({ where: { slug: s.toLowerCase() } });
+    }
     if (!row) return Response.json({ error: "not_found" }, { status: 404 });
 
     if (row.expireAt && Date.now() > row.expireAt.getTime()) {
@@ -99,6 +109,10 @@ export async function POST(req: Request) {
 
     if (!expectedHash || !hashes.has(expectedHash)) {
       return Response.json({ error: "wrong_password" }, { status: 401 });
+    }
+
+    if (!String(row.html || "").trim()) {
+      return Response.json({ error: "empty_transcript" }, { status: 404 });
     }
 
     return Response.json({ ok: true, html: row.html }, { status: 200 });

@@ -1,13 +1,14 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { BsArrowLeft } from "react-icons/bs";
-import { HiMiniLockOpen } from "react-icons/hi2";
+import { ArrowLeft, Copy, Lock, ShieldCheck, Unlock } from "lucide-react";
 
 type VerifyOk = { ok: true; html: string };
 type VerifyErr =
   | { error: "wrong_password" }
   | { error: "expired" }
+  | { error: "not_found" }
+  | { error: "empty_transcript" }
   | { error: "bad_request" }
   | { error: "server_error"; detail?: string }
   | { error: string; detail?: string };
@@ -19,54 +20,78 @@ function cx(...s: Array<string | false | undefined | null>) {
 }
 
 function parseSlug(slug: string) {
-  // slug = guildSlug-userId-shortcode
-  const parts = (slug || "").split("-");
+  const parts = String(slug || "").split("-");
   if (parts.length < 3) return { guildSlug: slug, userId: "", shortcode: "" };
-  const shortcode = parts.pop()!;
-  const userId = parts.pop()!;
+  const shortcode = parts.pop() || "";
+  const userId = parts.pop() || "";
   const guildSlug = parts.join("-");
   return { guildSlug, userId, shortcode };
 }
 
-export default function TranscriptPage({ params }: { params: { slug: string } }) {
-  const slug = params.slug;
+function prettyGuild(guildSlug: string) {
+  return String(guildSlug || "Servidor")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
 
+export default function TranscriptPage({ params }: { params: { slug: string } }) {
+  const slug = String(params?.slug || "");
   const info = useMemo(() => parseSlug(slug), [slug]);
 
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<Status>("locked");
-  const [message, setMessage] = useState<string>("");
-  const [html, setHtml] = useState<string>("");
+  const [message, setMessage] = useState("");
+  const [html, setHtml] = useState("");
   const [shake, setShake] = useState(false);
 
-  // (opcional) lembrar a última senha digitada nesse navegador pra esse slug
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(`Aurora_transcript_pw:${slug}`);
       if (saved) setPassword(saved);
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [slug]);
 
+  function pulseError(msg: string) {
+    setStatus("error");
+    setMessage(msg);
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+  }
+
   function setNiceError(err: VerifyErr, httpStatus?: number) {
-    const code = (err as any)?.error;
+    const code = String((err as any)?.error || "");
+    const detail = String((err as any)?.detail || "");
 
     if (httpStatus === 401 || code === "wrong_password") {
-      setMessage("Senha incorreta. Consulte o suporte do servidor se você não recebeu a senha.");
+      pulseError("Senha incorreta. Confira a senha enviada no fechamento do ticket.");
       return;
     }
     if (httpStatus === 410 || code === "expired") {
-      setMessage("Este transcript expirou e não está mais disponível.");
+      pulseError("Este transcript expirou e nao esta mais disponivel.");
+      return;
+    }
+    if (httpStatus === 404 || code === "not_found" || code === "empty_transcript") {
+      pulseError("Transcript nao encontrado. Verifique se o link esta correto.");
+      return;
+    }
+    if (httpStatus === 400 || code === "bad_request") {
+      pulseError("Dados invalidos. Reabra o link e tente novamente.");
       return;
     }
 
-    setMessage("Erro ao carregar o transcript. Tente novamente em alguns segundos.");
+    if (code === "server_error" && detail.toLowerCase().includes("transcript_hash_secret")) {
+      pulseError("Falha de configuracao no servidor de transcript. Avise a administracao.");
+      return;
+    }
+
+    pulseError("Erro ao carregar o transcript. Tente novamente em alguns segundos.");
   }
 
   async function unlock() {
     if (!password.trim()) {
-      setMessage("Digite a senha para desbloquear.");
-      setShake(true);
-      setTimeout(() => setShake(false), 550);
+      pulseError("Digite a senha para desbloquear.");
       return;
     }
 
@@ -80,34 +105,37 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
         body: JSON.stringify({ slug, password }),
       });
 
-      const data = (await res.json()) as VerifyOk | VerifyErr;
-
-      if (!res.ok) {
-        setStatus("error");
-        setNiceError(data as VerifyErr, res.status);
-        setShake(true);
-        setTimeout(() => setShake(false), 550);
+      let data: VerifyOk | VerifyErr;
+      try {
+        data = (await res.json()) as VerifyOk | VerifyErr;
+      } catch {
+        pulseError("Resposta invalida do servidor de transcript.");
         return;
       }
 
-      // ok
-      const ok = data as VerifyOk;
+      if (!res.ok) {
+        setNiceError(data as VerifyErr, res.status);
+        return;
+      }
 
+      const ok = data as VerifyOk;
       try {
         sessionStorage.setItem(`Aurora_transcript_pw:${slug}`, password);
-      } catch {}
+      } catch {
+        // ignore
+      }
 
-      // micro “unlock feel”
-      await new Promise((r) => setTimeout(r, 450));
-
+      await new Promise((r) => setTimeout(r, 300));
       setHtml(ok.html);
       setStatus("unlocked");
-    } catch (e) {
-      setStatus("error");
-      setMessage("Falha de conexão. Verifique sua internet e tente novamente.");
-      setShake(true);
-      setTimeout(() => setShake(false), 550);
+    } catch {
+      pulseError("Falha de conexao. Verifique a internet e tente novamente.");
     }
+  }
+
+  function copySlug() {
+    if (!navigator?.clipboard) return;
+    navigator.clipboard.writeText(slug).catch(() => null);
   }
 
   function reset() {
@@ -116,197 +144,141 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
     setHtml("");
   }
 
-  const titleGuild = info.guildSlug
-    ? info.guildSlug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())
-    : "Servidor";
-
   return (
-    <div className="min-h-screen bg-[#2c0c3b] text-white relative overflow-hidden">
-      {/* Background glow */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-[520px] w-[920px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-2xl" />
-        <div className="absolute bottom-[-240px] right-[-240px] h-[520px] w-[520px] rounded-full bg-fuchsia-500/15 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(118, 56, 56, 0.36),transparent_55%)]" />
+    <div className="relative min-h-screen overflow-hidden text-white">
+      <div className="aura-grid-bg fixed inset-0 pointer-events-none" />
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute -top-24 left-[8%] h-[22rem] w-[22rem] rounded-full bg-fuchsia-500/20 blur-3xl" />
+        <div className="absolute bottom-[-9rem] right-[10%] h-[24rem] w-[24rem] rounded-full bg-violet-500/18 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 py-8 sm:py-10">
-        {/* Top bar */}
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={() => (window.location.href = "/")}
-            className="group inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10 transition"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 transition hover:bg-white/10"
           >
-            <span className="opacity-80 group-hover:opacity-100"><BsArrowLeft /></span>
+            <ArrowLeft size={16} />
             Voltar
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline text-xs text-white/50">
-              {status === "unlocked" ? "Desbloqueado" : "Protegido por senha"}
-            </span>
-            <span
-              className={cx(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs backdrop-blur",
-                status === "unlocked"
-                  ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-                  : "border-purple-400/30 bg-purple-400/10 text-purple-200"
-              )}
-            >
-              <span
-                className={cx(
-                  "h-2 w-2 rounded-full",
-                  status === "unlocked" ? "bg-emerald-400" : "bg-purple-400"
-                )}
-              />
-              {status === "unlocked" ? "Desbloqueado" : "Privado"}
-            </span>
-          </div>
+          <span
+            className={cx(
+              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs backdrop-blur",
+              status === "unlocked"
+                ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+                : "border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-200"
+            )}
+          >
+            {status === "unlocked" ? <Unlock size={12} /> : <Lock size={12} />}
+            {status === "unlocked" ? "Desbloqueado" : "Privado"}
+          </span>
         </div>
 
-        {/* Main card */}
-        <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl backdrop-blur-xl">
-          {/* Header */}
+        <div className="aura-panel mt-6 overflow-hidden rounded-3xl border border-white/10">
           <div className="flex flex-col gap-4 border-b border-white/10 p-6 sm:p-7">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-                  Transcript Privado
-                </h1>
-                <p className="mt-1 text-sm text-white/60">
-                  Acesso protegido. Somente quem possui a senha pode visualizar este atendimento.
-                </p>
+                <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Transcript protegido</h1>
+                <p className="mt-1 text-sm text-white/65">Somente quem possui a senha pode visualizar o atendimento.</p>
               </div>
-
-              <div className="hidden sm:flex flex-col items-end gap-2">
-                <div className="text-xs text-white/50">Servidor</div>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
-                  <span className="h-2 w-2 rounded-full bg-purple-400" />
-                  <span className="text-white/90">{titleGuild}</span>
-                </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/85">
+                {prettyGuild(info.guildSlug)}
               </div>
             </div>
 
-            {/* Small meta row */}
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-white/70">
-                slug: <span className="ml-1 text-white/90">{slug}</span>
+            <div className="flex flex-wrap gap-2 text-xs text-white/70">
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/25 px-3 py-1">
+                slug: <span className="text-white/90">{slug}</span>
               </span>
-              {info.userId && (
-                <span className="inline-flex items-center rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-white/70">
-                  user: <span className="ml-1 text-white/90">{info.userId}</span>
-                </span>
-              )}
-              {info.shortcode && (
-                <span className="inline-flex items-center rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-white/70">
-                  code: <span className="ml-1 text-white/90">{info.shortcode}</span>
-                </span>
-              )}
+              <button
+                type="button"
+                onClick={copySlug}
+                className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/25 px-3 py-1 transition hover:bg-white/10"
+              >
+                <Copy size={12} /> copiar slug
+              </button>
             </div>
           </div>
 
-          {/* Content */}
           <div className="p-6 sm:p-7">
             {status !== "unlocked" ? (
-              <div className="grid gap-6 md:grid-cols-[380px_1fr] items-start">
-                {/* Lock panel */}
-                <div
-                  className={cx(
-                    "rounded-2xl border border-white/10 bg-black/25 p-5 sm:p-6 shadow-xl",
-                    shake && "animate-[shake_0.55s_ease-in-out]"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="https://r2.e-z.host/3b4c067b-8d6b-4b6c-ba63-092e2cbda5d5/zl54n5em.png"
-                      alt="Bot"
-                      className="h-12 w-12 rounded-2xl border border-white/10 object-cover"
-                    />
+              <div className="grid items-start gap-6 md:grid-cols-[360px_1fr]">
+                <div className={cx("rounded-2xl border border-white/10 bg-black/25 p-5 sm:p-6", shake && "animate-[shake_0.5s_ease-in-out]")}>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-fuchsia-400/10">
+                      <ShieldCheck size={18} className="text-fuchsia-200" />
+                    </div>
                     <div>
-                      <div className="text-sm font-medium text-white/90">Aurora</div>
-                      <div className="text-xs text-white/60">Acesso seguro ao transcript</div>
+                      <div className="text-sm font-medium text-white/90">Aurora Security</div>
+                      <div className="text-xs text-white/60">Validacao de senha do transcript</div>
                     </div>
                   </div>
 
-                  <div className="mt-5">
-                    <label className="text-xs text-white/60">Senha</label>
-                    <input
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") unlock();
-                      }}
-                      type="password"
-                      placeholder="Digite a senha recebida…"
-                      className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-purple-400/50 focus:ring-2 focus:ring-purple-500/20 transition"
-                    />
+                  <label className="text-xs text-white/60">Senha de acesso</label>
+                  <input
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") unlock();
+                    }}
+                    type="password"
+                    placeholder="Ex: guild-ABCD1234"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 transition focus:border-fuchsia-400/50 focus:ring-2 focus:ring-fuchsia-500/20"
+                  />
 
-                    {message && (
-                      <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
-                        {message}
-                      </div>
+                  {message ? <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">{message}</div> : null}
+
+                  <button
+                    onClick={unlock}
+                    disabled={status === "unlocking"}
+                    className={cx(
+                      "mt-4 w-full rounded-xl px-4 py-3 text-sm font-medium transition",
+                      status === "unlocking"
+                        ? "cursor-not-allowed bg-white/10 text-white/50"
+                        : "bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white hover:from-fuchsia-400 hover:to-violet-400"
                     )}
+                  >
+                    {status === "unlocking" ? "Desbloqueando..." : "Desbloquear transcript"}
+                  </button>
 
-                    <button
-                      onClick={unlock}
-                      disabled={status === "unlocking"}
-                      className={cx(
-                        "mt-4 w-full rounded-xl px-4 py-3 text-sm font-medium transition",
-                        status === "unlocking"
-                          ? "bg-white/10 text-white/50 cursor-not-allowed"
-                          : "bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_20px_60px_rgba(124,58,237,0.25)]"
-                      )}
-                    >
-                      {status === "unlocking" ? "Desbloqueando..." : `Desbloquear`}
-                    </button>
-
-                    <div className="mt-3 text-xs text-white/50 leading-relaxed">
-                      Dica: se a senha não funcionar, peça ao suporte do servidor para reenviar.
-                    </div>
+                  <div className="mt-3 text-xs leading-relaxed text-white/55">
+                    Dica: cole a senha exatamente como foi enviada no fechamento do ticket.
                   </div>
                 </div>
 
-                {/* Preview / explanation panel */}
                 <div className="rounded-2xl border border-white/10 bg-black/15 p-5 sm:p-6">
-                  <div className="text-sm font-medium text-white/85">O que você vai ver</div>
-                  <p className="mt-2 text-sm text-white/60 leading-relaxed">
-                    Assim que desbloquear, o transcript será carregado com o layout original do Discord,
-                    preservando embeds, menções e estrutura do atendimento.
+                  <div className="text-sm font-medium text-white/90">O que sera exibido</div>
+                  <p className="mt-2 text-sm leading-relaxed text-white/65">
+                    O historico completo do atendimento, incluindo mensagens, embeds e ordem original da conversa.
                   </p>
 
                   <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-4">
-                    <div className="text-xs text-white/60">Segurança</div>
-                    <ul className="mt-2 space-y-2 text-sm text-white/70">
-                      <li className="flex gap-2">
-                        <span className="text-purple-300">•</span> Protegido por senha única
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-purple-300">•</span> Pode expirar automaticamente (TTL)
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-purple-300">•</span> Conteúdo exibido em iframe isolado
-                      </li>
+                    <div className="text-xs text-white/60">Checklist de acesso</div>
+                    <ul className="mt-2 space-y-2 text-sm text-white/75">
+                      <li>1. Link correto do transcript</li>
+                      <li>2. Senha enviada ao fechar o ticket</li>
+                      <li>3. Transcript dentro do prazo de expiracao</li>
                     </ul>
                   </div>
 
-                  {status === "error" && (
+                  {status === "error" ? (
                     <button
                       onClick={reset}
-                      className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
+                      className="mt-4 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
                     >
                       Tentar novamente
                     </button>
-                  )}
+                  ) : null}
                 </div>
 
-                {/* keyframes for shake */}
                 <style jsx global>{`
                   @keyframes shake {
                     0% { transform: translateX(0); }
-                    15% { transform: translateX(-8px); }
-                    30% { transform: translateX(8px); }
-                    45% { transform: translateX(-6px); }
-                    60% { transform: translateX(6px); }
-                    75% { transform: translateX(-3px); }
+                    20% { transform: translateX(-7px); }
+                    40% { transform: translateX(7px); }
+                    60% { transform: translateX(-5px); }
+                    80% { transform: translateX(5px); }
                     100% { transform: translateX(0); }
                   }
                 `}</style>
@@ -314,35 +286,30 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
             ) : (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">
-                      <HiMiniLockOpen /> Acesso liberado
-                    </span>
-                    <span className="text-sm text-white/50">
-                      Você pode rolar e visualizar o atendimento completo.
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">
+                    <Unlock size={14} /> Acesso liberado
+                  </span>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => window.location.reload()}
-                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
                     >
                       Recarregar
                     </button>
                     <button
                       onClick={reset}
-                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
                     >
                       Bloquear
                     </button>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/25 overflow-hidden">
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/25">
                   <iframe
                     title="Transcript"
-                    className="w-full h-[78vh] bg-black"
+                    className="h-[78vh] w-full bg-black"
                     sandbox="allow-scripts allow-same-origin"
                     srcDoc={html}
                   />
@@ -352,10 +319,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-6 text-center text-xs text-white/40">
-          Protegido por senha • Aurora Transcripts
-        </div>
+        <div className="mt-6 text-center text-xs text-white/45">Aurora Transcript Security</div>
       </div>
     </div>
   );
