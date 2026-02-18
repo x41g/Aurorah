@@ -171,20 +171,38 @@ export function LicenseKeysPanel() {
       <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
         <div className="font-semibold">Gerar novas keys</div>
         <div className="mt-3 grid grid-cols-1 md:grid-cols-6 gap-2">
-          <select value={planKey || activePlans[0]?.key || ""} onChange={(e) => setPlanKey(e.target.value)} className="h-11 rounded-xl bg-black/40 border border-white/10 px-3 outline-none">
-            {activePlans.map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.name} ({p.key})
-              </option>
-            ))}
-          </select>
-          <input value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder="Dias (ex:30)" className="h-11 rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
-          <input value={maxActivations} onChange={(e) => setMaxActivations(e.target.value)} placeholder="Ativacoes (ex:1)" className="h-11 rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
-          <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="h-11 rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
-          <input value={count} onChange={(e) => setCount(e.target.value)} placeholder="Qtd (1-50)" className="h-11 rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
-          <button className="h-11 px-4 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition disabled:opacity-60" onClick={() => createKeys()} disabled={saving || loading || activePlans.length === 0}>
-            Gerar
-          </button>
+          <div>
+            <div className="mb-1 text-xs text-white/60">Plano</div>
+            <select value={planKey || activePlans[0]?.key || ""} onChange={(e) => setPlanKey(e.target.value)} className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none">
+              {activePlans.map((p) => (
+                <option key={p.key} value={p.key}>
+                  {p.name} ({p.key})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-white/60">Duração (dias)</div>
+            <input value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder="Ex: 30" className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-white/60">Máx. ativações</div>
+            <input value={maxActivations} onChange={(e) => setMaxActivations(e.target.value)} placeholder="Ex: 1" className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-white/60">Expira em (opcional)</div>
+            <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-white/60">Quantidade</div>
+            <input value={count} onChange={(e) => setCount(e.target.value)} placeholder="1-50" className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-white/60">Ação</div>
+            <button className="h-11 w-full px-4 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition disabled:opacity-60" onClick={() => createKeys()} disabled={saving || loading || activePlans.length === 0}>
+              Gerar
+            </button>
+          </div>
         </div>
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota interna (opcional)" className="mt-2 h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
         {createdCodes.length > 0 ? (
@@ -256,4 +274,3 @@ function LicenseRow({
     </div>
   );
 }
-
