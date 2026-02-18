@@ -53,6 +53,7 @@ export function LicenseKeysPanel() {
   const [ok, setOk] = useState("");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [rows, setRows] = useState<LicenseKeyRow[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [createdCodes, setCreatedCodes] = useState<string[]>([]);
 
   const [q, setQ] = useState("");
@@ -79,8 +80,10 @@ export function LicenseKeysPanel() {
       const kData = await kRes.json().catch(() => ({}));
       if (!pRes.ok) throw new Error(pData?.error || "Falha ao carregar planos");
       if (!kRes.ok) throw new Error(kData?.error || "Falha ao carregar keys");
+      const nextRows = Array.isArray(kData?.keys) ? (kData.keys as LicenseKeyRow[]) : [];
       setPlans(Array.isArray(pData?.plans) ? (pData.plans as Plan[]) : []);
-      setRows(Array.isArray(kData?.keys) ? (kData.keys as LicenseKeyRow[]) : []);
+      setRows(nextRows);
+      setSelectedIds((prev) => prev.filter((id) => nextRows.some((r) => r.id === id)));
     } catch (e: any) {
       setError(String(e?.message || e));
     } finally {
@@ -134,14 +137,58 @@ export function LicenseKeysPanel() {
       const res = await fetch("/api/admin/license-keys", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          id,
-          ...payload,
-        }),
+        body: JSON.stringify({ id, ...payload }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Falha ao atualizar key");
       setOk("Key atualizada.");
+      setTimeout(() => setOk(""), 1200);
+      await load();
+    } catch (e: any) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteKeys(ids: string[]) {
+    if (!ids.length) return;
+    setSaving(true);
+    setError("");
+    setOk("");
+    try {
+      const res = await fetch("/api/admin/license-keys", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Falha ao excluir key(s)");
+      setOk(`${Number(data?.deleted || ids.length)} key(s) excluida(s).`);
+      setTimeout(() => setOk(""), 1200);
+      setSelectedIds([]);
+      await load();
+    } catch (e: any) {
+      setError(String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function bulkDisable(ids: string[]) {
+    if (!ids.length) return;
+    setSaving(true);
+    setError("");
+    setOk("");
+    try {
+      const res = await fetch("/api/admin/license-keys", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids, status: "disabled" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Falha ao desativar keys");
+      setOk(`${Number(data?.updated || ids.length)} key(s) desativada(s).`);
       setTimeout(() => setOk(""), 1200);
       await load();
     } catch (e: any) {
@@ -162,12 +209,21 @@ export function LicenseKeysPanel() {
     }
   }
 
+  function toggleSelect(id: string, checked: boolean) {
+    setSelectedIds((prev) => (checked ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)));
+  }
+
+  function toggleSelectAll(checked: boolean) {
+    if (!checked) return setSelectedIds([]);
+    setSelectedIds(rows.map((r) => r.id));
+  }
+
   return (
     <div className="card mt-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold">License Keys</h2>
-          <p className="text-white/60 text-sm">Gere, revogue e acompanhe ativações por key.</p>
+          <p className="text-white/60 text-sm">Gere, revogue e acompanhe ativacoes por key.</p>
         </div>
         <button className="h-10 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition" onClick={() => load()} disabled={loading || saving}>
           Atualizar
@@ -204,11 +260,11 @@ export function LicenseKeysPanel() {
             </select>
           </div>
           <div>
-            <div className="mb-1 text-xs text-white/60">Duração (dias)</div>
+            <div className="mb-1 text-xs text-white/60">Duracao (dias)</div>
             <input value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder="Ex: 30" className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
           </div>
           <div>
-            <div className="mb-1 text-xs text-white/60">Máx. ativações</div>
+            <div className="mb-1 text-xs text-white/60">Max. ativacoes</div>
             <input value={maxActivations} onChange={(e) => setMaxActivations(e.target.value)} placeholder="Ex: 1" className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
           </div>
           <div>
@@ -220,7 +276,7 @@ export function LicenseKeysPanel() {
             <input value={count} onChange={(e) => setCount(e.target.value)} placeholder="1-50" className="h-11 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none" />
           </div>
           <div>
-            <div className="mb-1 text-xs text-white/60">Ação</div>
+            <div className="mb-1 text-xs text-white/60">Acao</div>
             <button className="h-11 w-full px-4 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition disabled:opacity-60" onClick={() => createKeys()} disabled={saving || loading || activePlans.length === 0}>
               Gerar
             </button>
@@ -258,8 +314,42 @@ export function LicenseKeysPanel() {
       {ok ? <div className="mt-3 text-sm text-emerald-200">{ok}</div> : null}
 
       <div className="mt-5 space-y-3">
+        {rows.length > 0 ? (
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3 flex flex-wrap items-center gap-2">
+            <label className="inline-flex items-center gap-2 text-sm text-white/80">
+              <input type="checkbox" checked={rows.length > 0 && selectedIds.length === rows.length} onChange={(e) => toggleSelectAll(e.target.checked)} />
+              Selecionar todas
+            </label>
+            <span className="text-xs text-white/60">Selecionadas: {selectedIds.length}</span>
+            <button
+              type="button"
+              disabled={saving || selectedIds.length === 0}
+              onClick={() => bulkDisable(selectedIds)}
+              className="h-9 px-3 rounded-xl border border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/20 transition text-sm font-semibold disabled:opacity-60"
+            >
+              Desativar selecionadas
+            </button>
+            <button
+              type="button"
+              disabled={saving || selectedIds.length === 0}
+              onClick={() => deleteKeys(selectedIds)}
+              className="h-9 px-3 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold disabled:opacity-60"
+            >
+              Excluir selecionadas
+            </button>
+          </div>
+        ) : null}
+
         {rows.map((k) => (
-          <LicenseRow key={k.id} row={k} busy={saving} onSave={patchKey} />
+          <LicenseRow
+            key={k.id}
+            row={k}
+            busy={saving}
+            selected={selectedIds.includes(k.id)}
+            onSelect={toggleSelect}
+            onSave={patchKey}
+            onDelete={(id) => deleteKeys([id])}
+          />
         ))}
         {!loading && rows.length === 0 ? <div className="text-sm text-white/60">Nenhuma key encontrada.</div> : null}
       </div>
@@ -270,11 +360,17 @@ export function LicenseKeysPanel() {
 function LicenseRow({
   row,
   busy,
+  selected,
+  onSelect,
   onSave,
+  onDelete,
 }: {
   row: LicenseKeyRow;
   busy: boolean;
+  selected: boolean;
+  onSelect: (id: string, checked: boolean) => void;
   onSave: (id: string, payload: { status?: string; expiresAt?: string; note?: string }) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [status, setStatus] = useState(String(row.status || "active"));
   const [expiresAt, setExpiresAt] = useState(toLocalInput(row.expiresAt));
@@ -282,12 +378,15 @@ function LicenseRow({
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="text-sm text-white/80">
-        Key: <b>{row.codePrefix}...{row.codeLast4}</b> | Plano: <b>{planDisplayName({ key: row.planKey, name: row.plan?.name })}</b> | Status: <b>{licenseStatusLabel(row.status)}</b> | Uso: <b>{row.usedCount}/{row.maxActivations}</b> | Ativações: <b>{Number(row._count?.activations || 0)}</b>
+      <div className="text-sm text-white/80 flex items-center gap-2">
+        <input type="checkbox" checked={selected} onChange={(e) => onSelect(row.id, e.target.checked)} />
+        <span>
+          Key: <b>{row.codePrefix}...{row.codeLast4}</b> | Plano: <b>{planDisplayName({ key: row.planKey, name: row.plan?.name })}</b> | Status: <b>{licenseStatusLabel(row.status)}</b> | Uso: <b>{row.usedCount}/{row.maxActivations}</b> | Ativacoes: <b>{Number(row._count?.activations || 0)}</b>
+        </span>
       </div>
       <div className="text-xs text-white/60 mt-1">Criada em {new Date(row.createdAt).toLocaleString("pt-BR")}</div>
 
-      <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-2">
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none">
           <option value="active">{licenseStatusLabel("active")}</option>
           <option value="disabled">{licenseStatusLabel("disabled")}</option>
@@ -304,10 +403,16 @@ function LicenseRow({
         >
           Salvar
         </button>
+        <button
+          type="button"
+          onClick={() => onDelete(row.id)}
+          className="h-10 px-3 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold"
+          disabled={busy}
+        >
+          Excluir
+        </button>
       </div>
     </div>
   );
 }
-
-
 

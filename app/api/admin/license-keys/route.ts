@@ -96,6 +96,23 @@ export async function PUT(req: Request) {
   if (!session) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
+  const ids = Array.isArray(body?.ids) ? body.ids.map((x: any) => String(x || "").trim()).filter(Boolean) : [];
+  if (ids.length > 0) {
+    const nextStatusRaw = body?.status === undefined ? undefined : String(body.status).toLowerCase();
+    const allowed = ["active", "disabled", "exhausted", "expired"];
+    const status = nextStatusRaw && allowed.includes(nextStatusRaw) ? nextStatusRaw : undefined;
+    if (!status) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+
+    const result = await prisma.licenseKey.updateMany({
+      where: { id: { in: ids } },
+      data: {
+        status,
+        revokedAt: status === "disabled" ? new Date() : null,
+      },
+    });
+    return NextResponse.json({ ok: true, updated: result.count });
+  }
+
   const id = String(body?.id || "").trim();
   if (!id) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
@@ -122,3 +139,27 @@ export async function PUT(req: Request) {
   return NextResponse.json({ ok: true, key: row });
 }
 
+export async function DELETE(req: Request) {
+  const session = await assertAdmin();
+  if (!session) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+
+  const { searchParams } = new URL(req.url);
+  const qpId = String(searchParams.get("id") || "").trim();
+  const qpIds = String(searchParams.get("ids") || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  const body = await req.json().catch(() => null);
+  const bodyId = String(body?.id || "").trim();
+  const bodyIds = Array.isArray(body?.ids) ? body.ids.map((x: any) => String(x || "").trim()).filter(Boolean) : [];
+
+  const ids = [...new Set([qpId, bodyId, ...qpIds, ...bodyIds].filter(Boolean))];
+  if (!ids.length) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+
+  const result = await prisma.licenseKey.deleteMany({
+    where: { id: { in: ids } },
+  });
+
+  return NextResponse.json({ ok: true, deleted: result.count });
+}
