@@ -21,6 +21,13 @@ export default function Home() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
   }
 
+  const sectionFx = {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.18 as const },
+    transition: { duration: 0.45, ease: 'easeOut' as const },
+  }
+
   return (
     <div className="landing-page min-h-screen overflow-hidden text-white">
       <div className="aura-grid-bg fixed inset-0 pointer-events-none" />
@@ -56,7 +63,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="section relative z-10 pt-16 sm:pt-20">
+      <motion.section className="section relative z-10 pt-14 sm:pt-20" {...sectionFx}>
         <div className="container-max grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <motion.div variants={container} initial="hidden" animate="visible" className="space-y-7">
             <motion.div variants={item} className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/35 bg-fuchsia-400/10 px-4 py-2 text-sm text-fuchsia-100">
@@ -64,7 +71,7 @@ export default function Home() {
               <span>{config.botDescription}</span>
             </motion.div>
 
-            <motion.h1 variants={item} className="text-4xl font-bold leading-[1.04] sm:text-5xl lg:text-6xl">
+            <motion.h1 variants={item} className="text-3xl font-bold leading-[1.04] min-[420px]:text-4xl sm:text-5xl lg:text-6xl">
               Ticket, IA e pagamento
               <span className="gradient-text block">em uma experiencia premium</span>
             </motion.h1>
@@ -74,14 +81,14 @@ export default function Home() {
             </motion.p>
 
             <motion.div variants={item} className="flex flex-wrap gap-3">
-              <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className="btn-primary fx-hover-lift fx-shimmer">
+              <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className="btn-primary fx-hover-lift fx-shimmer w-full min-[420px]:w-auto">
                 Adicionar no servidor
                 <ArrowRight size={16} />
               </a>
-              <a href="#pricing" className="btn-secondary fx-hover-lift">Ver planos</a>
+              <a href="#pricing" className="btn-secondary fx-hover-lift w-full min-[420px]:w-auto">Ver planos</a>
             </motion.div>
 
-            <motion.div variants={item} className="grid max-w-xl grid-cols-3 gap-3 sm:gap-4">
+            <motion.div variants={item} className="grid max-w-xl grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:gap-4">
               {config.stats.map((s, i) => (
                 <div key={i} className="aura-panel rounded-2xl p-4 text-center sm:p-5">
                   <div className="gradient-text text-xl font-bold sm:text-2xl">{s.number}</div>
@@ -106,9 +113,9 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section id="features" className="section section-dark relative z-10">
+      <motion.section id="features" className="section section-dark relative z-10" {...sectionFx}>
         <div className="container-max">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12 text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">Estrutura pensada para conversao</h2>
@@ -130,9 +137,9 @@ export default function Home() {
             })}
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section id="pricing" className="section relative z-10">
+      <motion.section id="pricing" className="section relative z-10" {...sectionFx}>
         <div className="container-max">
           <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12 text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">Planos claros e escalaveis</h2>
@@ -170,16 +177,16 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="section section-dark relative z-10">
+      <motion.section className="section section-dark relative z-10" {...sectionFx}>
         <div className="container-max">
           <h2 className="mb-10 text-center text-3xl font-bold sm:text-4xl">Quem usa recomenda</h2>
           <TestimonialCarousel />
         </div>
-      </section>
+      </motion.section>
 
-      <section id="faq" className="section relative z-10">
+      <motion.section id="faq" className="section relative z-10" {...sectionFx}>
         <div className="container-max max-w-3xl">
           <h2 className="mb-10 text-center text-3xl font-bold sm:text-4xl">FAQ</h2>
           <div className="space-y-3">
@@ -194,9 +201,9 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="section relative z-10">
+      <motion.section className="section relative z-10" {...sectionFx}>
         <div className="container-max">
           <div className="aura-panel rounded-3xl p-8 text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">Pronto para lancar sua operacao?</h2>
@@ -207,9 +214,9 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="section relative z-10 pt-0">
+      <motion.section className="section relative z-10 pt-0" {...sectionFx}>
         <div className="container-max">
           <div className="aura-panel rounded-3xl p-6 sm:p-8">
             <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -232,7 +239,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <footer className="relative z-10 border-t border-white/10 px-4 py-10">
         <div className="container-max flex flex-col items-center justify-between gap-2 text-sm text-white/60 sm:flex-row">
