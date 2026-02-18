@@ -49,6 +49,25 @@ function buildPasswordCandidates(input: string, guildSlug: string): string[] {
   return Array.from(out);
 }
 
+function buildHashCandidates(passwordCandidate: string, secret: string): string[] {
+  const p = String(passwordCandidate || "");
+  const s = String(secret || "");
+  const out = new Set<string>();
+
+  // formatos atuais
+  out.add(sha256(`${p}|${s}`));
+  out.add(sha256(`${p}:${s}`));
+
+  // compatibilidade legada (caso tenha mudado no passado)
+  out.add(sha256(`${p}`));
+  out.add(sha256(`${s}${p}`));
+  out.add(sha256(`${p}${s}`));
+  out.add(sha256(`${s}|${p}`));
+  out.add(sha256(`${s}:${p}`));
+
+  return Array.from(out);
+}
+
 export async function POST(req: Request) {
   try {
     const { slug, password }: { slug?: string; password?: string } = await req.json();
@@ -72,8 +91,9 @@ export async function POST(req: Request) {
     const hashes = new Set<string>();
     for (const candidate of candidates) {
       for (const secret of secrets) {
-        hashes.add(sha256(`${candidate}|${secret}`));
-        hashes.add(sha256(`${candidate}:${secret}`));
+        for (const h of buildHashCandidates(candidate, secret)) {
+          hashes.add(h);
+        }
       }
     }
 

@@ -45,8 +45,8 @@ function cls(active: boolean, disabled = false) {
   return [
     'flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 border',
     active
-      ? 'bg-fuchsia-400/16 border-fuchsia-300/50 shadow-lg shadow-fuchsia-400/15'
-      : 'border-transparent hover:bg-white/6',
+      ? 'bg-gradient-to-r from-fuchsia-400/18 to-violet-400/14 border-fuchsia-300/50 shadow-lg shadow-fuchsia-400/15'
+      : 'border-transparent hover:bg-white/6 hover:border-white/10',
     disabled ? 'opacity-45 pointer-events-none' : '',
   ].join(' ')
 }
@@ -279,7 +279,7 @@ export function Sidebar({
       ) : null}
 
       <aside className="hidden lg:block w-[280px] shrink-0">
-        <div className="card sticky top-6 p-4 fx-fade-in">
+        <div className="sticky top-6 rounded-3xl border border-white/10 bg-gradient-to-b from-white/8 to-white/[0.04] p-4 shadow-[0_12px_35px_rgba(8,10,20,0.35)] backdrop-blur-xl fx-fade-in">
           {content}
         </div>
       </aside>
