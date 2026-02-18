@@ -1067,7 +1067,13 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
                   <Field label="Cor" value={ticketEmbedColor} onChange={setTicketEmbedColor} />
                   <Field label="Banner URL" value={ticketEmbedBannerUrl} onChange={setTicketEmbedBannerUrl} />
                   <Field label="Miniatura URL" value={ticketEmbedThumbUrl} onChange={setTicketEmbedThumbUrl} />
-                  <Field label="Descricao" value={ticketEmbedDescription} onChange={setTicketEmbedDescription} className="md:col-span-2" />
+                  <TextAreaField
+                    label="Descricao"
+                    value={ticketEmbedDescription}
+                    onChange={setTicketEmbedDescription}
+                    placeholder={"Ex.: Atendimento VIP\nDescreva regras e informações em múltiplas linhas."}
+                    className="md:col-span-2"
+                  />
                 </div>
               </Reveal>
               <Reveal show={ticketAppearanceMode === 'content'}>

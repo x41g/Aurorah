@@ -1,6 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import type { GuildConfig, GuildStats } from '@/lib/types'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Topbar } from '@/components/dashboard/Topbar'
@@ -72,7 +73,7 @@ export function GuildDashboardClient({
             <StatCard label="Tickets fechados hoje" value={String(closed)} />
             <StatCard label="Saldo do dia" value={net > 0 ? `+${net}` : String(net)} hint="Criados - Fechados" />
             <StatCard
-              label="Atualizado (Horário de Brasília)"
+              label="Atualizado (Horario de Brasilia)"
               value={
                 stats.updatedAt
                   ? new Date(stats.updatedAt).toLocaleTimeString('pt-BR', {
@@ -82,43 +83,53 @@ export function GuildDashboardClient({
               }
             />
           </div>
+
           {hasCarryOverClose ? (
             <div className="mb-6 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/80">
               Hoje foram fechados tickets abertos em dias anteriores. Isso e esperado.
             </div>
           ) : null}
 
-          {tab === 'stats' ? (
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-2">Estatísticas de Tickets</h2>
-              <p className="text-white/60 mb-4">O bot envia métricas automaticamente. Para resultados completos, mantenha o bot online.</p>
-              <div className="grid md:grid-cols-4 gap-4 mb-6">
-                <StatCard label="Criados hoje" value={String(created)} />
-                <StatCard label="Fechados hoje" value={String(closed)} />
-                <StatCard label="Saldo do dia" value={net > 0 ? `+${net}` : String(net)} hint="Criados - Fechados" />
-                <StatCard label="Taxa de fechamento" value={`${closeRate}%`} hint="Fechados / Criados no dia" />
-              </div>
-            </div>
-          ) : tab === 'staff' ? (
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-2">Estatísticas de Staff</h2>
-              <p className="text-white/60 mb-4">Ranking e contadores por staff (assumidos/fechados).</p>
-              <div className="space-y-3">
-                {stats.staff && Object.keys(stats.staff).length ? (
-                  Object.entries(stats.staff).map(([id, s]) => (
-                    <StaffRow key={id} id={id} claimed={Number((s as any)?.claimed ?? 0)} closed={Number((s as any)?.closed ?? 0)} />
-                  ))
-                ) : (
-                  <div className="text-sm text-white/60">Sem dados de staff ainda.</div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <GuildSettings guildId={guildId} initial={cfg} tab={tab} entitlements={entitlements} />
-          )}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 8, filter: 'blur(2px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -6, filter: 'blur(1px)' }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              {tab === 'stats' ? (
+                <div className="card">
+                  <h2 className="text-xl font-semibold mb-2">Estatisticas de Tickets</h2>
+                  <p className="text-white/60 mb-4">O bot envia metricas automaticamente. Para resultados completos, mantenha o bot online.</p>
+                  <div className="grid md:grid-cols-4 gap-4 mb-6">
+                    <StatCard label="Criados hoje" value={String(created)} />
+                    <StatCard label="Fechados hoje" value={String(closed)} />
+                    <StatCard label="Saldo do dia" value={net > 0 ? `+${net}` : String(net)} hint="Criados - Fechados" />
+                    <StatCard label="Taxa de fechamento" value={`${closeRate}%`} hint="Fechados / Criados no dia" />
+                  </div>
+                </div>
+              ) : tab === 'staff' ? (
+                <div className="card">
+                  <h2 className="text-xl font-semibold mb-2">Estatisticas de Staff</h2>
+                  <p className="text-white/60 mb-4">Ranking e contadores por staff (assumidos/fechados).</p>
+                  <div className="space-y-3">
+                    {stats.staff && Object.keys(stats.staff).length ? (
+                      Object.entries(stats.staff).map(([id, s]) => (
+                        <StaffRow key={id} id={id} claimed={Number((s as any)?.claimed ?? 0)} closed={Number((s as any)?.closed ?? 0)} />
+                      ))
+                    ) : (
+                      <div className="text-sm text-white/60">Sem dados de staff ainda.</div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <GuildSettings guildId={guildId} initial={cfg} tab={tab} entitlements={entitlements} />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
   )
 }
-

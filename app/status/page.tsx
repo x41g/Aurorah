@@ -2,7 +2,10 @@ import { prisma } from '@/lib/prisma'
 
 function fmtTs(ts?: number | null) {
   if (!ts) return '-'
-  return new Date(ts).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+  return new Date(ts).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour12: false,
+  })
 }
 
 function asArray(v: unknown): string[] {
@@ -57,7 +60,7 @@ export default async function StatusPage() {
   ] as const
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+    <main className="mx-auto max-w-6xl min-h-[calc(100vh-5rem)] px-4 py-14 sm:px-6 fx-fade-in">
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-black gradient-text">Status Aurora</h1>
         <p className="mt-2 text-white/70">Estado atual dos servicos em tempo real (America/Sao_Paulo).</p>
@@ -65,7 +68,7 @@ export default async function StatusPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {cards.map((c) => (
-          <section key={c.name} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <section key={c.name} className="rounded-2xl border border-white/10 bg-white/5 p-5 fx-hover-lift">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-white">{c.name}</h2>
               <span
