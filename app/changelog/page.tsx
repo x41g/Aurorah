@@ -1,9 +1,15 @@
 import { CHANGELOG_ENTRIES } from '@/lib/changelog'
+import Link from 'next/link'
 
 export default function ChangelogPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
       <div className="mb-8">
+        <div className="mb-4">
+          <Link href="/dashboard" className="btn-secondary inline-flex px-4 py-2 rounded-2xl">
+            Voltar para dashboard
+          </Link>
+        </div>
         <h1 className="text-3xl sm:text-4xl font-black gradient-text">Novidades e Atualizacoes</h1>
         <p className="mt-2 text-white/70">Historico das melhorias do bot e dashboard.</p>
       </div>
