@@ -12,12 +12,12 @@ export async function requireSession() {
 
 export async function canManageGuild(guildId: string) {
   const session = await requireSession();
-  if (!session?.accessToken) return { ok: false as const, session: null };
+  if (!session?.accessToken) return { ok: false as const, reason: "no_session" as const, session: null };
 
   const guilds = await fetchUserGuilds(session.accessToken);
   const g = guilds.find((x) => String(x.id) === String(guildId));
-  if (!g) return { ok: false as const, session };
-  if (!hasManageGuild(g)) return { ok: false as const, session };
+  if (!g) return { ok: false as const, reason: "guild_not_found" as const, session };
+  if (!hasManageGuild(g)) return { ok: false as const, reason: "missing_permission" as const, session };
 
   // se o usuário for o dono, salva no DB para o sistema de assinaturas
   try {
@@ -34,7 +34,7 @@ export async function canManageGuild(guildId: string) {
 
   const entitlements = await getGuildEntitlements(String(guildId));
   if (!entitlements.canUseDashboard) {
-    return { ok: false as const, session, guild: g, entitlements };
+    return { ok: false as const, reason: "plan_blocked" as const, session, guild: g, entitlements };
   }
 
   return { ok: true as const, session, guild: g, entitlements };

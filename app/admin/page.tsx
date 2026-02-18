@@ -9,6 +9,8 @@ import type { GuildStats } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { WhitelistPanel } from "@/components/admin/WhitelistPanel"; 
 import { ResetDbPanel } from "@/components/admin/ResetDbPanel";
+import { MaintenancePanel } from "@/components/admin/MaintenancePanel";
+import { DEFAULT_MAINTENANCE_MESSAGE, readGuildIds, readMaintenanceState } from "@/lib/siteMaintenance";
 
 type BotGuilds = { guildIds: string[]; updatedAt?: number };
 
@@ -20,8 +22,9 @@ export default async function AdminPage() {
   if (!isAdminDiscordId(userId)) redirect("/403");
 
   const botRow = await prisma.botState.findUnique({ where: { id: "singleton" } });
+  const maintenance = readMaintenanceState(botRow?.guildIds);
   const botGuilds: BotGuilds = {
-    guildIds: Array.isArray(botRow?.guildIds) ? (botRow!.guildIds as any).map(String) : [],
+    guildIds: readGuildIds(botRow?.guildIds),
     updatedAt: botRow?.updatedAt ? botRow.updatedAt.getTime() : 0,
   };
 
@@ -98,6 +101,13 @@ return (
 
           <div className="mt-6">
             <ResetDbPanel />
+          </div>
+
+          <div className="mt-6">
+            <MaintenancePanel
+              initialEnabled={maintenance.enabled}
+              initialMessage={maintenance.message || DEFAULT_MAINTENANCE_MESSAGE}
+            />
           </div>
   </>
 );

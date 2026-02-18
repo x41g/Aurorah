@@ -80,12 +80,10 @@ export function ResetDbPanel() {
   const [captchaToken, setCaptchaToken] = useState("");
   const turnstileEnabled = Boolean(String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim());
   const [selectedTargets, setSelectedTargets] = useState<string[]>([
-    "guildConfig",
     "guildStats",
-    "guildOwners",
     "transcripts",
     "usageMonthly",
-    "botState",
+    "aiData",
   ]);
 
   function toggleTarget(key: string) {

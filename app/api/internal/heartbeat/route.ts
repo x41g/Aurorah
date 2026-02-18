@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertInternalAuth } from "@/lib/internalAuth";
 import { prisma } from "@/lib/prisma";
+import { buildBotStatePayload, readMaintenanceState } from "@/lib/siteMaintenance";
 
 type Payload = {
   guildIds?: string[];
@@ -24,10 +25,13 @@ export async function POST(req: Request) {
   const mergedIds = guilds.length ? guilds.map((g) => g.id) : guildIds;
   if (!mergedIds.length) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
+  const current = await prisma.botState.findUnique({ where: { id: "singleton" } });
+  const maintenance = readMaintenanceState(current?.guildIds);
+
   await prisma.botState.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton", guildIds: mergedIds },
-    update: { guildIds: mergedIds },
+    create: { id: "singleton", guildIds: buildBotStatePayload(mergedIds, maintenance) as any },
+    update: { guildIds: buildBotStatePayload(mergedIds, maintenance) as any },
   });
 
   if (guilds.length) {

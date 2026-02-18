@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function GET(req: Request, { params }: { params: { guildId: string } }) {
   const { guildId } = params;
   const access = await canManageGuild(guildId);
-  if (!access.ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (!access.ok) return NextResponse.json({ error: "forbidden", reason: (access as any).reason || "unknown" }, { status: 403 });
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -47,4 +47,3 @@ export async function GET(req: Request, { params }: { params: { guildId: string 
     },
   });
 }
-

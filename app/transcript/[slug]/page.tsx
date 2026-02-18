@@ -117,7 +117,6 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       pulseError("Complete o captcha antes de desbloquear.");
       return;
     }
-
     setStatus("unlocking");
     setMessage("");
 

@@ -44,7 +44,6 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const captchaToken = String(body?.captchaToken || "").trim();
-
   if (isTurnstileEnabled()) {
     if (!captchaToken) {
       return NextResponse.json({ error: "captcha_required" }, { status: 400 });

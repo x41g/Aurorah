@@ -1,11 +1,23 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 
 declare global {
   interface Window {
-    [key: string]: unknown;
+    turnstile?: {
+      render: (
+        container: HTMLElement,
+        options: {
+          sitekey: string;
+          theme?: "light" | "dark" | "auto";
+          callback?: (token: string) => void;
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        }
+      ) => string;
+      remove?: (widgetId: string) => void;
+    };
   }
 }
 
@@ -16,39 +28,47 @@ type Props = {
 
 export function TurnstileBox({ onTokenChange, className }: Props) {
   const siteKey = String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim();
-  const callbackId = useMemo(() => `turnstile_ok_${Math.random().toString(36).slice(2, 10)}`, []);
-  const expiredId = useMemo(() => `turnstile_exp_${Math.random().toString(36).slice(2, 10)}`, []);
-  const errorId = useMemo(() => `turnstile_err_${Math.random().toString(36).slice(2, 10)}`, []);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const widgetIdRef = useRef<string | null>(null);
+  const [scriptReady, setScriptReady] = useState(false);
 
   useEffect(() => {
-    if (!siteKey) return;
-    window[callbackId] = (token: string) => onTokenChange(String(token || ""));
-    window[expiredId] = () => onTokenChange("");
-    window[errorId] = () => onTokenChange("");
+    if (!siteKey || !scriptReady) return;
+    if (!containerRef.current) return;
+    if (!window.turnstile?.render) return;
+
+    if (widgetIdRef.current) return;
+
+    widgetIdRef.current = window.turnstile.render(containerRef.current, {
+      sitekey: siteKey,
+      theme: "dark",
+      callback: (token) => onTokenChange(String(token || "")),
+      "expired-callback": () => onTokenChange(""),
+      "error-callback": () => onTokenChange(""),
+    });
+
     return () => {
-      delete window[callbackId];
-      delete window[expiredId];
-      delete window[errorId];
+      if (widgetIdRef.current && window.turnstile?.remove) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch {
+          // noop
+        }
+      }
+      widgetIdRef.current = null;
     };
-  }, [siteKey, callbackId, expiredId, errorId, onTokenChange]);
+  }, [siteKey, scriptReady, onTokenChange]);
 
   if (!siteKey) return null;
 
   return (
     <div className={className}>
       <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
         strategy="afterInteractive"
+        onLoad={() => setScriptReady(true)}
       />
-      <div
-        className="cf-turnstile"
-        data-sitekey={siteKey}
-        data-theme="dark"
-        data-callback={callbackId}
-        data-expired-callback={expiredId}
-        data-error-callback={errorId}
-      />
+      <div ref={containerRef} />
     </div>
   );
 }
-

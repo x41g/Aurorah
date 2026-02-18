@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-function asArray(v: unknown): string[] {
-  return Array.isArray(v) ? v.map((x) => String(x)) : []
-}
+import { readGuildIds } from '@/lib/siteMaintenance'
 
 export async function GET() {
   try {
@@ -15,7 +12,7 @@ export async function GET() {
       prisma.guildConfig.findFirst({ select: { updatedAt: true }, orderBy: { updatedAt: 'desc' } }),
     ])
 
-    const guildIds = asArray(botState?.guildIds)
+    const guildIds = readGuildIds(botState?.guildIds)
     const botLastHeartbeatAt = botState?.updatedAt ? botState.updatedAt.getTime() : 0
     const botOnline = botLastHeartbeatAt > 0 && now - botLastHeartbeatAt <= 3 * 60 * 1000
 
