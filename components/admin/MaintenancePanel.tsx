@@ -33,6 +33,11 @@ export function MaintenancePanel({ initialEnabled, initialMessage }: Props) {
       }
       setEnabled(Boolean(data?.maintenance?.enabled));
       setMessage(String(data?.maintenance?.message || message));
+      try {
+        localStorage.setItem("aurora:maintenance:updatedAt", String(Date.now()));
+      } catch {
+        // noop
+      }
       setOk(Boolean(data?.maintenance?.enabled) ? "Modo manutencao ativado." : "Modo manutencao desativado.");
     } catch (e: any) {
       setError(String(e?.message || e));
@@ -98,4 +103,3 @@ export function MaintenancePanel({ initialEnabled, initialMessage }: Props) {
     </div>
   );
 }
-

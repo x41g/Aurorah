@@ -13,6 +13,7 @@ const maintenanceCache: MaintenanceCache = {
 
 function canBypassMaintenance(pathname: string) {
   if (!pathname) return true;
+  if (/\.[a-zA-Z0-9]+$/.test(pathname)) return true;
   if (pathname.startsWith("/api")) return true;
   if (pathname.startsWith("/admin")) return true;
   if (pathname.startsWith("/login")) return true;
@@ -25,7 +26,7 @@ function canBypassMaintenance(pathname: string) {
 
 async function isMaintenanceEnabled(req: NextRequest): Promise<boolean> {
   const now = Date.now();
-  if (now - maintenanceCache.fetchedAt < 3500) {
+  if (now - maintenanceCache.fetchedAt < 250) {
     return maintenanceCache.value;
   }
 

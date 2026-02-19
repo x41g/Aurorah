@@ -11,10 +11,12 @@ type MaintenanceState = {
 
 function shouldBypass(pathname: string) {
   if (!pathname) return false;
+  if (/\.[a-zA-Z0-9]+$/.test(pathname)) return true;
   if (pathname.startsWith("/api")) return true;
   if (pathname.startsWith("/admin")) return true;
   if (pathname.startsWith("/login")) return true;
   if (pathname.startsWith("/403")) return true;
+  if (pathname.startsWith("/maintenance")) return true;
   if (pathname.startsWith("/_next")) return true;
   if (pathname.startsWith("/favicon")) return true;
   return false;
@@ -46,18 +48,30 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
     };
 
     load();
-    const interval = setInterval(load, 2500);
+    const interval = setInterval(load, 600);
     const onFocus = () => load();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "aurora:maintenance:updatedAt") load();
+    };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("storage", onStorage);
 
     return () => {
       active = false;
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("storage", onStorage);
     };
   }, [pathname]);
+
+  useEffect(() => {
+    if (!state) return;
+    if (String(pathname || "").startsWith("/maintenance") && !state.enabled) {
+      window.location.replace("/");
+    }
+  }, [state, pathname]);
 
   const blocked = useMemo(() => {
     if (!state?.enabled) return false;

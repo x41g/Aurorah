@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Providers } from './providers'
 import { ConsoleSafetyNotice } from "@/components/common/ConsoleSafetyNotice";
+import { MaintenanceGate } from "@/components/maintenance/MaintenanceGate";
 import './globals.css'
 import { Fredoka } from "next/font/google";
 import { Plus_Jakarta_Sans } from "next/font/google";
@@ -59,7 +60,7 @@ export default function RootLayout({
       <body className={`${fredoka.className} ${plusJakarta.variable} transition-colors duration-300`}>
         <Providers>
           <ConsoleSafetyNotice />
-          {children}
+          <MaintenanceGate>{children}</MaintenanceGate>
         </Providers>
       </body>
     </html>
