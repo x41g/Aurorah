@@ -35,6 +35,7 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
   const [scriptReady, setScriptReady] = useState(false);
   const [rendered, setRendered] = useState(false);
   const [error, setError] = useState("");
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const looksLikeTurnstileSiteKey = (value: string) => /^0x[a-zA-Z0-9_-]{20,}$/.test(String(value || "").trim());
 
@@ -114,10 +115,26 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
     if (!siteKey) return;
     if (scriptReady) return;
     const t = setTimeout(() => {
-      setError("Captcha nao carregou. Verifique bloqueador/extensao e recarregue a pagina.");
-    }, 7000);
+      setError("Captcha demorou para carregar. Verifique extensoes/rede ou tente novamente.");
+    }, 20000);
     return () => clearTimeout(t);
   }, [siteKey, scriptReady]);
+
+  const handleRetry = () => {
+    onTokenChange("");
+    setRendered(false);
+    setError("");
+    setScriptReady(false);
+    if (widgetIdRef.current && window.turnstile?.remove) {
+      try {
+        window.turnstile.remove(widgetIdRef.current);
+      } catch {
+        // noop
+      }
+    }
+    widgetIdRef.current = null;
+    setRetryNonce((v) => v + 1);
+  };
 
   if (!siteKey && !error) {
     return (
@@ -132,9 +149,12 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
   return (
     <div className={className}>
       <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        src={`https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&retry=${retryNonce}`}
         strategy="afterInteractive"
-        onLoad={() => setScriptReady(true)}
+        onLoad={() => {
+          setError("");
+          setScriptReady(true);
+        }}
         onError={() => setError("Falha ao carregar script do Turnstile (rede/extensao/bloqueador).")}
       />
       <div className="min-h-[78px] rounded-xl border border-white/10 bg-black/20 p-2">
@@ -142,7 +162,16 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
         {!rendered && !error ? <div className="text-xs text-white/60">Carregando captcha...</div> : null}
       </div>
       {error ? (
-        <div className="mt-2 rounded-xl border border-red-300/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</div>
+        <div className="mt-2 rounded-xl border border-red-300/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+          <div>{error}</div>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="mt-2 inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/20"
+          >
+            Tentar novamente
+          </button>
+        </div>
       ) : null}
     </div>
   );
