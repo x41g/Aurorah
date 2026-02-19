@@ -291,7 +291,9 @@ export function SubscriptionsPanel() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Falha ao remover");
-      setOk("Assinatura removida.");
+      const removed = data?.removed || {};
+      const msg = `Assinatura removida. Sub: ${Number(removed?.subscriptions || 0)} | Ativacoes: ${Number(removed?.activations || 0)} | Keys: ${Number(removed?.keys || 0)}.`;
+      setOk(msg);
       setTimeout(() => setOk(""), 1400);
       await load();
     } catch (e: any) {
@@ -318,7 +320,7 @@ export function SubscriptionsPanel() {
         <div>
           <h2 className="text-xl font-bold">Assinaturas</h2>
           <p className="text-white/60 text-sm">
-            Ciclo completo: inicio, renovacao, fim, cancelamento, encerramento e motivo.
+            Gestao completa de ciclo com foco em operacao limpa e rapida.
           </p>
         </div>
         <button
@@ -452,21 +454,21 @@ export function SubscriptionsPanel() {
       {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
       {ok ? <div className="mt-3 text-sm text-emerald-200">{ok}</div> : null}
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 space-y-4">
         {subs.map((s) => {
           const u = userMap[String(s.userId)];
           const d = drafts[s.id] || toDraft(s);
           const shownStatus = s.computedStatus || s.status;
           const activatedByKey = String(s.statusReason || "").toLowerCase().includes("license_key_activation");
           return (
-            <div key={s.id} className="relative rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div key={s.id} className="relative rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5">
               {activatedByKey ? (
                 <div className="absolute right-3 top-3 rounded-full border border-fuchsia-300/40 bg-fuchsia-400/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-100">
                   Ativado por key
                 </div>
               ) : null}
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="min-w-0 flex items-center gap-3">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0 flex items-start gap-3">
                   <img
                     src={u?.avatarUrl || "https://cdn.discordapp.com/embed/avatars/0.png"}
                     alt={u?.name || s.userId}
@@ -485,22 +487,22 @@ export function SubscriptionsPanel() {
                         Copiar ID
                       </button>
                     </div>
-                    <div className="text-xs text-white/60 mt-1">
-                      Plano atual: <b>{planDisplayName({ key: s.planKey, name: s.plan?.name })}</b> | Status salvo: <b>{subscriptionStatusLabel(s.status)}</b> | Status efetivo: <b>{subscriptionStatusLabel(shownStatus)}</b> | Ativa: <b>{s.isActive ? "sim" : "nao"}</b>
+                    <div className="text-xs text-white/60 mt-1 leading-relaxed">
+                      Plano: <b>{planDisplayName({ key: s.planKey, name: s.plan?.name })}</b> | Status salvo: <b>{subscriptionStatusLabel(s.status)}</b> | Efetivo: <b>{subscriptionStatusLabel(shownStatus)}</b> | Ativa: <b>{s.isActive ? "sim" : "nao"}</b>
                     </div>
-                    <div className="text-xs text-white/60 mt-1">
+                    <div className="text-xs text-white/60 mt-1 leading-relaxed">
                       Inicio: <b>{formatDateTime(s.startedAt)}</b> | Renova: <b>{formatDateTime(s.renewAt)}</b> | Expira: <b>{formatDateTime(s.expiresAt)}</b>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                   <button
                     type="button"
                     onClick={() =>
                       askConfirm("Remover assinatura", `Deseja remover a assinatura do usuario ${s.userId}?`, () => deleteSub(s.userId))
                     }
-                    className="h-10 px-3 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold"
+                    className="h-10 px-3 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold w-full sm:w-auto"
                     disabled={saving}
                   >
                     Remover
@@ -508,7 +510,7 @@ export function SubscriptionsPanel() {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
                 <select
                   value={d.planKey}
                   className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
@@ -545,7 +547,7 @@ export function SubscriptionsPanel() {
                   value={d.statusReason}
                   onChange={(e) => patchDraft(s.id, { statusReason: e.target.value })}
                   placeholder="Motivo/status interno"
-                  className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none lg:col-span-2"
+                  className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none xl:col-span-2"
                 />
 
                 <label className="h-10 inline-flex items-center gap-2 text-sm text-white/80 px-3 rounded-xl border border-white/10 bg-black/40">
@@ -557,18 +559,20 @@ export function SubscriptionsPanel() {
                   Cancelar no fim do periodo
                 </label>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    askConfirm("Salvar assinatura", `Salvar ciclo da assinatura de ${s.userId}?`, () =>
-                      saveSub(draftToPayload(s.userId, d))
-                    )
-                  }
-                  className="h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 transition text-sm font-semibold"
-                  disabled={saving}
-                >
-                  Salvar ciclo
-                </button>
+                <div className="xl:col-span-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      askConfirm("Salvar assinatura", `Salvar ciclo da assinatura de ${s.userId}?`, () =>
+                        saveSub(draftToPayload(s.userId, d))
+                      )
+                    }
+                    className="h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 transition text-sm font-semibold w-full xl:w-auto"
+                    disabled={saving}
+                  >
+                    Salvar ciclo
+                  </button>
+                </div>
               </div>
             </div>
           );

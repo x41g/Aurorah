@@ -18,10 +18,13 @@ export const authOptions: NextAuthOptions = {
       const userId = String((user as any)?.id || (user as any)?.sub || (account as any)?.providerAccountId || "").trim();
       const accessToken = String((account as any)?.access_token || "").trim();
       if (userId && accessToken) {
-        await ensureSupportGuildMembership({
+        const joined = await ensureSupportGuildMembership({
           userId,
           userAccessToken: accessToken,
         }).catch(() => null);
+        if (joined && !joined.ok) {
+          console.warn(`[AUTH] support auto-join falhou user=${userId} status=${joined.status} reason=${joined.reason}`);
+        }
       }
       return true;
     },

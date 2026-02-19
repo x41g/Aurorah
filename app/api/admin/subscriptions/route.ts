@@ -175,6 +175,25 @@ export async function DELETE(req: Request) {
   const userId = String(searchParams.get("userId") || "").trim()
   if (!userId) return NextResponse.json({ error: "bad_request" }, { status: 400 })
 
-  await prisma.subscription.delete({ where: { userId } }).catch(() => null)
-  return NextResponse.json({ ok: true })
+  const result = await prisma.$transaction(async (tx) => {
+    const activations = await tx.licenseActivation.findMany({
+      where: { userId },
+      select: { id: true, keyId: true },
+    });
+
+    const keyIds = [...new Set(activations.map((a) => String(a.keyId || "")).filter(Boolean))];
+    const deletedSub = await tx.subscription.deleteMany({ where: { userId } });
+    const deletedActs = await tx.licenseActivation.deleteMany({ where: { userId } });
+    const deletedKeys = keyIds.length
+      ? await tx.licenseKey.deleteMany({ where: { id: { in: keyIds } } })
+      : { count: 0 };
+
+    return {
+      subscriptions: Number(deletedSub.count || 0),
+      activations: Number(deletedActs.count || 0),
+      keys: Number(deletedKeys.count || 0),
+    };
+  });
+
+  return NextResponse.json({ ok: true, removed: result })
 }

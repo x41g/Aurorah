@@ -1,8 +1,7 @@
 ﻿'use client'
 
-import { signOut } from 'next-auth/react'
 import { useTheme } from '@/app/providers'
-import { Moon, Sun, LogOut, Heart } from 'lucide-react'
+import { Moon, Sun, Heart } from 'lucide-react'
 import { useState } from 'react'
 
 type Props = {
@@ -63,13 +62,6 @@ export function Topbar({ title, userName, userImage }: Props) {
           <span className="hidden lg:inline">Apoiar</span>
         </a>
 
-        <button
-          onClick={() => signOut({ callbackUrl: '/' })}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition hover:border-red-500/30 hover:bg-red-500/20"
-          title="Sair"
-        >
-          <LogOut size={18} />
-        </button>
       </div>
     </div>
   )

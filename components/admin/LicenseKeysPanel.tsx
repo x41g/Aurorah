@@ -20,6 +20,36 @@ type LicenseKeyRow = {
   _count?: { activations?: number };
   plan?: Plan;
 };
+const KEY_VAULT_STORAGE_KEY = "aurora:license-key-vault:v1";
+
+function readKeyVault(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(KEY_VAULT_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      const keyId = String(k || "").trim();
+      const code = String(v || "").trim();
+      if (!keyId || !code) continue;
+      out[keyId] = code;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function saveKeyVault(vault: Record<string, string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(KEY_VAULT_STORAGE_KEY, JSON.stringify(vault));
+  } catch {
+    // noop
+  }
+}
 
 function licenseStatusLabel(status?: string | null) {
   const s = String(status || "").toLowerCase();
@@ -55,6 +85,7 @@ export function LicenseKeysPanel() {
   const [rows, setRows] = useState<LicenseKeyRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [createdCodes, setCreatedCodes] = useState<string[]>([]);
+  const [codeVault, setCodeVault] = useState<Record<string, string>>({});
 
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -93,6 +124,7 @@ export function LicenseKeysPanel() {
 
   useEffect(() => {
     void load();
+    setCodeVault(readKeyVault());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -118,6 +150,15 @@ export function LicenseKeysPanel() {
       if (!res.ok) throw new Error(data?.error || "Falha ao criar keys");
       const created = Array.isArray(data?.created) ? data.created : [];
       const codes = created.map((x: any) => String(x?.code || "")).filter(Boolean);
+      const pairs = created
+        .map((x: any) => ({ id: String(x?.id || "").trim(), code: String(x?.code || "").trim() }))
+        .filter((x: any) => x.id && x.code);
+      if (pairs.length) {
+        const merged = { ...readKeyVault() };
+        for (const p of pairs) merged[p.id] = p.code;
+        setCodeVault(merged);
+        saveKeyVault(merged);
+      }
       setCreatedCodes(codes);
       setOk(`${codes.length} key(s) criada(s).`);
       setTimeout(() => setOk(""), 1800);
@@ -344,11 +385,13 @@ export function LicenseKeysPanel() {
           <LicenseRow
             key={k.id}
             row={k}
+            fullCode={codeVault[k.id] || ""}
             busy={saving}
             selected={selectedIds.includes(k.id)}
             onSelect={toggleSelect}
             onSave={patchKey}
             onDelete={(id) => deleteKeys([id])}
+            onCopy={copyText}
           />
         ))}
         {!loading && rows.length === 0 ? <div className="text-sm text-white/60">Nenhuma key encontrada.</div> : null}
@@ -359,18 +402,22 @@ export function LicenseKeysPanel() {
 
 function LicenseRow({
   row,
+  fullCode,
   busy,
   selected,
   onSelect,
   onSave,
   onDelete,
+  onCopy,
 }: {
   row: LicenseKeyRow;
+  fullCode: string;
   busy: boolean;
   selected: boolean;
   onSelect: (id: string, checked: boolean) => void;
   onSave: (id: string, payload: { status?: string; expiresAt?: string; note?: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onCopy: (value: string) => Promise<void>;
 }) {
   const [status, setStatus] = useState(String(row.status || "active"));
   const [expiresAt, setExpiresAt] = useState(toLocalInput(row.expiresAt));
@@ -378,11 +425,20 @@ function LicenseRow({
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="text-sm text-white/80 flex items-center gap-2">
+      <div className="text-sm text-white/80 flex flex-wrap items-center gap-2">
         <input type="checkbox" checked={selected} onChange={(e) => onSelect(row.id, e.target.checked)} />
         <span>
-          Key: <b>{row.codePrefix}...{row.codeLast4}</b> | Plano: <b>{planDisplayName({ key: row.planKey, name: row.plan?.name })}</b> | Status: <b>{licenseStatusLabel(row.status)}</b> | Uso: <b>{row.usedCount}/{row.maxActivations}</b> | Ativacoes: <b>{Number(row._count?.activations || 0)}</b>
+          Key: <b>{fullCode || `${row.codePrefix}...${row.codeLast4}`}</b> | Plano: <b>{planDisplayName({ key: row.planKey, name: row.plan?.name })}</b> | Status: <b>{licenseStatusLabel(row.status)}</b> | Uso: <b>{row.usedCount}/{row.maxActivations}</b> | Ativacoes: <b>{Number(row._count?.activations || 0)}</b>
         </span>
+        <button
+          type="button"
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/5 hover:bg-white/10 transition disabled:opacity-40"
+          title={fullCode ? "Copiar key completa" : "Key completa indisponivel para esta sessao"}
+          disabled={!fullCode}
+          onClick={() => onCopy(fullCode)}
+        >
+          <Copy size={14} />
+        </button>
       </div>
       <div className="text-xs text-white/60 mt-1">Criada em {new Date(row.createdAt).toLocaleString("pt-BR")}</div>
 
@@ -415,4 +471,3 @@ function LicenseRow({
     </div>
   );
 }
-
