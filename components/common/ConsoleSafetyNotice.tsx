@@ -11,11 +11,11 @@ export function ConsoleSafetyNotice() {
 `;
 
     console.log(
-      "%cPare por aqui.",
+      "%cPARE POR AQUI. ÁREA DESIGNADA PARA DESENVOLVEDORES.",
       "font-size:26px;font-weight:900;color:#f87171;text-shadow:0 0 18px rgba(248,113,113,.35);"
     );
     console.log(
-      "%cSe alguem pediu para voce colar codigo aqui, nao cole. Isso pode roubar sua conta, token ou dados.",
+      "%cSe você não é um desenvolvedor, é melhor fechar este console, sumir e seguir com tua vida.",
       "font-size:13px;color:#e5e7eb;background:#111827;padding:8px 10px;border-radius:8px;"
     );
     console.log("%cGatinho da seguranca:\n" + art, "font-size:13px;color:#93c5fd;");

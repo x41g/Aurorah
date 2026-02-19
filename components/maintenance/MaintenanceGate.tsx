@@ -26,23 +26,36 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/maintenance", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (!active) return;
-        const m = data?.maintenance || {};
-        setState({
-          enabled: Boolean(m.enabled),
-          message: String(m.message || "Estamos em manutencao para melhorias. Voltamos em breve."),
-          updatedAt: Number.isFinite(Number(m.updatedAt)) ? Number(m.updatedAt) : null,
+
+    const load = () => {
+      fetch("/api/maintenance", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!active) return;
+          const m = data?.maintenance || {};
+          setState({
+            enabled: Boolean(m.enabled),
+            message: String(m.message || "Estamos em manutencao para melhorias. Voltamos em breve."),
+            updatedAt: Number.isFinite(Number(m.updatedAt)) ? Number(m.updatedAt) : null,
+          });
+        })
+        .catch(() => {
+          if (!active) return;
+          setState({ enabled: false, message: "", updatedAt: null });
         });
-      })
-      .catch(() => {
-        if (!active) return;
-        setState({ enabled: false, message: "", updatedAt: null });
-      });
+    };
+
+    load();
+    const interval = setInterval(load, 2500);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
     return () => {
       active = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
   }, [pathname]);
 
@@ -70,7 +83,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
         <p className="mt-4 max-w-2xl text-sm text-white/75 sm:text-base">{state?.message}</p>
 
         <div className="mt-6 w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-2">
-          <img src="/aurorabanner.png" alt="Aurora manutencao" className="h-auto w-full rounded-xl object-cover" />
+          <img src="/aurora_manutencao.png" alt="Aurora manutencao" className="h-auto w-full rounded-xl object-cover" />
         </div>
 
         <div className="mt-10 grid w-full max-w-3xl gap-3 sm:grid-cols-3">

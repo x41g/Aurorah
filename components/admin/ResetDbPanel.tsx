@@ -93,12 +93,14 @@ export function ResetDbPanel() {
     });
   }
 
-  function selectAll() {
-    setSelectedTargets(RESET_TARGETS.map((t) => t.key));
-  }
+  const allSelected = selectedTargets.length === RESET_TARGETS.length;
 
-  function clearAll() {
-    setSelectedTargets([]);
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedTargets([]);
+      return;
+    }
+    setSelectedTargets(RESET_TARGETS.map((t) => t.key));
   }
 
   const hasDangerSelection =
@@ -166,17 +168,10 @@ export function ResetDbPanel() {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={selectAll}
+          onClick={toggleAll}
           className="px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-xs"
         >
-          Selecionar tudo
-        </button>
-        <button
-          type="button"
-          onClick={clearAll}
-          className="px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-xs"
-        >
-          Limpar selecao
+          {allSelected ? "Desmarcar tudo" : "Selecionar tudo"}
         </button>
       </div>
 
