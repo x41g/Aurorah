@@ -19,11 +19,11 @@ export const config = {
   instagramLink: "https://www.instagram.com/_auroxe/",
   tiktokLink: "https://www.tiktok.com/@auroxefx",
 
-                                                                                                                                                                                                                                                                                              /* stats: [
-                                                                                                                                                                                                                                                                                                { number: "3+", label: "Servidores Ativos" },
-                                                                                                                                                                                                                                                                                                { number: "10+", label: "Tickets Processados" },
-                                                                                                                                                                                                                                                                                                { number: "99.9%", label: "Uptime" },
-                                                                                                                                                                                                                                                                                              ], */
+    /* stats: [
+      { number: "3+", label: "Servidores Ativos" },
+      { number: "10+", label: "Tickets Processados" },
+      { number: "99.9%", label: "Uptime" },
+    ], */
 
   features: [
     {
