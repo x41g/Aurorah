@@ -103,10 +103,10 @@ export default function DashboardGeminiPreview() {
             ...prev,
             {
               id: 3,
-              author: "Aurora IA",
+              author: "Aurora",
               role: "bot",
               type: "payment",
-              amount: "R$ 19,90",
+              amount: "R$ 14,90",
               desc: "Compra Prioritária",
             },
           ]);

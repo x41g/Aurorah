@@ -69,7 +69,7 @@ export const config = {
     },
     {
       name: "Prime",
-      price: "R$ 19,90",
+      price: "R$ 14,90",
       period: "/mes",
       description: "Para servidores em crescimento",
       features: [

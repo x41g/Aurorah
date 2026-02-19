@@ -165,6 +165,7 @@ export function SubscriptionsPanel() {
   const [newEndedAt, setNewEndedAt] = useState("");
   const [newStatusReason, setNewStatusReason] = useState("");
   const [newCancelAtPeriodEnd, setNewCancelAtPeriodEnd] = useState(false);
+  const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
 
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     open: false,
@@ -460,8 +461,16 @@ export function SubscriptionsPanel() {
           const d = drafts[s.id] || toDraft(s);
           const shownStatus = s.computedStatus || s.status;
           const activatedByKey = String(s.statusReason || "").toLowerCase().includes("license_key_activation");
+          const expanded = expandedSubId === s.id;
+          const saveCurrent = () =>
+            askConfirm("Salvar assinatura", `Salvar ciclo da assinatura de ${s.userId}?`, () =>
+              saveSub(draftToPayload(s.userId, d))
+            );
           return (
-            <div key={s.id} className="relative rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5">
+            <div
+              key={s.id}
+              className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.03] p-4 lg:p-5"
+            >
               {activatedByKey ? (
                 <div className="absolute right-3 top-3 rounded-full border border-fuchsia-300/40 bg-fuchsia-400/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-100">
                   Ativado por key
@@ -487,8 +496,19 @@ export function SubscriptionsPanel() {
                         Copiar ID
                       </button>
                     </div>
-                    <div className="text-xs text-white/60 mt-1 leading-relaxed">
-                      Plano: <b>{planDisplayName({ key: s.planKey, name: s.plan?.name })}</b> | Status salvo: <b>{subscriptionStatusLabel(s.status)}</b> | Efetivo: <b>{subscriptionStatusLabel(shownStatus)}</b> | Ativa: <b>{s.isActive ? "sim" : "nao"}</b>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                      <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5">
+                        Plano: <b>{planDisplayName({ key: s.planKey, name: s.plan?.name })}</b>
+                      </span>
+                      <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5">
+                        Salvo: <b>{subscriptionStatusLabel(s.status)}</b>
+                      </span>
+                      <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5">
+                        Efetivo: <b>{subscriptionStatusLabel(shownStatus)}</b>
+                      </span>
+                      <span className={`rounded-full border px-2 py-0.5 ${s.isActive ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-100" : "border-amber-300/35 bg-amber-300/10 text-amber-100"}`}>
+                        {s.isActive ? "Ativa" : "Inativa"}
+                      </span>
                     </div>
                     <div className="text-xs text-white/60 mt-1 leading-relaxed">
                       Inicio: <b>{formatDateTime(s.startedAt)}</b> | Renova: <b>{formatDateTime(s.renewAt)}</b> | Expira: <b>{formatDateTime(s.expiresAt)}</b>
@@ -497,6 +517,13 @@ export function SubscriptionsPanel() {
                 </div>
 
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedSubId(expanded ? null : s.id)}
+                    className="h-10 px-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 transition text-sm font-semibold w-full sm:w-auto"
+                  >
+                    {expanded ? "Fechar edicao" : "Editar ciclo"}
+                  </button>
                   <button
                     type="button"
                     onClick={() =>
@@ -510,7 +537,7 @@ export function SubscriptionsPanel() {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_auto]">
                 <select
                   value={d.planKey}
                   className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
@@ -536,44 +563,52 @@ export function SubscriptionsPanel() {
                     </option>
                   ))}
                 </select>
-
-                <DateField label="Inicio" value={d.startedAt} onChange={(v) => patchDraft(s.id, { startedAt: v })} />
-                <DateField label="Renova" value={d.renewAt} onChange={(v) => patchDraft(s.id, { renewAt: v })} />
-                <DateField label="Expira" value={d.expiresAt} onChange={(v) => patchDraft(s.id, { expiresAt: v })} />
-                <DateField label="Cancelada" value={d.canceledAt} onChange={(v) => patchDraft(s.id, { canceledAt: v })} />
-                <DateField label="Encerrada" value={d.endedAt} onChange={(v) => patchDraft(s.id, { endedAt: v })} />
-
-                <input
-                  value={d.statusReason}
-                  onChange={(e) => patchDraft(s.id, { statusReason: e.target.value })}
-                  placeholder="Motivo/status interno"
-                  className="h-10 rounded-xl bg-black/40 border border-white/10 px-3 outline-none xl:col-span-2"
-                />
-
-                <label className="h-10 inline-flex items-center gap-2 text-sm text-white/80 px-3 rounded-xl border border-white/10 bg-black/40">
-                  <input
-                    type="checkbox"
-                    checked={d.cancelAtPeriodEnd}
-                    onChange={(e) => patchDraft(s.id, { cancelAtPeriodEnd: e.target.checked })}
-                  />
-                  Cancelar no fim do periodo
-                </label>
-
-                <div className="xl:col-span-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      askConfirm("Salvar assinatura", `Salvar ciclo da assinatura de ${s.userId}?`, () =>
-                        saveSub(draftToPayload(s.userId, d))
-                      )
-                    }
-                    className="h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 transition text-sm font-semibold w-full xl:w-auto"
-                    disabled={saving}
-                  >
-                    Salvar ciclo
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={saveCurrent}
+                  className="h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 transition text-sm font-semibold w-full md:w-auto"
+                  disabled={saving}
+                >
+                  Salvar
+                </button>
               </div>
+
+              {expanded ? (
+                <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3 space-y-3">
+                  <div className="text-xs text-white/60 uppercase tracking-[0.12em]">Edicao avancada</div>
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    <DateField label="Inicio" value={d.startedAt} onChange={(v) => patchDraft(s.id, { startedAt: v })} />
+                    <DateField label="Renova" value={d.renewAt} onChange={(v) => patchDraft(s.id, { renewAt: v })} />
+                    <DateField label="Expira" value={d.expiresAt} onChange={(v) => patchDraft(s.id, { expiresAt: v })} />
+                    <DateField label="Cancelada" value={d.canceledAt} onChange={(v) => patchDraft(s.id, { canceledAt: v })} />
+                    <DateField label="Encerrada" value={d.endedAt} onChange={(v) => patchDraft(s.id, { endedAt: v })} />
+                    <label className="h-10 inline-flex items-center gap-2 text-sm text-white/80 px-3 rounded-xl border border-white/10 bg-black/40">
+                      <input
+                        type="checkbox"
+                        checked={d.cancelAtPeriodEnd}
+                        onChange={(e) => patchDraft(s.id, { cancelAtPeriodEnd: e.target.checked })}
+                      />
+                      Cancelar no fim do periodo
+                    </label>
+                  </div>
+                  <input
+                    value={d.statusReason}
+                    onChange={(e) => patchDraft(s.id, { statusReason: e.target.value })}
+                    placeholder="Motivo/status interno"
+                    className="h-10 w-full rounded-xl bg-black/40 border border-white/10 px-3 outline-none"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={saveCurrent}
+                      className="h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 transition text-sm font-semibold w-full sm:w-auto"
+                      disabled={saving}
+                    >
+                      Salvar ciclo completo
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           );
         })}
