@@ -80,18 +80,18 @@ export default function Home() {
       <div className="aura-grid-bg fixed inset-0 pointer-events-none" />
       <div className="pointer-events-none fixed inset-0">
         <motion.div
-          className="absolute -top-28 left-[8%] h-[26rem] w-[26rem] rounded-full bg-fuchsia-500/20 blur-3xl"
+          className="absolute -top-28 left-[8%] hidden h-[26rem] w-[26rem] rounded-full bg-fuchsia-500/20 blur-3xl sm:block"
           animate={{ x: [0, 35, 0], y: [0, -22, 0] }}
           transition={{ duration: 10, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-[-9rem] right-[10%] h-[28rem] w-[28rem] rounded-full bg-violet-500/20 blur-3xl"
+          className="absolute bottom-[-9rem] right-[10%] hidden h-[28rem] w-[28rem] rounded-full bg-violet-500/20 blur-3xl sm:block"
           animate={{ x: [0, -30, 0], y: [0, 18, 0] }}
           transition={{ duration: 11, repeat: Infinity }}
         />
       </div>
 
-      <nav className="sticky top-3 z-50 px-4 sm:px-6">
+      <nav className="sticky top-3 z-50 px-3 sm:px-6">
         <div className="container-max aura-panel flex items-center justify-between rounded-2xl px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             {config.images?.logo ? (
@@ -99,6 +99,8 @@ export default function Home() {
             ) : null}
             <strong className="gradient-text truncate text-lg sm:text-xl">{config.botName}</strong>
           </div>
+
+          <a href="/dashboard" className="btn-secondary px-3 py-2 text-xs md:hidden">Dashboard</a>
 
           <div className="hidden items-center gap-5 text-sm md:flex">
             <a href="#features" className="text-white/75 transition hover:text-white">Features</a>
@@ -110,8 +112,8 @@ export default function Home() {
         </div>
       </nav>
 
-      <motion.section className="section relative z-10 pt-14 sm:pt-20" {...sectionFx}>
-        <div className="container-max grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+      <motion.section className="section relative z-10 pt-10 sm:pt-20" {...sectionFx}>
+        <div className="container-max grid items-center gap-7 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
           <motion.div variants={container} initial="hidden" animate="visible" className="space-y-7">
             <motion.div variants={item} className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/35 bg-fuchsia-400/10 px-4 py-2 text-sm text-fuchsia-100">
               <Sparkles size={16} />
@@ -135,7 +137,7 @@ export default function Home() {
               <a href="#pricing" className="btn-secondary fx-hover-lift w-full min-[420px]:w-auto">Ver planos</a>
             </motion.div>
 
-            <motion.div variants={item} className="grid max-w-xl grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:gap-4">
+            <motion.div variants={item} className="grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
               {statsView.map((s, i) => (
                 <div key={i} className="aura-panel rounded-2xl p-4 text-center sm:p-5">
                   <div className="gradient-text text-xl font-bold sm:text-2xl">{s.number}</div>
@@ -149,12 +151,12 @@ export default function Home() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="space-y-3"
+            className="space-y-2 lg:space-y-3"
           >
-            <div className="rounded-3xl border border-fuchsia-300/35 p-[1px] fx-hover-lift">
+            <div className="rounded-2xl border border-fuchsia-300/35 p-[1px] fx-hover-lift sm:rounded-3xl">
               <DashboardPreview />
             </div>
-            <div className="text-sm text-white/75">Preview</div>
+            <div className="text-center text-xs text-white/60 sm:text-left sm:text-sm sm:text-white/75">Preview</div>
           </motion.div>
         </div>
       </motion.section>
@@ -190,12 +192,12 @@ export default function Home() {
             <p className="mt-3 text-white/65">Escolha por necessidade real da sua loja.</p>
           </motion.div>
 
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 md:gap-5">
             {config.plans.map((p, i) => (
               <article
                 key={i}
                 className={[
-                  'aura-panel rounded-3xl p-6 fx-hover-lift',
+                  'aura-panel rounded-3xl p-5 sm:p-6 fx-hover-lift',
                   p.popular ? 'ring-2 ring-fuchsia-300/45 shadow-[0_18px_50px_rgba(244,114,182,0.2)]' : '',
                 ].join(' ')}
               >
@@ -264,19 +266,19 @@ export default function Home() {
         <div className="container-max">
           <div className="aura-panel rounded-3xl p-6 sm:p-8">
             <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-2xl font-bold">Social e Contato</h3>
-              <p className="text-sm text-white/65">Canais oficiais da Aurora.</p>
+              <h3 className="text-xl font-semibold sm:text-2xl">Social</h3>
+              <p className="text-xs text-white/55 sm:text-sm sm:text-white/65">Canais oficiais da Aurora.</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex w-full items-center justify-center gap-2">
+            <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
+              <a href={config.discordLink} target="_blank" rel="noopener noreferrer" className="social-link">
                 <MessageCircle size={16} />
                 Discord
               </a>
-              <a href={config.instagramLink || config.buyLink} target="_blank" rel="noopener noreferrer" className="btn-secondary inline-flex w-full items-center justify-center gap-2">
+              <a href={config.instagramLink || config.buyLink} target="_blank" rel="noopener noreferrer" className="social-link">
                 <Instagram size={16} />
                 Instagram
               </a>
-              <a href={config.tiktokLink || config.buyLink} target="_blank" rel="noopener noreferrer" className="btn-primary inline-flex w-full items-center justify-center gap-2">
+              <a href={config.tiktokLink || config.buyLink} target="_blank" rel="noopener noreferrer" className="social-link">
                 <FaTiktok size={16} />
                 TikTok
               </a>

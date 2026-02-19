@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     siteName: '- Auroxe Group -',
     images: [
       {
-        url: '/aurorabanner.png', // A imagem deve estar na pasta 'public'
+        url: '/aurorabranding.png', // A imagem deve estar na pasta 'public'
         width: 1200,
         height: 630,
         alt: 'Preview do Aurora Bot',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Auroxe Group — Aurora ',
     description: 'Cansado de gerenciar seu servidor manualmente? A Aurora é a melhor auxiliar de tickets e pagamentos definitivo para Discord, automatizando o suporte e vendas do seu servidor com facilidade. Experimente agora e transforme seu servidor!',
-    images: ['/aurorabanner.png'], // Mesma imagem do OpenGraph
+    images: ['/aurorabranding.png'], // Mesma imagem do OpenGraph
   },
 };
 

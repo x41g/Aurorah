@@ -111,6 +111,19 @@ html.light ::-webkit-scrollbar-track {
   transform: translateY(-1px);
 }
 
+.social-link {
+  @apply inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-200;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(238, 243, 255, 0.78);
+}
+
+.social-link:hover {
+  border-color: rgba(216, 180, 254, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.96);
+}
+
 .card {
   @apply p-6 rounded-3xl border transition-all duration-300;
   border-color: rgba(255, 255, 255, 0.12);
@@ -197,6 +210,58 @@ html.light .aura-panel {
 
   .aura-panel {
     border-radius: 1rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .landing-page .section {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
+  .landing-page h1 {
+    font-size: 2rem;
+    line-height: 1.04;
+  }
+
+  .landing-page h2 {
+    font-size: 1.62rem;
+    line-height: 1.12;
+  }
+
+  .landing-page .aura-panel {
+    backdrop-filter: blur(12px);
+  }
+
+  .landing-page .btn-primary,
+  .landing-page .btn-secondary {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 0.9rem;
+    font-size: 0.92rem;
+  }
+
+  .landing-page footer .container-max {
+    gap: 0.65rem;
+    text-align: center;
+  }
+
+  .landing-page footer .container-max > div {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.2rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .landing-page h1 {
+    font-size: 1.82rem;
+  }
+
+  .landing-page h2 {
+    font-size: 1.48rem;
   }
 }
 
@@ -429,4 +494,16 @@ html.light .landing-page .bg-white\/5 {
 html.light .landing-page .btn-secondary {
   background: rgba(15, 23, 42, 0.08);
   border-color: rgba(15, 23, 42, 0.16);
+}
+
+html.light .social-link {
+  border-color: rgba(30, 41, 59, 0.16);
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(30, 41, 59, 0.78);
+}
+
+html.light .social-link:hover {
+  border-color: rgba(139, 92, 246, 0.34);
+  background: rgba(15, 23, 42, 0.08);
+  color: rgba(15, 23, 42, 0.95);
 }
