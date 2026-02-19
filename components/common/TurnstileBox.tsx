@@ -33,6 +33,7 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
   const widgetIdRef = useRef<string | null>(null);
   const [siteKey, setSiteKey] = useState(staticSiteKey);
   const [scriptReady, setScriptReady] = useState(false);
+  const [rendered, setRendered] = useState(false);
   const [error, setError] = useState("");
 
   const looksLikeTurnstileSiteKey = (value: string) => /^0x[a-zA-Z0-9_-]{20,}$/.test(String(value || "").trim());
@@ -78,13 +79,20 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
         theme: "dark",
-        callback: (token) => onTokenChange(String(token || "")),
-        "expired-callback": () => onTokenChange(""),
+        callback: (token) => {
+          setRendered(true);
+          onTokenChange(String(token || ""));
+        },
+        "expired-callback": () => {
+          setRendered(true);
+          onTokenChange("");
+        },
         "error-callback": () => {
           onTokenChange("");
           setError("Captcha expirou ou falhou. Atualize a pagina.");
         },
       });
+      setRendered(true);
       setError("");
     } catch {
       setError("Falha ao renderizar captcha. Confira a chave do Turnstile.");
@@ -101,6 +109,15 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
       widgetIdRef.current = null;
     };
   }, [siteKey, scriptReady, onTokenChange]);
+
+  useEffect(() => {
+    if (!siteKey) return;
+    if (scriptReady) return;
+    const t = setTimeout(() => {
+      setError("Captcha nao carregou. Verifique bloqueador/extensao e recarregue a pagina.");
+    }, 7000);
+    return () => clearTimeout(t);
+  }, [siteKey, scriptReady]);
 
   if (!siteKey && !error) {
     return (
@@ -120,7 +137,10 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
         onLoad={() => setScriptReady(true)}
         onError={() => setError("Falha ao carregar script do Turnstile (rede/extensao/bloqueador).")}
       />
-      <div ref={containerRef} />
+      <div className="min-h-[78px] rounded-xl border border-white/10 bg-black/20 p-2">
+        <div ref={containerRef} />
+        {!rendered && !error ? <div className="text-xs text-white/60">Carregando captcha...</div> : null}
+      </div>
       {error ? (
         <div className="mt-2 rounded-xl border border-red-300/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</div>
       ) : null}

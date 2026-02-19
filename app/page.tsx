@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Check, ChevronDown, MessageCircle, Instagram, Sparkles, PlayCircle } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown, MessageCircle, Instagram, Sparkles } from 'lucide-react'
 import { FaTiktok } from 'react-icons/fa'
 import { config } from '../config'
 import DashboardPreview from '@/components/DashboardPreview'
@@ -102,15 +102,12 @@ export default function Home() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="space-y-4"
+            className="space-y-3"
           >
-            <div className="aura-panel rounded-3xl p-2 fx-hover-lift">
+            <div className="rounded-3xl border border-fuchsia-300/35 p-[1px] fx-hover-lift">
               <DashboardPreview />
             </div>
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
-              <PlayCircle size={16} />
-              Preview ao vivo da Aurora V5
-            </div>
+            <div className="text-sm text-white/75">Preview</div>
           </motion.div>
         </div>
       </motion.section>

@@ -101,7 +101,7 @@ export function LicenseRedeemPanel({
           {loading ? "Ativando..." : "Ativar"}
         </button>
       </div>
-      <div className="mt-3">
+      <div className="mt-3 min-h-[100px]">
         <TurnstileBox onTokenChange={setCaptchaToken} onRequirementChange={setCaptchaRequired} />
       </div>
       {ok ? <div className="mt-3 text-sm text-emerald-200">{ok}</div> : null}

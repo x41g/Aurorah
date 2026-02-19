@@ -204,19 +204,19 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
                 <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Transcript protegido</h1>
                 <p className="mt-1 text-sm text-white/65">Somente quem possui a senha pode visualizar o atendimento.</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/85">
+              <div className="rounded-xl border border-white/10 px-3 py-2 text-sm text-white/85">
                 {prettyGuild(info.guildSlug)}
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs text-white/70">
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/25 px-3 py-1">
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 px-3 py-1">
                 slug: <span className="text-white/90">{slug}</span>
               </span>
               <button
                 type="button"
                 onClick={copySlug}
-                className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/25 px-3 py-1 transition hover:bg-white/10"
+                className="inline-flex items-center gap-1 rounded-full border border-white/10 px-3 py-1 transition hover:bg-white/10"
               >
                 <Copy size={12} /> copiar slug
               </button>
@@ -226,7 +226,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
           <div className="p-6 sm:p-7">
             {status !== "unlocked" ? (
               <div className="grid items-start gap-6 md:grid-cols-[360px_1fr]">
-                <div className={cx("rounded-2xl border border-white/10 bg-black/25 p-5 sm:p-6", shake && "animate-[shake_0.5s_ease-in-out]")}>
+                <div className={cx("rounded-2xl border border-white/10 p-5 sm:p-6", shake && "animate-[shake_0.5s_ease-in-out]")}>
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-fuchsia-400/10">
                       <ShieldCheck size={18} className="text-fuchsia-200" />
@@ -250,7 +250,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
                   />
 
                   {message ? <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">{message}</div> : null}
-                  <div className="mt-3">
+                  <div className="mt-3 min-h-[100px]">
                     <TurnstileBox onTokenChange={setCaptchaToken} onRequirementChange={setCaptchaRequired} />
                   </div>
 
@@ -272,13 +272,13 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/15 p-5 sm:p-6">
+                <div className="rounded-2xl border border-white/10 p-5 sm:p-6">
                   <div className="text-sm font-medium text-white/90">O que sera exibido</div>
                   <p className="mt-2 text-sm leading-relaxed text-white/65">
                     O historico completo do atendimento, incluindo mensagens, embeds e ordem original da conversa.
                   </p>
 
-                  <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-4">
+                  <div className="mt-4 rounded-xl border border-white/10 p-4">
                     <div className="text-xs text-white/60">Checklist de acesso</div>
                     <ul className="mt-2 space-y-2 text-sm text-white/75">
                       <li>1. Link correto do transcript</li>
