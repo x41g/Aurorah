@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TurnstileBox } from "@/components/common/TurnstileBox";
 
 type GuildOption = {
   id: string;
@@ -21,6 +22,20 @@ export function LicenseRedeemPanel({
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState("");
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [turnstileEnabled, setTurnstileEnabled] = useState<boolean>(
+    Boolean(String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim())
+  );
+
+  useEffect(() => {
+    if (turnstileEnabled) return;
+    fetch("/api/public-security", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        setTurnstileEnabled(Boolean(String(data?.turnstileSiteKey || "").trim()));
+      })
+      .catch(() => null);
+  }, [turnstileEnabled]);
 
   async function submit() {
     setLoading(true);
@@ -33,6 +48,7 @@ export function LicenseRedeemPanel({
         body: JSON.stringify({
           code: String(code || "").trim(),
           guildId: guildId || undefined,
+          captchaToken: captchaToken || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -57,6 +73,8 @@ export function LicenseRedeemPanel({
       else if (msg === "license_disabled") setError("Key desativada.");
       else if (msg === "license_exhausted") setError("Key sem ativacoes disponiveis.");
       else if (msg === "license_expired") setError("Key expirada.");
+      else if (msg === "captcha_required") setError("Complete o captcha para continuar.");
+      else if (msg === "captcha_failed") setError("Captcha invalido ou expirado. Tente novamente.");
       else setError(msg);
     } finally {
       setLoading(false);
@@ -89,15 +107,19 @@ export function LicenseRedeemPanel({
         <button
           type="button"
           onClick={() => submit()}
-          disabled={loading || !String(code).trim()}
+          disabled={loading || !String(code).trim() || (turnstileEnabled && !captchaToken)}
           className="h-11 px-4 rounded-2xl bg-white text-black font-semibold hover:bg-white/90 transition disabled:opacity-60"
         >
           {loading ? "Ativando..." : "Ativar"}
         </button>
       </div>
+      {turnstileEnabled ? (
+        <div className="mt-3">
+          <TurnstileBox onTokenChange={setCaptchaToken} />
+        </div>
+      ) : null}
       {ok ? <div className="mt-3 text-sm text-emerald-200">{ok}</div> : null}
       {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
     </div>
   );
 }
-

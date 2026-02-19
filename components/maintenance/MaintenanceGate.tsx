@@ -77,7 +77,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
           Modo manutencao
         </div>
 
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl">
+        <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl text-cyan-40">
           Estamos lapidando a plataforma
         </h1>
         <p className="mt-4 max-w-2xl text-sm text-white/75 sm:text-base">{state?.message}</p>

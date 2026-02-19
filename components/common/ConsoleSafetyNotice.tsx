@@ -11,7 +11,7 @@ export function ConsoleSafetyNotice() {
 `;
 
     console.log(
-      "%cPARE POR AQUI. ÁREA DESIGNADA PARA DESENVOLVEDORES.",
+      "%cÁREA DESIGNADA PARA DESENVOLVEDORES.\nPARE POR AQUI.",
       "font-size:26px;font-weight:900;color:#f87171;text-shadow:0 0 18px rgba(248,113,113,.35);"
     );
     console.log(
