@@ -35,6 +35,8 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
   const [scriptReady, setScriptReady] = useState(false);
   const [error, setError] = useState("");
 
+  const looksLikeTurnstileSiteKey = (value: string) => /^0x[a-zA-Z0-9_-]{20,}$/.test(String(value || "").trim());
+
   useEffect(() => {
     let active = true;
     if (staticSiteKey) {
@@ -64,6 +66,10 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
 
   useEffect(() => {
     if (!siteKey || !scriptReady) return;
+    if (!looksLikeTurnstileSiteKey(siteKey)) {
+      setError("Site key do Turnstile parece invalida. Use a chave que comeca com 0x...");
+      return;
+    }
     if (!containerRef.current) return;
     if (!window.turnstile?.render) return;
 
@@ -112,6 +118,7 @@ export function TurnstileBox({ onTokenChange, onRequirementChange, className }: 
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
         strategy="afterInteractive"
         onLoad={() => setScriptReady(true)}
+        onError={() => setError("Falha ao carregar script do Turnstile (rede/extensao/bloqueador).")}
       />
       <div ref={containerRef} />
       {error ? (

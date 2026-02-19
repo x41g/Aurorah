@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Providers } from './providers'
-import { MaintenanceGate } from "@/components/maintenance/MaintenanceGate";
 import { ConsoleSafetyNotice } from "@/components/common/ConsoleSafetyNotice";
 import './globals.css'
 import { Fredoka } from "next/font/google";
@@ -60,7 +59,7 @@ export default function RootLayout({
       <body className={`${fredoka.className} ${plusJakarta.variable} transition-colors duration-300`}>
         <Providers>
           <ConsoleSafetyNotice />
-          <MaintenanceGate>{children}</MaintenanceGate>
+          {children}
         </Providers>
       </body>
     </html>
