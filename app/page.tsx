@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Check, ChevronDown, MessageCircle, Instagram, Sparkles } from 'lucide-react'
 import { FaTiktok } from 'react-icons/fa'
@@ -8,8 +8,21 @@ import { config } from '../config'
 import DashboardPreview from '@/components/DashboardPreview'
 import TestimonialCarousel from '@/components/TestimonialCarousel'
 
+type LandingStats = {
+  activeServers: number
+  processedTickets: number
+}
+
+function formatStat(value: number) {
+  const n = Number(value || 0)
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M+`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}k+`
+  return `${n}+`
+}
+
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [landingStats, setLandingStats] = useState<LandingStats | null>(null)
 
   const container = {
     hidden: { opacity: 0 },
@@ -27,6 +40,40 @@ export default function Home() {
     viewport: { once: true, amount: 0.18 as const },
     transition: { duration: 0.45, ease: 'easeOut' as const },
   }
+
+  useEffect(() => {
+    let active = true
+
+    const load = async () => {
+      try {
+        const res = await fetch('/api/landing-stats', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json().catch(() => null)
+        if (!active || !data?.stats) return
+        setLandingStats({
+          activeServers: Number(data.stats.activeServers || 0),
+          processedTickets: Number(data.stats.processedTickets || 0),
+        })
+      } catch {
+        // fallback para config fixa
+      }
+    }
+
+    load()
+    const interval = setInterval(load, 30000)
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
+  }, [])
+
+  const statsView = useMemo(() => {
+    const base = [...config.stats]
+    if (!landingStats) return base
+    if (base[0]) base[0] = { ...base[0], number: formatStat(landingStats.activeServers) }
+    if (base[1]) base[1] = { ...base[1], number: formatStat(landingStats.processedTickets) }
+    return base
+  }, [landingStats])
 
   return (
     <div className="landing-page min-h-screen overflow-hidden text-white">
@@ -89,7 +136,7 @@ export default function Home() {
             </motion.div>
 
             <motion.div variants={item} className="grid max-w-xl grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:gap-4">
-              {config.stats.map((s, i) => (
+              {statsView.map((s, i) => (
                 <div key={i} className="aura-panel rounded-2xl p-4 text-center sm:p-5">
                   <div className="gradient-text text-xl font-bold sm:text-2xl">{s.number}</div>
                   <div className="text-xs text-white/65 sm:text-sm">{s.label}</div>

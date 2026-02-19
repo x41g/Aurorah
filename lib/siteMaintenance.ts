@@ -1,4 +1,4 @@
-type RawBotState = unknown;
+﻿type RawBotState = unknown;
 
 export type MaintenanceState = {
   enabled: boolean;
@@ -7,7 +7,7 @@ export type MaintenanceState = {
 };
 
 export const DEFAULT_MAINTENANCE_MESSAGE =
-  "Estamos em manutenção para aplicar melhorias. Voltamos em breve.";
+  "Estamos em manutencao para aplicar melhorias. Voltamos em breve.";
 
 export function readGuildIds(raw: RawBotState): string[] {
   if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
@@ -48,4 +48,5 @@ export function buildBotStatePayload(guildIds: string[], maintenance: Maintenanc
     },
   };
 }
+
 
