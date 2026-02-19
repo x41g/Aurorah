@@ -62,7 +62,13 @@ export async function POST(req: Request) {
       },
     });
 
-    const base = (process.env.NEXT_PUBLIC_BASE_URL || "https://auroxegroup.shop").replace(/\/$/, "");
+    const rawBase =
+      String(process.env.TRANSCRIPT_PUBLIC_BASE_URL || "").trim() ||
+      String(process.env.NEXT_PUBLIC_BASE_URL || "").trim();
+    const reqOrigin = new URL(req.url).origin;
+
+    // Evita base quebrada (ex.: URL de imagem/path). Usa sempre origin.
+    const base = rawBase ? new URL(rawBase).origin : reqOrigin;
     const url = `${base}/transcript/${slug}`;
 
     return NextResponse.json(
