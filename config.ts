@@ -81,6 +81,8 @@ export const config = {
         "SafePay (anti-scam)",
         "I.A integrada",
         "Analise estatisticas",
+        "Formularios personalizados",
+        "User Tracker Roblox"
       ],
       popular: true,
     },
