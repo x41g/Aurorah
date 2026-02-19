@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { isAdminDiscordId } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, getClientIp, isSameOriginRequest } from "@/lib/requestSecurity";
-import { isTurnstileEnabled, verifyTurnstileToken } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 
@@ -43,16 +42,6 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const captchaToken = String(body?.captchaToken || "").trim();
-  if (isTurnstileEnabled()) {
-    if (!captchaToken) {
-      return NextResponse.json({ error: "captcha_required" }, { status: 400 });
-    }
-    const captcha = await verifyTurnstileToken({ token: captchaToken, remoteIp: ip });
-    if (!captcha.ok) {
-      return NextResponse.json({ error: "captcha_failed" }, { status: 403 });
-    }
-  }
 
   const rawTargets = Array.isArray(body?.targets) ? body.targets : [];
   const targets = rawTargets

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Copy, Lock, ShieldCheck, Unlock } from "lucide-react";
-import { TurnstileBox } from "@/components/common/TurnstileBox";
 
 type VerifyOk = { ok: true; html: string };
 type VerifyErr =
@@ -11,8 +10,6 @@ type VerifyErr =
   | { error: "not_found" }
   | { error: "empty_transcript" }
   | { error: "bad_request" }
-  | { error: "captcha_required" }
-  | { error: "captcha_failed" }
   | { error: "too_many_requests" }
   | { error: "too_many_attempts" }
   | { error: "server_error"; detail?: string }
@@ -48,8 +45,6 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
   const [message, setMessage] = useState("");
   const [html, setHtml] = useState("");
   const [shake, setShake] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const [captchaRequired, setCaptchaRequired] = useState(false);
 
   useEffect(() => {
     try {
@@ -87,14 +82,6 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       pulseError("Dados invalidos. Reabra o link e tente novamente.");
       return;
     }
-    if (code === "captcha_required") {
-      pulseError("Complete o captcha para continuar.");
-      return;
-    }
-    if (code === "captcha_failed") {
-      pulseError("Captcha invalido ou expirado. Tente novamente.");
-      return;
-    }
     if (httpStatus === 429 || code === "too_many_requests" || code === "too_many_attempts") {
       pulseError("Muitas tentativas seguidas. Aguarde alguns segundos e tente de novo.");
       return;
@@ -113,10 +100,6 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       pulseError("Digite a senha para desbloquear.");
       return;
     }
-    if (captchaRequired && !captchaToken) {
-      pulseError("Complete o captcha antes de desbloquear.");
-      return;
-    }
     setStatus("unlocking");
     setMessage("");
 
@@ -124,7 +107,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       const res = await fetch("/api/transcript/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, password, captchaToken: captchaToken || undefined }),
+        body: JSON.stringify({ slug, password }),
       });
 
       let data: VerifyOk | VerifyErr;
@@ -250,16 +233,13 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
                   />
 
                   {message ? <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">{message}</div> : null}
-                  <div className="mt-3 min-h-[100px]">
-                    <TurnstileBox onTokenChange={setCaptchaToken} onRequirementChange={setCaptchaRequired} />
-                  </div>
 
                   <button
                     onClick={unlock}
-                    disabled={status === "unlocking" || (captchaRequired && !captchaToken)}
+                    disabled={status === "unlocking"}
                     className={cx(
                       "mt-4 w-full rounded-xl px-4 py-3 text-sm font-medium transition",
-                      status === "unlocking" || (captchaRequired && !captchaToken)
+                      status === "unlocking"
                         ? "cursor-not-allowed bg-white/10 text-white/50"
                         : "bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white hover:from-fuchsia-400 hover:to-violet-400"
                     )}

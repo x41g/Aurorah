@@ -4,8 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { fetchUserGuilds, hasManageGuild } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { activateLicenseKey } from "@/lib/licenseKeys";
-import { getClientIp } from "@/lib/requestSecurity";
-import { isTurnstileEnabled, verifyTurnstileToken } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 
@@ -18,19 +16,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const code = String(body?.code || "").trim();
   const guildId = body?.guildId ? String(body.guildId).trim() : "";
-  const captchaToken = String(body?.captchaToken || "").trim();
   if (!code) return NextResponse.json({ error: "bad_request" }, { status: 400 });
-
-  if (isTurnstileEnabled()) {
-    if (!captchaToken) {
-      return NextResponse.json({ error: "captcha_required" }, { status: 400 });
-    }
-    const ip = getClientIp(req);
-    const captcha = await verifyTurnstileToken({ token: captchaToken, remoteIp: ip });
-    if (!captcha.ok) {
-      return NextResponse.json({ error: "captcha_failed" }, { status: 403 });
-    }
-  }
 
   let selectedGuildId: string | null = null;
   if (guildId) {
@@ -82,8 +68,6 @@ export async function POST(req: Request) {
     const msg = String(e?.message || e || "activation_error");
     const known = new Set([
       "bad_request",
-      "captcha_required",
-      "captcha_failed",
       "license_not_found",
       "license_disabled",
       "license_exhausted",

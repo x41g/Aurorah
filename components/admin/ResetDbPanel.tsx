@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { TurnstileBox } from "@/components/common/TurnstileBox";
 
 type ResetTarget = {
   key: string;
@@ -77,8 +76,6 @@ export function ResetDbPanel() {
   const [ok, setOk] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [dangerText, setDangerText] = useState("");
-  const [captchaToken, setCaptchaToken] = useState("");
-  const [captchaRequired, setCaptchaRequired] = useState(false);
   const [selectedTargets, setSelectedTargets] = useState<string[]>([
     "guildStats",
     "transcripts",
@@ -106,7 +103,7 @@ export function ResetDbPanel() {
   const hasDangerSelection =
     selectedTargets.includes("subscriptions") || selectedTargets.includes("licenses");
   const canConfirmDanger = !hasDangerSelection || dangerText.trim().toUpperCase() === "CONFIRMAR";
-  const canSubmit = canConfirmDanger && (!captchaRequired || Boolean(captchaToken));
+  const canSubmit = canConfirmDanger;
 
   async function onReset() {
     setError("");
@@ -122,18 +119,15 @@ export function ResetDbPanel() {
       const res = await fetch("/api/admin/reset", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ targets: selectedTargets, captchaToken }),
+        body: JSON.stringify({ targets: selectedTargets }),
       });
       const data = await readJsonSafe(res).catch(() => ({}));
       if (!res.ok) {
         const code = String((data as any)?.error || "");
-        if (code === "captcha_required") throw new Error("Complete o captcha para continuar.");
-        if (code === "captcha_failed") throw new Error("Captcha invalido ou expirado. Tente novamente.");
         if (code === "too_many_requests") throw new Error("Muitas tentativas. Aguarde e tente de novo.");
         throw new Error(code || "Falha ao limpar");
       }
       setOk("Formatacao concluida com sucesso.");
-      setCaptchaToken("");
       setTimeout(() => location.reload(), 600);
     } catch (e: any) {
       setError(String(e?.message || e));
@@ -152,15 +146,11 @@ export function ResetDbPanel() {
 
         <button
           onClick={() => setConfirmOpen(true)}
-          disabled={loading || !selectedTargets.length || (captchaRequired && !captchaToken)}
+          disabled={loading || !selectedTargets.length}
           className="h-10 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold disabled:opacity-60"
         >
           {loading ? "Formatando..." : "Formatar selecionados"}
         </button>
-      </div>
-
-      <div className="mt-4">
-        <TurnstileBox onTokenChange={setCaptchaToken} onRequirementChange={setCaptchaRequired} />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
