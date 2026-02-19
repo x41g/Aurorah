@@ -457,8 +457,14 @@ export function SubscriptionsPanel() {
           const u = userMap[String(s.userId)];
           const d = drafts[s.id] || toDraft(s);
           const shownStatus = s.computedStatus || s.status;
+          const activatedByKey = String(s.statusReason || "").toLowerCase().includes("license_key_activation");
           return (
-            <div key={s.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div key={s.id} className="relative rounded-2xl border border-white/10 bg-white/5 p-4">
+              {activatedByKey ? (
+                <div className="absolute right-3 top-3 rounded-full border border-fuchsia-300/40 bg-fuchsia-400/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-fuchsia-100">
+                  Ativado por key
+                </div>
+              ) : null}
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="min-w-0 flex items-center gap-3">
                   <img

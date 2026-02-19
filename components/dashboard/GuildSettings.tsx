@@ -382,6 +382,7 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
   const clientIdRef = useRef(`dash-${Date.now()}-${Math.random().toString(36).slice(2)}`)
   const isEditingTriggersRef = useRef(false)
   const [remoteSyncMsg, setRemoteSyncMsg] = useState<string | null>(null)
+  const [publishingPanel, setPublishingPanel] = useState(false)
 
   const canEdit = Boolean(entitlements?.canEditConfig)
   const canUseAI = Boolean(entitlements?.canUseAI)
@@ -1414,6 +1415,31 @@ export function GuildSettings({ guildId, initial, tab = 'panel', entitlements = 
       )}
 
       <div className="flex flex-wrap items-center gap-3 mt-6 rounded-2xl border border-white/10 bg-white/5 p-3">
+        {(tab === 'panel' || tab === 'tickets') ? (
+          <button
+            type="button"
+            className="btn-secondary px-4 py-2 rounded-2xl disabled:opacity-60"
+            onClick={async () => {
+              if (!canEdit || publishingPanel || saving) return
+              setPublishingPanel(true)
+              setRemoteSyncMsg(null)
+              try {
+                const res = await fetch(`/api/guild-config/${encodeURIComponent(guildId)}/publish-panel`, { method: 'POST' })
+                const data = await res.json().catch(() => ({}))
+                if (!res.ok) throw new Error(String(data?.error || 'Falha ao solicitar publicacao do painel'))
+                setRemoteSyncMsg('Publicacao solicitada. O bot vai postar o painel em alguns segundos.')
+              } catch (e: any) {
+                setRemoteSyncMsg(`Falha ao publicar painel: ${String(e?.message || e)}`)
+              } finally {
+                setPublishingPanel(false)
+              }
+            }}
+            disabled={!canEdit || publishingPanel || saving}
+          >
+            {publishingPanel ? 'Solicitando...' : 'Publicar painel'}
+          </button>
+        ) : null}
+
         {(saving || autosaveStatus === 'error') ? (
           <button type="button" className="btn-primary px-6 py-3 rounded-2xl disabled:opacity-60 fx-hover-lift fx-shimmer" onClick={() => void save('manual')} disabled={saving || (tab === 'ai' && !canUseAI) || ((tab === 'payments') && !canUsePayments) || ((tab === 'safepay') && !canUseSafePay) || ((tab === 'tickets' || tab === 'panel') && !canEdit)}>
             {saving ? 'Salvando...' : 'Salvar agora'}
