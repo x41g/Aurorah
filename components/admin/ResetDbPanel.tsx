@@ -78,7 +78,7 @@ export function ResetDbPanel() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [dangerText, setDangerText] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
-  const turnstileEnabled = Boolean(String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim());
+  const [captchaRequired, setCaptchaRequired] = useState(false);
   const [selectedTargets, setSelectedTargets] = useState<string[]>([
     "guildStats",
     "transcripts",
@@ -106,7 +106,7 @@ export function ResetDbPanel() {
   const hasDangerSelection =
     selectedTargets.includes("subscriptions") || selectedTargets.includes("licenses");
   const canConfirmDanger = !hasDangerSelection || dangerText.trim().toUpperCase() === "CONFIRMAR";
-  const canSubmit = canConfirmDanger && (!turnstileEnabled || Boolean(captchaToken));
+  const canSubmit = canConfirmDanger && (!captchaRequired || Boolean(captchaToken));
 
   async function onReset() {
     setError("");
@@ -152,18 +152,16 @@ export function ResetDbPanel() {
 
         <button
           onClick={() => setConfirmOpen(true)}
-          disabled={loading || !selectedTargets.length || (turnstileEnabled && !captchaToken)}
+          disabled={loading || !selectedTargets.length || (captchaRequired && !captchaToken)}
           className="h-10 px-4 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 transition text-sm font-semibold disabled:opacity-60"
         >
           {loading ? "Formatando..." : "Formatar selecionados"}
         </button>
       </div>
 
-      {turnstileEnabled ? (
-        <div className="mt-4">
-          <TurnstileBox onTokenChange={setCaptchaToken} />
-        </div>
-      ) : null}
+      <div className="mt-4">
+        <TurnstileBox onTokenChange={setCaptchaToken} onRequirementChange={setCaptchaRequired} />
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button

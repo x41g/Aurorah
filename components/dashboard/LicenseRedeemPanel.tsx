@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TurnstileBox } from "@/components/common/TurnstileBox";
 
@@ -23,19 +23,7 @@ export function LicenseRedeemPanel({
   const [ok, setOk] = useState("");
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
-  const [turnstileEnabled, setTurnstileEnabled] = useState<boolean>(
-    Boolean(String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim())
-  );
-
-  useEffect(() => {
-    if (turnstileEnabled) return;
-    fetch("/api/public-security", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        setTurnstileEnabled(Boolean(String(data?.turnstileSiteKey || "").trim()));
-      })
-      .catch(() => null);
-  }, [turnstileEnabled]);
+  const [captchaRequired, setCaptchaRequired] = useState(false);
 
   async function submit() {
     setLoading(true);
@@ -107,17 +95,15 @@ export function LicenseRedeemPanel({
         <button
           type="button"
           onClick={() => submit()}
-          disabled={loading || !String(code).trim() || (turnstileEnabled && !captchaToken)}
+          disabled={loading || !String(code).trim() || (captchaRequired && !captchaToken)}
           className="h-11 px-4 rounded-2xl bg-white text-black font-semibold hover:bg-white/90 transition disabled:opacity-60"
         >
           {loading ? "Ativando..." : "Ativar"}
         </button>
       </div>
-      {turnstileEnabled ? (
-        <div className="mt-3">
-          <TurnstileBox onTokenChange={setCaptchaToken} />
-        </div>
-      ) : null}
+      <div className="mt-3">
+        <TurnstileBox onTokenChange={setCaptchaToken} onRequirementChange={setCaptchaRequired} />
+      </div>
       {ok ? <div className="mt-3 text-sm text-emerald-200">{ok}</div> : null}
       {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
     </div>

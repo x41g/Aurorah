@@ -49,7 +49,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
   const [html, setHtml] = useState("");
   const [shake, setShake] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
-  const turnstileEnabled = Boolean(String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim());
+  const [captchaRequired, setCaptchaRequired] = useState(false);
 
   useEffect(() => {
     try {
@@ -113,7 +113,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       pulseError("Digite a senha para desbloquear.");
       return;
     }
-    if (turnstileEnabled && !captchaToken) {
+    if (captchaRequired && !captchaToken) {
       pulseError("Complete o captcha antes de desbloquear.");
       return;
     }
@@ -124,7 +124,7 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
       const res = await fetch("/api/transcript/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, password, captchaToken }),
+        body: JSON.stringify({ slug, password, captchaToken: captchaToken || undefined }),
       });
 
       let data: VerifyOk | VerifyErr;
@@ -250,18 +250,16 @@ export default function TranscriptPage({ params }: { params: { slug: string } })
                   />
 
                   {message ? <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">{message}</div> : null}
-                  {turnstileEnabled ? (
-                    <div className="mt-3">
-                      <TurnstileBox onTokenChange={setCaptchaToken} />
-                    </div>
-                  ) : null}
+                  <div className="mt-3">
+                    <TurnstileBox onTokenChange={setCaptchaToken} onRequirementChange={setCaptchaRequired} />
+                  </div>
 
                   <button
                     onClick={unlock}
-                    disabled={status === "unlocking" || (turnstileEnabled && !captchaToken)}
+                    disabled={status === "unlocking" || (captchaRequired && !captchaToken)}
                     className={cx(
                       "mt-4 w-full rounded-xl px-4 py-3 text-sm font-medium transition",
-                      status === "unlocking" || (turnstileEnabled && !captchaToken)
+                      status === "unlocking" || (captchaRequired && !captchaToken)
                         ? "cursor-not-allowed bg-white/10 text-white/50"
                         : "bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white hover:from-fuchsia-400 hover:to-violet-400"
                     )}

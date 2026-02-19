@@ -23,10 +23,11 @@ declare global {
 
 type Props = {
   onTokenChange: (token: string) => void;
+  onRequirementChange?: (enabled: boolean) => void;
   className?: string;
 };
 
-export function TurnstileBox({ onTokenChange, className }: Props) {
+export function TurnstileBox({ onTokenChange, onRequirementChange, className }: Props) {
   const staticSiteKey = String(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "").trim();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
@@ -38,6 +39,7 @@ export function TurnstileBox({ onTokenChange, className }: Props) {
     let active = true;
     if (staticSiteKey) {
       setSiteKey(staticSiteKey);
+      onRequirementChange?.(true);
       return;
     }
 
@@ -45,17 +47,20 @@ export function TurnstileBox({ onTokenChange, className }: Props) {
       .then((res) => res.json())
       .then((data) => {
         if (!active) return;
-        setSiteKey(String(data?.turnstileSiteKey || "").trim());
+        const resolved = String(data?.turnstileSiteKey || "").trim();
+        setSiteKey(resolved);
+        onRequirementChange?.(Boolean(resolved));
       })
       .catch(() => {
         if (!active) return;
         setError("Nao foi possivel carregar o captcha.");
+        onRequirementChange?.(false);
       });
 
     return () => {
       active = false;
     };
-  }, [staticSiteKey]);
+  }, [staticSiteKey, onRequirementChange]);
 
   useEffect(() => {
     if (!siteKey || !scriptReady) return;
